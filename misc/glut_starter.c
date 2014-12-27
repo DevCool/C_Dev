@@ -16,15 +16,6 @@
 
 float ratio;
 
-/*********************************************************
-void update(void);
-void resizeDisplay(int width,int height);
-void display(void);
-void processKeys(unsigned char key,int x,int y);
-void processSpecial(unsigned int key,int x,int y);
-void processSpecialUp(unsigned int key,int x,int y);
-*********************************************************/
-
 void update(void) {
 	/* update logic code here */
 }
@@ -57,27 +48,18 @@ void display(void) {
 	glRotatef(90.0f,1.0f,0.0f,0.0f);
 	glColor3f(0.5f,0.5f,0.5f);
 	glBegin(GL_QUADS);
-		glVertex3f(-1.0f,-1.0f,-1.0f);
-		glVertex3f(-1.0f,1.0f,1.0f);
-		glVertex3f(1.0f,-1.0f,1.0f);
-		glVertex3f(1.0f,1.0f,-1.0f);
+		glVertex3f(-1.0f,-1.0f,0.0f);
+		glVertex3f(-1.0f,1.0f,0.0f);
+		glVertex3f(1.0f,-1.0f,0.0f);
+		glVertex3f(1.0f,1.0f,0.0f);
 	glEnd();
-
-	glPushMatrix();
-	glColor3f(1.0f,0.5f,0.5f);
-	glBegin(GL_TRIANGLES);
-		glVertex3f(-2.0f,-2.0f,0.0f);
-		glVertex3f(0.0f,-2.0f,0.0f);
-		glVertex3f(-1.0f,2.0f,0.0f);
-	glEnd();
-	glPopMatrix();
 
 	glutSwapBuffers();
 }
 
 void processKeys(unsigned char key,int x,int y) {
 	/* process normal keys here */
-	if(key==27&1) exit(0);
+	if(key==27) exit(0);
 }
 
 void processSpecial(int key,int x,int y) {
@@ -93,7 +75,7 @@ int main(int argc,char*args[]) {
 	glutInit(&argc,args);
 	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA);
 	glutInitWindowPosition(100,100);
-	glutInitWindowSize(800,600);
+	glutInitWindowSize(SCREEN_WIDTH,SCREEN_HEIGHT);
 	glutCreateWindow("GLUT Starter - by Philip R Simonson");
 
 	glutDisplayFunc(&display);
