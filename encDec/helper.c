@@ -23,11 +23,13 @@ int encrypt (const char *filename)
 
 	fp = fopen (filename, "rb");
 	if (fp == 0) {
+		printf ("Could open file: %s.\n", filename);
 		return 1;
 	}
 	sprintf (fname, "%s.enc", filename);
 	newFp = fopen (fname, "wb");
 	if (newFp == 0) {
+		printf ("Couldn't open file: %s.\n", fname);
 		return 1;
 	}
 
@@ -44,6 +46,8 @@ int encrypt (const char *filename)
 
 	fclose (fp);
 	fclose (newFp);
+
+	printf ("Successfully wrote file:         [ %s ]\n", fname);
 	fflush (0);
 
 	return 0;
@@ -59,11 +63,14 @@ int decrypt (const char *filename)
 
 	fp = fopen (filename, "rb");
 	if (fp == 0) {
+		printf ("Couldn't open file: %s.\n", filename);
 		return 1;
 	}
 	sprintf (fname, "%s.dec", filename);
 	newFp = fopen (fname, "wb");
 	if (newFp == 0) {
+		printf ("Couldn't open file: %s.\nFor writing operation.\n",
+			fname);
 		return 1;
 	}
 
@@ -80,8 +87,24 @@ int decrypt (const char *filename)
 
 	fclose (fp);
 	fclose (newFp);
+
+	printf ("Successfully wrote file:           [ %s ]\n", fname);
 	fflush (0);
 
+	return 0;
+}
+
+int prglogo (void)
+{
+	puts (
+		"    //\\\\         ||\n"
+		"   //  \\\\        ||             /||||\\        /|||||\\\n"
+		"  ||    ||      /||\\           ||    ||      ||    |/\n"
+		"  ||====||    ||||||||         ||||||/       ||\n"
+		"  ||    ||      \\||/           ||            ||\n"
+		"  ||    ||       ||   |\\       ||     |.     ||    |\\\n"
+		"  ||    ||        \\\\==//        \\||||||/      \\||||/\n"
+	);
 	return 0;
 }
 

@@ -1,0 +1,6 @@
+This is a test file.
+For use with my program, encdec.
+
+It works perfectly.
+
+-DevCooL
