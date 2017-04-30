@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1493401360 source:c:\users\phili\dev\objparser\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<conio.h>
+	<errno.h>
+	<time.h>
+	<unistd.h>
+	<windows.h>
+

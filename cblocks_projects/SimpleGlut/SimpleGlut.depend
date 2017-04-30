@@ -1,0 +1,15 @@
+# depslib dependency file v1.0
+1492916518 source:c:\users\phili\dev\simpleglut\main.c
+	<GL/gl.h>
+	<GL/glu.h>
+	<glut.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<math.h>
+
+1492884650 c:\devlibs\glut.h
+	<windows.h>
+	<GL/gl.h>
+	<GL/glu.h>
+

@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1493582172 source:c:\users\phili\dev\bdp\main.c
+	<sys/socket.h>
+	<arpa/inet.h>
+	<winsock2.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<errno.h>
+	<unistd.h>
+

@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1493495330 source:c:\users\phili\dev\convline\main.c
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<string.h>
+	<unistd.h>
+
