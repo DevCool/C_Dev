@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1493635494 source:c:\users\phili\dev\killpower\main.c
+	<sys/socket.h>
+	<arpa/inet.h>
+	<windows.h>
+	<winsock2.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<unistd.h>
+
