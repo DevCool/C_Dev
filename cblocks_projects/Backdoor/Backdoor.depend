@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1493601280 source:c:\users\phili\dev\backdoor\main.c
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<errno.h>
+	<unistd.h>
+	<winsock2.h>
+
