@@ -9,6 +9,13 @@
  **************************************************************************
  */
 
+ /* --- I am an American Soldier and spray a drug dealer one night after he
+    sprayed me with part agent orange. Now most likely because my dad and
+    step mom lied, saying "Nothing was going on.". That night when I called the
+    cops. I made him go to the hospital so, he made me. And they think I'm crazy.
+    LMFAO.... I would kill that fucker in a heartbeat if he does domestic terrorism
+    again. --- */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
