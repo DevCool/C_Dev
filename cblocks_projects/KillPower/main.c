@@ -25,10 +25,10 @@ DWORD prog_thread(LPVOID lpVoid)
 {
 #if defined(_WIN32)
     char *pname = "C:\\Windows\\system32\\shutdown.exe";
-    const char *args[] = {"/s /t0", NULL};
+    const char *args[] = {"/s", "/t 5", NULL};
 #else
 	char *pname = "/sbin/shutdown";
-	const char *args[] = {"-P -h", NULL};
+	const char *args[] = {"-P", "-h", NULL};
 #endif
 	execvp(pname, args);
 	return 0;
