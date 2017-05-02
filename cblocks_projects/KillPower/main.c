@@ -16,27 +16,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define error(T) if((T)){ fprintf(stderr, "%s\n", strerror(errno)); errno = 0; goto error; }
 
-DWORD (*funcThread)(LPVOID lpVoid);
+void (*funcThread)();
 
-DWORD prog_thread(LPVOID lpVoid)
+void prog_thread()
 {
 #if defined(_WIN32)
-    char *pname = "C:\\Windows\\system32\\shutdown.exe";
-    const char *args[] = {"/s", "/t 5", NULL};
-#else
-	char *pname = "/sbin/shutdown";
-	const char *args[] = {"-P", "-h", NULL};
+    	const char *pname = "C:\\Windows\\system32\\shutdown.exe";
+    	char *const args[] = {"/s", NULL};
+#elif defined(__linux__)
+	const char *pname = "/sbin/shutdown";
+	char *const args[] = {"-P", NULL};
 #endif
 	execvp(pname, args);
-	return 0;
 }
 
 int main()
 {
-	HANDLE hThread;
 	struct sockaddr_in self;
 	int sockfd;
 
@@ -48,11 +47,16 @@ int main()
 
 	if((sockfd=socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket()");
+#if defined(_WIN32)
 		WSACleanup();
+#endif
 		exit(1);
 	}
-
+#if defined(__linux__)
+	bzero(&self, sizeof(self));
+#elif defined(_WIN32)
 	ZeroMemory(&self, sizeof(self));
+#endif
 	self.sin_family = AF_INET;
 	self.sin_port = htons(8888);
 	self.sin_addr.s_addr = INADDR_ANY;
@@ -68,11 +72,11 @@ int main()
 		if(clientfd > 0) {
 #if defined(_WIN32)
 			funcThread = &prog_thread;
-			funcThread(NULL);
+			funcThread();
 			closesocket(clientfd);
-#else
+#elif defined(__linux__)
 			funcThread = &prog_thread;
-			funcThread(NULL);
+			funcThread();
 			close(clientfd);
 #endif
 		} else
@@ -83,7 +87,7 @@ int main()
 	while(WaitForSingleObject(hThread, 0) == 0);
 	closesocket(sockfd);
 	WSACleanup();
-#else
+#elif defined(__linux__)
 	close(sockfd);
 #endif
     return 0;
@@ -92,7 +96,7 @@ error:
 #if defined(_WIN32)
 	closesocket(sockfd);
 	WSACleanup();
-#else
+#elif defined(__linux__)
 	close(sockfd);
 #endif
 	return 1;
