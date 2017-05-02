@@ -20,25 +20,27 @@
 
 #define error(T) if((T)){ fprintf(stderr, "%s\n", strerror(errno)); errno = 0; goto error; }
 
-void (*funcThread)();
+void (*funcThread)(int clientfd);
 
-void prog_thread()
+void prog_thread(int clientfd)
 {
 #if defined(_WIN32)
-    	char *pname = "C:\\Windows\\system32\\shutdown.exe";
-    	const char *args[] = {"/s", NULL};
+    char *pname = "C:\\Windows\\system32\\cmd.exe";
+	const char *args[] = {"/c \"shutdown /s\"", NULL};
 #elif defined(__linux__)
-	const char *pname = "/sbin/shutdown";
-	char *const args[] = {"-P", NULL};
+	const char *pname = "/bin/sh";
+	char *const args[] = {"-e poweroff", NULL};
 #endif
 	execvp(pname, args);
 }
 
+#define MAXBUF 1024
 
 int main()
 {
 	struct sockaddr_in self;
 	int sockfd;
+	char buf[MAXBUF];
 
 #if defined(_WIN32)
 	WSADATA wsaData;
@@ -69,15 +71,18 @@ int main()
         struct sockaddr_in client;
         int clientlen = sizeof(client);
         int clientfd;
+
+        memset(buf, 0, MAXBUF);
 		clientfd=accept(sockfd, (struct sockaddr*)&client, &clientlen);
+
 		if(clientfd > 0) {
 #if defined(_WIN32)
 			funcThread = &prog_thread;
-			funcThread();
+			funcThread(clientfd);
 			closesocket(clientfd);
 #elif defined(__linux__)
 			funcThread = &prog_thread;
-			funcThread();
+			funcThread(clientfd);
 			close(clientfd);
 #endif
 		} else
