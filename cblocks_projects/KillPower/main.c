@@ -25,14 +25,15 @@ void (*funcThread)();
 void prog_thread()
 {
 #if defined(_WIN32)
-    	const char *pname = "C:\\Windows\\system32\\shutdown.exe";
-    	char *const args[] = {"/s", NULL};
+    	char *pname = "C:\\Windows\\system32\\shutdown.exe";
+    	const char *args[] = {"/s", NULL};
 #elif defined(__linux__)
 	const char *pname = "/sbin/shutdown";
 	char *const args[] = {"-P", NULL};
 #endif
 	execvp(pname, args);
 }
+
 
 int main()
 {
@@ -84,7 +85,6 @@ int main()
     }
 
 #if defined(_WIN32)
-	while(WaitForSingleObject(hThread, 0) == 0);
 	closesocket(sockfd);
 	WSACleanup();
 #elif defined(__linux__)
