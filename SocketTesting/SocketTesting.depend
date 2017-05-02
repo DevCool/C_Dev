@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1493701606 source:c:\users\phili\dev\sockettesting\main.c
+	<windows.h>
+	<winsock2.h>
+	<sys/socket.h>
+	<arpa/inet.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<errno.h>
+	<unistd.h>
+
