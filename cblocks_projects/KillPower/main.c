@@ -26,10 +26,10 @@ void prog_thread(int clientfd)
 {
 #if defined(_WIN32)
     char *pname = "C:\\Windows\\system32\\cmd.exe";
-	const char *args[] = {"/c \"shutdown /s\"", NULL};
+	const char *args[] = {"/c", "shutdown", "/s", NULL};
 #elif defined(__linux__)
 	const char *pname = "/bin/sh";
-	char *const args[] = {"-c \"sudo poweroff\"", "&", NULL};
+	char *const args[] = {"-c", "shutdown", "-P", "now", NULL};
 #endif
 	execvp(pname, args);
 }
