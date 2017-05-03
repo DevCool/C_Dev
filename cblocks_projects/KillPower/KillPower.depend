@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1493637501 source:c:\users\phili\dev\killpower\main.c
+1493695298 source:c:\users\phili\dev\killpower\main.c
 	<sys/socket.h>
 	<arpa/inet.h>
 	<windows.h>
@@ -8,4 +8,5 @@
 	<stdlib.h>
 	<string.h>
 	<unistd.h>
+	<errno.h>
 

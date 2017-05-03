@@ -29,18 +29,15 @@ void prog_thread(int clientfd)
 	const char *args[] = {"/c \"shutdown /s\"", NULL};
 #elif defined(__linux__)
 	const char *pname = "/bin/sh";
-	char *const args[] = {"-e poweroff", NULL};
+	char *const args[] = {"-c \"sudo poweroff\"", "&", NULL};
 #endif
 	execvp(pname, args);
 }
-
-#define MAXBUF 1024
 
 int main()
 {
 	struct sockaddr_in self;
 	int sockfd;
-	char buf[MAXBUF];
 
 #if defined(_WIN32)
 	WSADATA wsaData;
@@ -72,7 +69,6 @@ int main()
         int clientlen = sizeof(client);
         int clientfd;
 
-        memset(buf, 0, MAXBUF);
 		clientfd=accept(sockfd, (struct sockaddr*)&client, &clientlen);
 
 		if(clientfd > 0) {
