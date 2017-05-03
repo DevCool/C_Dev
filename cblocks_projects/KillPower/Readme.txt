@@ -1,5 +1,5 @@
 ===================
-= KillPower v0.01 =
+= KillPower v0.02 =
 ===================
 
 For windows/linux.

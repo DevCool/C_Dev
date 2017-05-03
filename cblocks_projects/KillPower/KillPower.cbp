@@ -35,7 +35,8 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Linker>
-			<Add option="-lws2_32" />
+			<Add library="kernel32" />
+			<Add library="ws2_32" />
 		</Linker>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
