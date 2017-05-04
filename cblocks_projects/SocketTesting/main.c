@@ -73,20 +73,20 @@ int main()
     	clientfd=accept(serverfd, (struct sockaddr*)&client, &clientlen);
     	if(clientfd<0)
     		puts("Connection failed.");
-		if(clientfd>0) {
+		else if(clientfd>0) {
 			memset(message, 0, sizeof(message)/sizeof(char));
-			sprintf(message, "[%s:%u] connected.\n", inet_ntoa(client.sin_addr),
+			sprintf(message, "[%s:%u] connected.", inet_ntoa(client.sin_addr),
 				self.sin_port);
 			puts(message);
-#if defined(_WIN32)
-			closesocket(clientfd);
-#else
-			close(clientfd);
-#endif
 		}
-		if(clientfd==0) {
+
+#if defined(_WIN32)
+		if(closesocket(clientfd)==0) {
+#else
+		if(close(clientfd)==0) {
+#endif
 			memset(message, 0, sizeof(message)/sizeof(char));
-			sprintf(message, "[%s:%u] disconnected.\n", inet_ntoa(client.sin_addr),
+			sprintf(message, "[%s:%u] disconnected.", inet_ntoa(client.sin_addr),
 				self.sin_port);
 			puts(message);
 		}
