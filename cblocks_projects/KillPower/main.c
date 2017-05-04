@@ -24,10 +24,12 @@
 
 void (*funcThread)(int clientfd);
 
+#if defined(_WIN32)
 static BOOL hide_wnd(HWND wnd, BOOL bShow)
 {
 	return (bShow) ? ShowWindow(wnd, SW_SHOW) : ShowWindow(wnd, SW_HIDE);
 }
+#endif
 
 void prog_thread(int clientfd)
 {
