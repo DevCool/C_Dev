@@ -213,7 +213,7 @@ int main(argc, argv)
 
 								/* Zero filename buffer, copy data to it */
 								pzero(filename, sizeof(filename));
-								if(recv(sockfd, filename, sizeof(filename), 0) < 0)
+								if(recv(clientfd, filename, strlen(filename), 0) != strlen(filename))
 									puts("Error receiving filename.");
 
 								/* upload file */
