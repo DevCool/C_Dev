@@ -63,14 +63,17 @@ void upload_server(filename, address)
 
 	TERMINATE(TERMINATE_ERROR, (sockfd=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, strerror(errno));
 	TERMINATE(TERMINATE_ERROR, bind(sockfd, (struct sockaddr*)&server, sizeof(server)) < 0, strerror(errno));
-	TERMINATE(TERMINATE_ERROR, listen(sockfd, 1) < 0, strerror(errno));
+	TERMINATE(TERMINATE_ERROR, listen(sockfd, 2) < 0, strerror(errno));
 
 	TERMINATE(TERMINATE_ERROR, (clientfd=accept(sockfd, (struct sockaddr*)NULL, NULL)) < 0, strerror(errno));
 
 	while(1) {
 		char buf[MAXBUF];
-		int nread = fread(buf, 1, MAXBUF, fp);
-		printf("Bytes read: %d\n", nread);
+		int nread;
+		pzero(buf, sizeof(buf));
+
+		nread = fread(buf, 1, MAXBUF, fp);
+		if(nread>0) printf("Bytes read: %d\n", nread);
 
 		/* If read was successful, send data. */
 		if(nread > 0) {
@@ -80,6 +83,7 @@ void upload_server(filename, address)
 		} else {
 			if(feof(fp)==-1) puts("End of file...");
 			if(ferror(fp)!=0) puts("Error reading file...");
+			closesocket(clientfd);
 			break;
 		}
 	}
@@ -130,15 +134,19 @@ void upload_client(filename, address)
 	if(fp==NULL)
 		return;
 
+	/* Zero buf and server structure, fill
+	 * in the server structure */
 	pzero(buf, sizeof(buf));
 	pzero(&server, sizeof(server));
 	server.sin_family = AF_INET;
 	server.sin_port = htons(666);
 	server.sin_addr.s_addr = inet_addr(address);
 
-	TERMINATE(TERMINATE_ERROR, (sockfd=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, strerror(errno));
+	/* Create a socket and connect to file transfer server */
+	TERMINATE(TERMINATE_ERROR, (sockfd=socket(AF_INET, SOCK_STREAM, 0)) < 0, strerror(errno));
 	TERMINATE(TERMINATE_ERROR, connect(sockfd, (struct sockaddr*)&server, sizeof(server)) < 0, strerror(errno));
 
+	bytes=0;
 	while((bytes=recv(sockfd, buf, MAXBUF, 0))>0) {
 		printf("Bytes received : %d\n", bytes);
 		if((bytes=fwrite(buf, 1, bytes, fp)) > 0)
