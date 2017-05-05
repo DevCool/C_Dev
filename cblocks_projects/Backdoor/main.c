@@ -121,6 +121,7 @@ char **argv;
         	if((recv(sockfd, reply, MAXBUF, 0)) < 0)
         		puts("Could not recv data.");
         	scanf("%[^\n]s", buf);
+        	if(strncmp(buf, "exit", 4)==0) break;
 			if((send(sockfd, buf, MAXBUF, 0)) < 0)
 				puts("Could not send data.");
         }
