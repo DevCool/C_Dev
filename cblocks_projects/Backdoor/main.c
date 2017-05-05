@@ -105,11 +105,14 @@ char *search_name(filename)
 {
 	char *tmp = NULL;
 
-	while(*++filename != 0)
+	while(*filename != 0) {
 		if(*filename == '\\')
 			tmp = filename;
 		else
 			tmp = NULL;
+		++filename;
+	}
+	if(tmp==NULL) return filename;
 	return tmp;
 }
 
