@@ -41,7 +41,46 @@ void pzero(p, s)
 		*(p+i)=0;
 }
 
+#define BUFSIZE 1
 #define MAXBUF 1024
+
+/* getln() - this is a function to grab input.
+ */
+char *getln()
+{
+	int size = BUFSIZE;
+	int p = 0;
+	char c;
+	char *buf = NULL;
+
+	buf = realloc(buf, size);
+	if(!buf) return NULL;
+
+	while(1) {
+		c=getchar();
+		if(c==-1 || c==0x0d) {
+			++p;
+			if(p>=size) {
+				size+=BUFSIZE;
+				buf=realloc(buf, size);
+				if(!buf) return NULL;
+				*(buf+p)=0;
+				return(buf);
+			}
+		} else {
+			*(buf+p)=c;
+		}
+		++p;
+
+		if(p>=size) {
+			size+=BUFSIZ;
+			buf=realloc(buf, size);
+			if(!buf) break;
+		}
+	}
+
+	return NULL;
+}
 
 /* upload_server() - this is what the client runs.
  */
@@ -195,36 +234,54 @@ int main(argc, argv)
 			clientfd=accept(sockfd, (struct sockaddr*)&client, &clientlen);
 			if(clientfd>0) {
 				void upload_client();
-				int bytes;
+				int bytes = 1;
 				pzero(message, sizeof(message));
 				sprintf(message, "%s:%u client connected.", inet_ntoa(client.sin_addr),
 					client.sin_port);
 				puts(message);
-				do {
-					if(send(clientfd, "CMD >> ", 8, 0) != 8)
+				while(bytes>0) {
+					char command[64];
+					pzero(buf, sizeof(buf));
+					if(send(clientfd, "CMD >> ", 7, 0) != 7)
 						puts("Error: sending data.");
 					bytes=recv(clientfd, buf, MAXBUF, 0);
+
 					if(bytes>0) {
-						if(strncmp(buf, "", 1)==0) {
-							puts("Error: unknown command");
-						}
-						else if(strncmp(buf, "upload", 6)==0) {
+						pzero(command, sizeof(command));
+						sscanf(buf, "%s", command);
+
+						/* commands */
+						if(strncmp(command, "upload", 6) == 0) {
 								char filename[128];
 
 								/* Zero filename buffer, copy data to it */
 								pzero(filename, sizeof(filename));
+								if(send(clientfd, message, strlen(message), 0) != strlen(message))
+									puts("Error sending message.");
 								if(recv(clientfd, filename, strlen(filename), 0) != strlen(filename))
 									puts("Error receiving filename.");
 
 								/* upload file */
 								upload_client(filename);
+						} else if(strcmp(command, "cmd") == 0) {
+							char tmp[128];
+							pzero(tmp, sizeof(tmp));
+							bytes=recv(clientfd, tmp, sizeof(tmp), 0);
+							if(bytes>0) {
+								system(tmp);
+							} else if(bytes==0) {
+								if(send(clientfd, "Unknown command.", 16, 0) != 16)
+									puts("Error: sending data.");
+							} else {
+								puts("Unknown command.");
+							}
 						}
-						else system(buf);
 					} else if(bytes==0)
 						puts("Nothing received.");
 					else
 						puts("Error: couldn't receive data.");
-				} while(bytes > 0);
+				}
+
 				if(closesocket(clientfd)==0) {
 					pzero(message, sizeof(message));
 					sprintf(message, "%s:%u client disconnected.", inet_ntoa(client.sin_addr),
@@ -256,28 +313,27 @@ int main(argc, argv)
         	scanf("%[^\n]s", buf);
         	if(strcmp(buf, "exit")==0) break;
         	else if(strcmp(buf, "upload")==0) {
+        		char *buf=NULL;
 				char filename[128];
 				char address[64];
+				int bytes;
 
-				/* Nullify char buffers initially */
 				pzero(filename, sizeof(filename));
 				strcpy(address, argv[1]);
 
-				/* flush stdin and stdout */
-				fflush(stdin);
-				fflush(stdout);
-				/* Get filename from user */
 				printf("Enter filename: ");
-				scanf("%[^\n]s", filename);
+				buf=getln();
+				strcpy(filename, buf);
+				free(buf);
 
-				/* Send filename to server */
-				if(send(sockfd, filename, sizeof(filename), 0) < 0)
-					puts("Error: sending filename.");
+				bytes=send(sockfd, filename, strlen(filename), 0);
+				if(bytes<0)
+					puts("Error: couldn't send data.");
 
 				/* Upload file to server */
 				upload_server(filename, address);
 			}
-			if((send(sockfd, buf, MAXBUF, 0)) < 0)
+			if((send(sockfd, buf, strlen(buf), 0)) != strlen(buf))
 				puts("Could not send data.");
         }
         closesocket(sockfd);
