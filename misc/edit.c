@@ -18,8 +18,12 @@ int main(argc, argv)
 
 	if(argc == 2) {
 		res = reader(argv[1],buffer);
-		free(buffer);
-		if(res != 0) return res;
+		if(res != 0) {
+			free(buffer);
+			return res;
+		} else {
+			return res;
+		}
 	} else if(argc == 3 && argv[1][0] == '-' &&
 		argv[1][1] == 'e') {
 		res = editor(argv[2]);
@@ -88,6 +92,7 @@ int reader(filename, buf)
 	while((c = fgetc(file)) != EOF) {
 		if(fputc(c,stdout) == EOF) {
 			printf("Unable to read file.\n");
+			free(buf);
 			fclose(file);
 			return 1;
 		}
