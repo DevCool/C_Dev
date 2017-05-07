@@ -90,16 +90,12 @@ int reader(filename, buf)
 	rewind(file);
 	pos = 0;
 	while((c = fgetc(file)) != EOF) {
-		if(fputc(c,stdout) == EOF) {
-			printf("Unable to read file.\n");
-			free(buf);
-			fclose(file);
-			return 1;
-		}
 		*(buf+pos) = c;
 		++pos;
 	}
 	fclose(file);
+	for(pos=0; pos<=strlen(buf)+1; ++pos)
+		putchar(*(buf+pos));
 	return 0;
 }
 
