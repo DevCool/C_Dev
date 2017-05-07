@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+#define MY_PORT 4444
+
 void handle_clients();
 
 int main(argc,argv)
@@ -34,6 +36,7 @@ int main(argc,argv)
 	ZeroMemory(msg,sizeof(msg));
 #endif
 
+	errno = 0;
 	if((serverfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
 		fprintf(stderr,"Error: %s\n",strerror(errno));
 #if defined(_WIN32)
@@ -51,8 +54,9 @@ int main(argc,argv)
 #endif
 	server.sin_family = AF_INET;
 	server.sin_port = htons(MY_PORT);
-	server.sin_addr.s_addr = htol(INADDR_ANY);
+	server.sin_addr.s_addr = htonl(INADDR_ANY);
 
+	errno = 0;
 	if(bind(serverfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 		fprintf(stderr,"Error: %s\n",strerror(errno));
 #if defined(_WIN32)
@@ -63,8 +67,9 @@ int main(argc,argv)
 #endif
 		return -1;
 	}
-	printf("%s bound to port [%u].\n",inet_ntoa(server.sin_addr),server.sin_port);
+	printf("%s bound to port [%d].\n",inet_ntoa(server.sin_addr),MY_PORT);
 
+	errno = 0;
 	if(listen(serverfd,1) < 0) {
 		fprintf(stderr,"Error: %s\n",strerror(errno));
 #if defined(_WIN32)
@@ -79,20 +84,25 @@ int main(argc,argv)
 	while(1) {
 		int clientfd;
 		struct sockaddr_in client;
+		int clientlen = sizeof(client);
 		clientfd = accept(serverfd,(struct sockaddr*)&client,&clientlen);
 		if(clientfd > 0) {
 			printf("%s:%d client connected.\n",inet_ntoa(client.sin_addr),
-				client.sin_port);
+				MY_PORT);
 			handle_clients(clientfd);
 #if defined(_WIN32)
-			closesocket(clientfd);
-#else
-			close(clientfd);
-#endif
-			if(clientfd == 0) {
+			if(closesocket(clientfd) == 0) {
 				printf("%s:%d client disconnected.\n",
-					inet_ntoa(client.sin_addr),client.sin_port);
+					inet_ntoa(client.sin_addr),
+					MY_PORT);
 			}
+#else
+			if(close(clientfd) == 0) {
+				printf("%s:%d client disconnected.\n",
+					inet_ntoa(client.sin_addr),
+					MY_PORT);
+			}
+#endif
 		} else {
 			puts("Cannot accept client connection.");
 		}
