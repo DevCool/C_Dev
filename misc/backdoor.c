@@ -89,7 +89,7 @@ int main(argc,argv)
 		if(clientfd > 0) {
 			printf("%s:%d client connected.\n",inet_ntoa(client.sin_addr),
 				MY_PORT);
-			handle_clients(clientfd);
+			handle_clients(&clientfd);
 #if defined(_WIN32)
 			if(closesocket(clientfd) == 0) {
 				printf("%s:%d client disconnected.\n",
@@ -118,8 +118,33 @@ int main(argc,argv)
 }
 
 void handle_clients(socket)
-	int socket;
+	int *socket;
 {
-	/* Todo : Add client handling code here. */
+	char msg[256];
+	char cmd[64];
+	int i;
+	int c;
+
+	do {
+		memset(cmd,0,sizeof(cmd));
+		send(*socket,"CMD >> ",7,0);
+		for(i=0; i<sizeof(cmd); ++i) {
+			recv(*socket,&c,1,0);
+			cmd[i] = c;
+			if(cmd[i] == 0x0A || c == 0x0D) {
+				break;
+			}
+		}
+
+		if(strncmp(cmd,"exit",4) == 0) {
+			break;
+		} else if(strncmp(cmd,"help",4) == 0) {
+			memset(msg,0,sizeof(msg));
+			sprintf(msg,"Commands: [exit,help]\r\n");
+			send(*socket,msg,strlen(msg),0);
+		} else {
+			send(*socket,"Unknown command.\r\n",18,0);
+		}
+	} while(1);
 }
 
