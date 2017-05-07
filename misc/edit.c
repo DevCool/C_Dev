@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int main(argc, argv)
 	int argc;
@@ -8,7 +9,7 @@ int main(argc, argv)
 {
 	int editor();
 	int reader();
-	char *buffer;
+	char buffer[512][80];
 	int res;
 
 	if(argc < 2 && argc > 3) {
@@ -18,12 +19,6 @@ int main(argc, argv)
 
 	if(argc == 2) {
 		res = reader(argv[1],buffer);
-		if(res != 0) {
-			free(buffer);
-			return res;
-		} else {
-			return res;
-		}
 	} else if(argc == 3 && argv[1][0] == '-' &&
 		argv[1][1] == 'e') {
 		res = editor(argv[2]);
@@ -72,30 +67,39 @@ int editor(filename)
 
 int reader(filename, buf)
 	const char *filename;
-	char *buf;
+	char buf[512][80];
 {
 	FILE *file;
-	int pos;
+	int cols;
+	int rows;
 	int c;
 
+	memset(buf, 0, 512*80);
 	if((file = fopen(filename,"r")) == NULL) {
 		printf("Cannot open input file for reading.\n");
 		return 1;
 	}
-	if((buf = calloc(1, ftell(file))) == NULL) {
-		printf("Cannot allocate memory for size of file.\n");
+	cols = 0;
+	rows = 0;
+	errno = 0;
+	while((c = fgetc(file)) != EOF) {
+		if(c == 0x0A || c == 0x0D) {
+			++rows;
+		}
+		buf[rows][cols] = c;
+		++cols;
+	}
+	if(errno != 0) {
+		printf("Error: reading file.\n");
 		fclose(file);
 		return -1;
 	}
-	rewind(file);
-	pos = 0;
-	while((c = fgetc(file)) != EOF) {
-		*(buf+pos) = c;
-		++pos;
-	}
 	fclose(file);
-	for(pos=0; pos<=strlen(buf)+1; ++pos)
-		putchar(*(buf+pos));
+	for(rows=0; rows<=512; ++rows) {
+		for(cols=0; cols<80; ++cols) {
+			putchar(buf[rows][cols]);
+		}
+	}
 	return 0;
 }
 
