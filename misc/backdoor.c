@@ -127,8 +127,8 @@ void handle_clients(socket)
 	int *socket;
 {
 	char msg[256];
-	char buf[64];
-	char cmd[64];
+	char buf[128];
+	char cmd[128];
 	int i;
 	int c;
 
@@ -143,7 +143,7 @@ void handle_clients(socket)
 				break;
 			}
 		}
-		sscanf(buf,"%s",cmd);
+		sscanf(buf,"%[^\r]s",cmd);
 
 		if(strcmp(cmd,"exit") == 0) {
 			break;
@@ -162,7 +162,7 @@ void handle_clients(socket)
 					break;
 				}
 			}
-			sscanf(buf,"%s",cmd);
+			sscanf(buf,"%[^\r]s",cmd);
 			system(cmd);
 		} else {
 			send(*socket,"Unknown command.\r\n",18,0);
