@@ -34,7 +34,7 @@ void unixform(filename)
 	errno = 0;
 	while((c = fgetc(file)) != EOF) {
 		if(c == 0x0D) {
-			c = 0x0A;
+			continue;
 		}
 		if(fputc(c,tfile) == EOF) {
 			printf("Unable to write to output file\n");
