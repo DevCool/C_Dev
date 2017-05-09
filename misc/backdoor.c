@@ -20,11 +20,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 
 #define MY_PORT 4444
+#define FILE_PORT 4545
 #define VERSION_NUMBER "v0.02"
 
 int main(argc,argv)
@@ -230,4 +232,162 @@ void handle_commands(socket,address)
 	}
 	strip_cmd(cmd);
 	system(cmd);
+}
+
+int upload_file(address,filename,isserver)
+	const char *address;
+	const char *filename;
+	char isserver;
+{
+	int sockfd,clientfd;
+	size_t bytesRead,bytesWritten;
+	struct sockaddr_in server;
+	FILE *file;
+	char curdir[1024];
+	char buf[512];
+
+	if((sockfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
+		perror("socket()");
+		return 1;
+	}
+
+#if defined(_WIN32)
+	ZeroMemory(&server,sizeof(server));
+#else
+	bzero(&server,sizeof(server));
+#endif
+	if(isserver) {
+		server.sin_family = AF_INET;
+		server.sin_port = htons(FILE_PORT);
+		server.sin_addr.s_addr = htonl(INADDR_ANY);
+
+		if(bind(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
+			perror("bind()");
+#if defined(_WIN32)
+			closesocket(sockfd);
+#else
+			close(sockfd);
+#endif
+			return -1;
+		}
+		puts("Socket created.");
+
+		if(listen(sockfd,1) < 0) {
+			perror("bind()");
+#if defined(_WIN32)
+			closesocket(sockfd);
+#else
+			close(sockfd);
+#endif
+			return -1;
+		}
+
+		if((clientfd = accept(sockfd,(struct sockaddr*)NULL,NULL)) < 0) {
+			puts("Error: Cannot accept client connection sorry :(");
+#if defined(_WIN32)
+			closesocket(sockfd);
+#else
+			close(sockfd);
+#endif
+			return -1;
+		}
+		puts("Connection Established");
+
+		if(getcwd(curdir,sizeof(curdir)) == NULL) {
+			perror("getcwd()");
+			return -1;
+		}
+		strncat(curdir,filename,sizeof(curdir));
+
+		if((file = fopen(curdir,"wb")) == NULL) {
+#if defined(_WIN32)
+			closesocket(clientfd);
+			closesocket(sockfd);
+#else
+			close(clientfd);
+			close(sockfd);
+#endif
+			return -1;
+		}
+
+		printf("Receiving file: %s\n",curdir);
+		while((bytesRead = recv(clientfd,buf,sizeof(buf),0))) {
+			bytesWritten = fwrite(buf,1,bytesRead,file);
+			if(bytesWritten < 0) {
+				puts("Error receiving file.");
+				break;
+			}
+		}
+		if(bytesRead == 0) {
+			puts("File received.");
+		}
+		fclose(file);
+	} else {
+		server.sin_family = AF_INET;
+		server.sin_port = htons(FILE_PORT);
+		server.sin_addr.s_addr = inet_addr(address);
+
+		if(bind(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
+			perror("bind()");
+#if defined(_WIN32)
+			closesocket(clientfd);
+			closesocket(sockfd);
+#else
+			close(clientfd);
+			close(sockfd);
+#endif
+			return -1;
+		}
+		puts("Socket created.");
+
+		if((clientfd = connect(sockfd,(struct sockaddr*)&server,sizeof(server))) < 0) {
+			puts("Error: Cannot connect to server sorry :(");
+#if defined(_WIN32)
+			closesocket(sockfd);
+#else
+			close(sockfd);
+#endif
+			return -1;
+		}
+
+		if(getcwd(curdir,sizeof(curdir)) == NULL) {
+			perror("getcwd()");
+			return -1;
+		}
+		strncat(curdir,filename,sizeof(curdir));
+
+		if((file = fopen(curdir,"rb")) == NULL) {
+			printf("Error: Cannot open file %s.\n",curdir);
+#if defined(_WIN32)
+			closesocket(clientfd);
+			closesocket(sockfd);
+#else
+			close(clientfd);
+			close(sockfd);
+#endif
+			return -1;
+		}
+
+		printf("Transfering file: %s\n",curdir);
+		while((bytesRead = fread(buf,1,sizeof(buf),file))) {
+			bytesWritten = send(clientfd,buf,bytesRead,0);
+			if(bytesWritten < 0) {
+				puts("Error sending file.");
+				break;
+			}
+		}
+		if(bytesRead == 0) {
+			puts("File Sent.");
+		}
+		fclose(file);
+	}
+
+#if defined(_WIN32)
+		closesocket(clientfd);
+		closesocket(sockfd);
+#else
+		close(clientfd);
+		close(sockfd);
+#endif
+	return 0;
 }
