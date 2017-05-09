@@ -11,8 +11,8 @@
  */
 
 #if defined(_WIN32)
-	#include <windows.h>
 	#include <winsock2.h>
+	#include <windows.h>
 #else
 	#include <sys/socket.h>
 	#include <arpa/inet.h>
@@ -162,7 +162,7 @@ void handle_clients(socket,address)
 	char msg[256];
 	char cmd[128];
 	int bytes;
-	int c;
+	char c;
 
 	while(1) {
 		memset(msg,0,sizeof(msg));
@@ -207,7 +207,7 @@ void handle_commands(socket,address)
 	char msg[256];
 	char cmd[128];
 	int bytes;
-	int c;
+	char c;
 
 	memset(msg,0,sizeof(msg));
 	memset(cmd,0,sizeof(cmd));
