@@ -141,7 +141,8 @@ int main(argc,argv)
 	} else if(argc == 5 && argv[1][0] == '-' && argv[1][1] == 'u') {
 		return upload_file(argv[2],argv[3],atoi(argv[4]));
 	} else {
-		printf("Usage: %s [-u] filename.ext",argv[0]);
+		printf("Usage: %s [-u] <IP-address> <filename.ext> <isserver>\n"
+			"isserver - if 0 then its client anything else is server.\n",argv[0]);
 	}
 	return 0;
 }
@@ -252,6 +253,7 @@ int upload_file(address,filename,isserver)
 	int sockfd,clientfd;
 	size_t bytesRead,bytesWritten;
 	struct sockaddr_in server;
+	struct sockaddr_in client;
 	FILE *file;
 	char curdir[1024];
 	char buf[512];
@@ -266,8 +268,10 @@ int upload_file(address,filename,isserver)
 
 #if defined(_WIN32)
 	ZeroMemory(&server,sizeof(server));
+	ZeroMemory(&client,sizeof(client));
 #else
 	bzero(&server,sizeof(server));
+	bzero(&client,sizeof(client));
 #endif
 	if(isserver) {
 		server.sin_family = AF_INET;
@@ -364,7 +368,7 @@ int upload_file(address,filename,isserver)
 		}
 		puts("Socket created.");
 
-		if((clientfd = connect(sockfd,(struct sockaddr*)&server,sizeof(server))) < 0) {
+		if((clientfd = connect(sockfd,(struct sockaddr*)&client,sizeof(client))) < 0) {
 			puts("Error: Cannot connect to server sorry :(");
 #if defined(_WIN32)
 			closesocket(sockfd);
