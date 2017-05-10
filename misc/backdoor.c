@@ -356,19 +356,7 @@ int upload_file(address,filename,isserver)
 		server.sin_port = htons(FILE_PORT);
 		server.sin_addr.s_addr = inet_addr(address);
 
-		if(bind(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
-			perror("bind()");
-#if defined(_WIN32)
-			closesocket(sockfd);
-			WSACleanup();
-#else
-			close(sockfd);
-#endif
-			return -1;
-		}
-		puts("Socket created.");
-
-		if((clientfd = connect(sockfd,(struct sockaddr*)&client,sizeof(client))) < 0) {
+		if((connect(sockfd,(struct sockaddr*)&client,sizeof(client))) < 0) {
 			puts("Error: Cannot connect to server sorry :(");
 #if defined(_WIN32)
 			closesocket(sockfd);
@@ -378,15 +366,14 @@ int upload_file(address,filename,isserver)
 #endif
 			return -1;
 		}
+		puts("Connected");
 
 		if(getcwd(curdir,sizeof(curdir)) == NULL) {
 			perror("getcwd()");
 #if defined(_WIN32)
-			closesocket(clientfd);
 			closesocket(sockfd);
 			WSACleanup();
 #else
-			close(clientfd);
 			close(sockfd);
 #endif
 			return -1;
@@ -396,11 +383,9 @@ int upload_file(address,filename,isserver)
 		if((file = fopen(curdir,"rb")) == NULL) {
 			printf("Error: Cannot open file %s.\n",curdir);
 #if defined(_WIN32)
-			closesocket(clientfd);
 			closesocket(sockfd);
 			WSACleanup();
 #else
-			close(clientfd);
 			close(sockfd);
 #endif
 			return -1;
@@ -408,7 +393,7 @@ int upload_file(address,filename,isserver)
 
 		printf("Transfering file: %s\n",curdir);
 		while((bytesRead = fread(buf,1,sizeof(buf),file))) {
-			bytesWritten = send(clientfd,buf,bytesRead,0);
+			bytesWritten = send(sockfd,buf,bytesRead,0);
 			if(bytesWritten < 0) {
 				puts("Error sending file.");
 				break;
@@ -418,6 +403,14 @@ int upload_file(address,filename,isserver)
 			puts("File Sent.");
 		}
 		fclose(file);
+
+#if defined(_WIN32)
+		closesocket(sockfd);
+		WSACleanup();
+#else
+		close(sockfd);
+#endif
+		return 0;
 	}
 
 #if defined(_WIN32)
