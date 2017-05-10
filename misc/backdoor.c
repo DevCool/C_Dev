@@ -172,32 +172,14 @@ void handle_clients(socket,address)
 	const char *address;
 {
 	void handle_commands();
+	void get_cmd();
 	char msg[256];
 	char cmd[128];
-	int bytes;
-	char c;
 
 	while(1) {
 		memset(msg,0,sizeof(msg));
-		memset(cmd,0,sizeof(cmd));
 		send(*socket,"CMD >> ",7,0);
-		bytes = 0;
-		c = 0;
-		while(recv(*socket,&c,1,0)) {
-			if(bytes < 0) {
-				sprintf(msg,"Error: receiving from %s.\r\n",
-					address);
-				send(*socket,msg,strlen(msg),0);
-			}
-			if(c == 0x0A) {
-				printf("Command: %s\n",cmd);
-				break;
-			} else {
-				cmd[bytes] = c;
-			}
-			bytes++;
-		}
-		strip_cmd(cmd);
+		get_cmd(socket,address,cmd,sizeof(cmd));
 
 		if(strcmp(cmd,"exit") == 0) {
 			break;
@@ -217,32 +199,52 @@ void handle_commands(socket,address)
 	int *socket;
 	const char *address;
 {
-	char msg[256];
+	void get_cmd();
 	char cmd[128];
-	int bytes;
-	char c;
-
-	memset(msg,0,sizeof(msg));
-	memset(cmd,0,sizeof(cmd));
 
 	send(*socket,"Enter command: ",15,0);
-	bytes = 0;
-	c = 0;
-	while(recv(*socket,&c,1,0)) {
+	get_cmd(socket,address,cmd,sizeof(cmd));
+	system(cmd);
+}
+
+void get_cmd(socket,address,buf,size)
+	int *socket;
+	const char *address;
+	char buf[];
+	size_t size;
+{
+	char msg[256];
+	char c;
+	int i,bytes;
+	memset(msg,0,sizeof(msg));
+	memset(buf,0,size);
+	i = 0;
+	while((bytes = recv(*socket,&c,1,0)) != 0) {
 		if(bytes < 0) {
 			sprintf(msg,"Error: receiving from %s.\r\n",
 				address);
 			send(*socket,msg,strlen(msg),0);
+			return;
 		}
 		if(c == 0x0A) {
 			break;
+		} else if(c == 0x08) {
+			if(i > 0) {
+				buf[i] = 0;
+				--i;
+			} else {
+				continue;
+			}
 		} else {
-			cmd[bytes] = c;
+			if(i < size-1) {
+				buf[i] = c;
+				++i;
+			} else {
+				break;
+			}
 		}
-		bytes++;
 	}
-	strip_cmd(cmd);
-	system(cmd);
+	strip_cmd(buf);
 }
 
 int upload_file(address,filename,isserver)
