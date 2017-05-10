@@ -10,7 +10,7 @@
  ***************************************************
  */
 
-/* --- Haven't tested the file upload yet --- */
+/* --- File upload fully works now :P (All FiXeD) --- */
 
 #if defined(_WIN32)
 	#include <winsock2.h>
