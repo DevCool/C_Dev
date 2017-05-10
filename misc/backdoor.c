@@ -276,7 +276,7 @@ int upload_file(address,filename,isserver)
 	if(isserver) {
 		server.sin_family = AF_INET;
 		server.sin_port = htons(FILE_PORT);
-		server.sin_addr.s_addr = htonl(INADDR_ANY);
+		server.sin_addr.s_addr = inet_addr(address);
 
 		if(bind(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 			perror("bind()");
@@ -300,6 +300,7 @@ int upload_file(address,filename,isserver)
 #endif
 			return -1;
 		}
+		puts("Listening...");
 
 		if((clientfd = accept(sockfd,(struct sockaddr*)NULL,NULL)) < 0) {
 			puts("Error: Cannot accept client connection sorry :(");
@@ -366,7 +367,7 @@ int upload_file(address,filename,isserver)
 #endif
 			return -1;
 		}
-		puts("Connected");
+		puts("Connection Established");
 
 		if(getcwd(curdir,sizeof(curdir)) == NULL) {
 			perror("getcwd()");
