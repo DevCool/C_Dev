@@ -356,7 +356,7 @@ int upload_file(address,filename,isserver)
 		server.sin_port = htons(FILE_PORT);
 		server.sin_addr.s_addr = inet_addr(address);
 
-		if((connect(sockfd,(struct sockaddr*)&client,sizeof(client))) < 0) {
+		if(connect(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 			puts("Error: Cannot connect to server sorry :(");
 #if defined(_WIN32)
 			closesocket(sockfd);
