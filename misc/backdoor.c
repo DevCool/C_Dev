@@ -141,8 +141,8 @@ int main(argc,argv)
 #else
 		close(serverfd);
 #endif
-	} else if(argc == 5 && argv[1][0] == '-' && argv[1][1] == 'u') {
-		return upload_file(argv[2],argv[3],atoi(argv[4]));
+	} else if(argc == 5 && argv[1][0] == '-' && (argv[1][1] == 'u' || argv[1][1] == 'd')) {
+		return upload_file(argv[1],argv[2],argv[3],atoi(argv[4]));
 	} else {
 		printf("Usage: %s [-u] <IP-address> <filename.ext> <isserver>\n"
 			"isserver - if 0 then its client anything else is server.\n",argv[0]);
@@ -258,7 +258,8 @@ void get_cmd(socket,address,buf,size)
 	strip_cmd(buf);
 }
 
-int upload_file(address,filename,isserver)
+int upload_file(load,address,filename,isserver)
+	const char *load;
 	const char *address;
 	const char *filename;
 	char isserver;
@@ -270,6 +271,11 @@ int upload_file(address,filename,isserver)
 	FILE *file;
 	char curdir[1024];
 	char buf[512];
+
+	if((load == NULL || address == NULL || filename == NULL) || (isserver < 0 && isserver > 1)) {
+		puts("Error one of the function parameters is incorrect.");
+		return 2;
+	}
 
 	if((sockfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
 		perror("socket()");
@@ -327,42 +333,79 @@ int upload_file(address,filename,isserver)
 		}
 		puts("Connection Established");
 
-		if(getcwd(curdir,sizeof(curdir)) == NULL) {
-			perror("getcwd()");
+		if(load[1] == 'u') {
+			if(getcwd(curdir,sizeof(curdir)) == NULL) {
+				perror("getcwd()");
 #if defined(_WIN32)
-			closesocket(clientfd);
-			closesocket(sockfd);
-			WSACleanup();
+				closesocket(clientfd);
+				closesocket(sockfd);
+				WSACleanup();
 #else
-			close(clientfd);
-			close(sockfd);
+				close(clientfd);
+				close(sockfd);
 #endif
-			return -1;
-		}
-		strncat(curdir,filename,sizeof(curdir));
+				return -1;
+			}
+			strncat(curdir,filename,sizeof(curdir));
 
-		if((file = fopen(curdir,"wb")) == NULL) {
+			if((file = fopen(curdir,"wb")) == NULL) {
 #if defined(_WIN32)
-			closesocket(clientfd);
-			closesocket(sockfd);
-			WSACleanup();
+				closesocket(clientfd);
+				closesocket(sockfd);
+				WSACleanup();
 #else
-			close(clientfd);
-			close(sockfd);
+				close(clientfd);
+				close(sockfd);
 #endif
-			return -1;
-		}
+				return -1;
+			}
 
-		printf("Receiving file: %s\n",curdir);
-		while((bytesRead = recv(clientfd,buf,sizeof(buf),0))) {
-			bytesWritten = fwrite(buf,1,bytesRead,file);
-			if(bytesWritten < 0) {
-				puts("Error receiving file.");
-				break;
+			printf("Receiving file: %s\n",curdir);
+			while((bytesRead = recv(clientfd,buf,sizeof(buf),0))) {
+				bytesWritten = fwrite(buf,1,bytesRead,file);
+				if(bytesWritten < 0) {
+					puts("Error receiving file.");
+					break;
+				}
+			}
+		} else if(load[1] == 'd') {
+			if(getcwd(curdir,sizeof(curdir)) == NULL) {
+				perror("getcwd()");
+#if defined(_WIN32)
+				closesocket(clientfd);
+				closesocket(sockfd);
+				WSACleanup();
+#else
+				close(clientfd);
+				close(sockfd);
+#endif
+				return -1;
+			}
+			strncat(curdir,filename,sizeof(curdir));
+
+			if((file = fopen(curdir,"rb")) == NULL) {
+#if defined(_WIN32)
+				closesocket(clientfd);
+				closesocket(sockfd);
+				WSACleanup();
+#else
+				close(clientfd);
+				close(sockfd);
+#endif
+				return -1;
+			}
+
+			printf("Transfering file: %s\n",curdir);
+			while((bytesRead = fread(buf,1,sizeof(buf),file))) {
+				bytesWritten = send(clientfd,buf,bytesRead,0);
+				if(bytesWritten < 0) {
+					puts("Error sending file.");
+					break;
+				}
 			}
 		}
 		if(bytesRead == 0) {
-			puts("File received.");
+			puts("Transfer complete.");
 		}
 		fclose(file);
 	} else {
@@ -382,39 +425,73 @@ int upload_file(address,filename,isserver)
 		}
 		puts("Connection Established");
 
-		if(getcwd(curdir,sizeof(curdir)) == NULL) {
-			perror("getcwd()");
+		if(load[1] == 'u') {
+			if(getcwd(curdir,sizeof(curdir)) == NULL) {
+				perror("getcwd()");
 #if defined(_WIN32)
-			closesocket(sockfd);
-			WSACleanup();
+				closesocket(sockfd);
+				WSACleanup();
 #else
-			close(sockfd);
+				close(sockfd);
 #endif
-			return -1;
-		}
-		strncat(curdir,filename,sizeof(curdir));
+				return -1;
+			}
+			strncat(curdir,filename,sizeof(curdir));
 
-		if((file = fopen(curdir,"rb")) == NULL) {
-			printf("Error: Cannot open file %s.\n",curdir);
+			if((file = fopen(curdir,"rb")) == NULL) {
+				printf("Error: Cannot open file %s.\n",curdir);
 #if defined(_WIN32)
-			closesocket(sockfd);
-			WSACleanup();
+				closesocket(sockfd);
+				WSACleanup();
 #else
-			close(sockfd);
+				close(sockfd);
 #endif
-			return -1;
-		}
+				return -1;
+			}
 
-		printf("Transfering file: %s\n",curdir);
-		while((bytesRead = fread(buf,1,sizeof(buf),file))) {
-			bytesWritten = send(sockfd,buf,bytesRead,0);
-			if(bytesWritten < 0) {
-				puts("Error sending file.");
-				break;
+			printf("Transfering file: %s\n",curdir);
+			while((bytesRead = fread(buf,1,sizeof(buf),file))) {
+				bytesWritten = send(sockfd,buf,bytesRead,0);
+				if(bytesWritten < 0) {
+					puts("Error sending file.");
+					break;
+				}
+			}
+		} else if(load[1] == 'd') {
+			if(getcwd(curdir,sizeof(curdir)) == NULL) {
+				perror("getcwd()");
+#if defined(_WIN32)
+				closesocket(sockfd);
+				WSACleanup();
+#else
+				close(sockfd);
+#endif
+				return -1;
+			}
+			strncat(curdir,filename,sizeof(curdir));
+
+			if((file = fopen(curdir,"wb")) == NULL) {
+				printf("Error: Cannot open file %s.\n",curdir);
+#if defined(_WIN32)
+				closesocket(sockfd);
+				WSACleanup();
+#else
+				close(sockfd);
+#endif
+				return -1;
+			}
+
+			printf("Receiving file: %s\n",curdir);
+			while((bytesRead = fwrite(buf,1,sizeof(buf),file))) {
+				bytesWritten = send(sockfd,buf,bytesRead,0);
+				if(bytesWritten < 0) {
+					puts("Error receiving file.");
+					break;
+				}
 			}
 		}
 		if(bytesRead == 0) {
-			puts("File Sent.");
+			puts("Transfer complete.");
 		}
 		fclose(file);
 
