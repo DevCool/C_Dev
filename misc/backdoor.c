@@ -177,6 +177,7 @@ void handle_clients(socket,address)
 	SECURITY_ATTRIBUTES saAttr;
 	HANDLE child_rd;
 	HANDLE child_wr;
+	HANDLE hSockFile;
 	void create_child();
 	void writepipe();
 	void readpipe();
@@ -185,6 +186,13 @@ void handle_clients(socket,address)
 	void get_cmd();
 	char msg[256];
 	char cmd[128];
+
+#if defined(_WIN32)
+	hSockFile = NULL;
+	hSockFile = CreateFile("SocketInfo.log",GENERIC_READ,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_TEMPORARY,NULL);
+	if(hSockFile == NULL)
+		printf("Warning: prompt command is\ndisabled, do to socket not opened for reading.\n");
+#endif
 
 	while(1) {
 		memset(msg,0,sizeof(msg));
@@ -200,28 +208,31 @@ void handle_clients(socket,address)
 			handle_commands(socket,address);
 		} else if(strcmp(cmd,"prompt") == 0) {
 #if defined(_WIN32)
-			saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-			saAttr.bInheritHandle = TRUE;
-			saAttr.lpSecurityDescriptor = NULL;
+			if(hSockFile != NULL) {
+				saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+				saAttr.bInheritHandle = TRUE;
+				saAttr.lpSecurityDescriptor = NULL;
 
-			/* create a pipe for the child process's stdout */
-			if(CreatePipe(&child_rd,&child_wr,&saAttr,0) == 0)
-				puts("Error: Cannot create stdout pipe.");
+				/* create a pipe for the child process's stdout */
+				if(CreatePipe(&child_rd,&child_wr,&saAttr,0) == 0)
+					puts("Error: Cannot create stdout pipe.");
 
-			/* make the read handle to the pipe for stdout not inherited */
-			if(SetHandleInformation(child_rd,HANDLE_FLAG_INHERIT,0) == 0)
-				puts("Error: Cannot make handle not inherited for stdout.");
+				/* make the read handle to the pipe for stdout not inherited */
+				if(SetHandleInformation(child_rd,HANDLE_FLAG_INHERIT,0) == 0)
+					puts("Error: Cannot make handle not inherited for stdout.");
 
-			/* create pipe for the child process's stdin */
-			if(CreatePipe(&child_rd,&child_wr,&saAttr,0) == 0)
-				puts("Error: Cannot create stdin pipe.");
+				/* create pipe for the child process's stdin */
+				if(CreatePipe(&child_rd,&child_wr,&saAttr,0) == 0)
+					puts("Error: Cannot create stdin pipe.");
 
-			/* make the write handle to the pipe for stdin not inherited */
-			if(SetHandleInformation(child_wr,HANDLE_FLAG_INHERIT,0) == 0)
-				puts("Error: Cannot make handle not inherited for stdin.");
+				/* make the write handle to the pipe for stdin not inherited */
+				if(SetHandleInformation(child_wr,HANDLE_FLAG_INHERIT,0) == 0)
+					puts("Error: Cannot make handle not inherited for stdin.");
 
-			/* Create the child process */
-			create_child(*socket,child_wr,child_rd);
+				/* Create the child process */
+				create_child(hSockFile,child_wr,child_rd);
+			} else
+				printf("Warning: Socket wasn't opened cannot read.\n");
 #else
 			sprintf(msg,"Command not yet implemented.\r\n");
 			send(*socket,msg,strlen(msg),0);
@@ -467,8 +478,8 @@ int upload_file(address,filename,isserver)
 
 /* create_child() - creates child process to redirect input/output.
  */
-void create_child(socket,child_wr,child_rd)
-	int *socket;
+void create_child(file,child_wr,child_rd)
+	HANDLE file;
 	HANDLE child_wr;
 	HANDLE child_rd;
 {
@@ -491,22 +502,23 @@ void create_child(socket,child_wr,child_rd)
 	siInfo.dwFlags |= STARTF_USESTDHANDLES;
 
 	/* Create child process */
-	bSuccess = CreateProcess(NULL,"cmd.exe",NULL,NULL,TRUE,0,NULL,
+	bSuccess = CreateProcess("C:\\Windows\\System32\\cmd.exe","child",NULL,NULL,TRUE,0,NULL,
 		NULL,&siInfo,&piInfo);
 
 	if(bSuccess == FALSE)
 		printf("Error: Couldn't create child process.\n");
 	else {
-		writepipe(socket,child_wr);
-		readpipe(socket,child_rd);
-
+		while(piInfo.hProcess != 0) {
+			writepipe(file,child_wr);
+			readpipe(child_rd);
+		}
 		CloseHandle(piInfo.hProcess);
 		CloseHandle(piInfo.hThread);
 	}
 }
 
-void writepipe(socket,child_wr)
-	int *socket;
+void writepipe(file,child_wr)
+	HANDLE file;
 	HANDLE child_wr;
 {
 	DWORD dwRead,dwWritten;
@@ -514,7 +526,7 @@ void writepipe(socket,child_wr)
 	BOOL bSuccess = FALSE;
 
 	for(;;) {
-		bSuccess = ReadFile(socket,chBuf,BUFSIZE,&dwRead,NULL);
+		bSuccess = ReadFile(file,chBuf,BUFSIZE,&dwRead,NULL);
 		if(bSuccess == FALSE || dwRead == 0) break;
 
 		bSuccess = WriteFile(child_wr,chBuf,dwRead,&dwWritten,NULL);
