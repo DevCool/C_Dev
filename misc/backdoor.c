@@ -213,38 +213,6 @@ void get_cmd(socket,address,buf,size)
 	char buf[];
 	size_t size;
 {
-	char msg[256];
-	char c;
-	int i,bytes;
-	memset(msg,0,sizeof(msg));
-	memset(buf,0,size);
-	i = 0;
-	while((bytes = recv(*socket,&c,1,0)) != 0) {
-		if(bytes < 0) {
-			sprintf(msg,"Error: receiving from %s.\r\n",
-				address);
-			send(*socket,msg,strlen(msg),0);
-			return;
-		}
-		if(c == 0x0A) {
-			break;
-		} else if(c == 0x08) {
-			if(i > 0) {
-				buf[i] = 0;
-				--i;
-			} else {
-				continue;
-			}
-		} else {
-			if(i < size-1) {
-				buf[i] = c;
-				++i;
-			} else {
-				break;
-			}
-		}
-	}
-	strip_cmd(buf);
 }
 
 int upload_file(address,filename,isserver)
