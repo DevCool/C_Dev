@@ -482,8 +482,8 @@ int upload_file(load,address,filename,isserver)
 			}
 
 			printf("Receiving file: %s\n",curdir);
-			while((bytesRead = fwrite(buf,1,sizeof(buf),file))) {
-				bytesWritten = send(sockfd,buf,bytesRead,0);
+			while((bytesRead = recv(sockfd,buf,sizeof(buf),0))) {
+				bytesWritten = fwrite(buf,1,bytesRead,file);
 				if(bytesWritten < 0) {
 					puts("Error receiving file.");
 					break;
@@ -505,12 +505,12 @@ int upload_file(load,address,filename,isserver)
 	}
 
 #if defined(_WIN32)
-		closesocket(clientfd);
-		closesocket(sockfd);
-		WSACleanup();
+	closesocket(clientfd);
+	closesocket(sockfd);
+	WSACleanup();
 #else
-		close(clientfd);
-		close(sockfd);
+	close(clientfd);
+	close(sockfd);
 #endif
 	return 0;
 }
