@@ -82,5 +82,3 @@ void unixform(filename)
 	fclose(tfile);
 	printf("File written successfully!\n");
 }
-
-
