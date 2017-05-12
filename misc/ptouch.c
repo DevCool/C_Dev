@@ -17,7 +17,7 @@ int main(argc,argv)
 	}
 	j = 0;
 	for(i = 1; i < argc; ++i) {
-		file = open(argv[i],"w");
+		file = fopen(argv[i],"w");
 		if(file == NULL) {
 			printf("Could not create file: %s\n",argv[i]);
 		}
