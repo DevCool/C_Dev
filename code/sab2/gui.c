@@ -13,6 +13,7 @@
 
 #define IDC_BUTTON1 1001
 #define IDC_BUTTON2 1002
+#define IDC_EDIT1 1003
 
 CWND mainWnd;
 
@@ -60,7 +61,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nS
 
 	mainWnd.bRunning = 1;
 	while(mainWnd.bRunning) {
-		while(PeekMessage(&mainWnd.uMsg, NULL, 0, 0, PM_REMOVE) != 0) {
+		if(PeekMessage(&mainWnd.uMsg, NULL, 0, 0, PM_REMOVE) != 0) {
 			TranslateMessage(&mainWnd.uMsg);
 			DispatchMessage(&mainWnd.uMsg);
 		}
@@ -77,6 +78,9 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 {
 	HWND hwndButton1;
 	HWND hwndButton2;
+	HWND hwndText1;
+	DWORD dwTimer1;
+	BOOL bTest = FALSE;
 
 	switch(msg) {
 		case WM_DESTROY:
@@ -88,13 +92,47 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_CLOSE:
 			DestroyWindow(hwnd);
 		break;
+		case WM_COMMAND:
+			if(HIWORD(wParam) == 0) {
+			}
+			if(LOWORD(wParam) == IDC_BUTTON1) {
+				dwTimer1 = GetTickCount();
+				SetWindowText(hwndText1, "Connected!");
+				while((GetTickCount()-dwTimer1) > 3);
+				ShowWindow(hwndButton1, SW_HIDE);
+				ShowWindow(hwndText1, SW_HIDE);
+				ShowWindow(hwndButton2, SW_SHOW);
+			}
+		break;
+		case WM_KEYDOWN:
+			if(wParam == VK_F5) {
+				bTest = !bTest;
+				if(bTest) {
+					dwTimer1 = GetTickCount();
+					SetWindowText(hwndText1, "Connected!");
+					while((GetTickCount()-dwTimer1) > 3);
+					ShowWindow(hwndButton1, SW_HIDE);
+					ShowWindow(hwndText1, SW_HIDE);
+					ShowWindow(hwndButton2, SW_SHOW);
+				} else {
+					SetWindowText(hwndText1, "Enter IP Address");
+					ShowWindow(hwndButton1, SW_SHOW);
+					ShowWindow(hwndText1, SW_SHOW);
+					ShowWindow(hwndButton2, SW_HIDE);
+				}
+			}
+		break;
 		case WM_CREATE:
 			if(btnControl(&hwndButton1, hwnd, GetModuleHandle(NULL), "&Connect",
-				20, 20, 175, 20, (HMENU)IDC_BUTTON1) < 0)
+				(640/2)-(175/2), (480/2), 175, 20, (HMENU)IDC_BUTTON1) < 0)
 				MessageBox(hwnd, "Cannot create sexy button.", "Error", MB_OK|MB_ICONERROR);
 			if(btnControl(&hwndButton2, hwnd, GetModuleHandle(NULL), "&Send",
 				640-150, 480-60, 130, 20, (HMENU)IDC_BUTTON2) < 0)
 				MessageBox(hwnd, "Cannot create send button.", "Error", MB_OK|MB_ICONERROR);
+			if(txtControl(&hwndText1, hwnd, GetModuleHandle(NULL), "Enter IP Address",
+				(640/2)-(175/2), (480/2)-30, 175, 20, (HMENU)IDC_EDIT1) < 0)
+				MessageBox(hwnd, "Cannot create text1 control.", "Error", MB_OK|MB_ICONERROR);
+			ShowWindow(hwndButton2, SW_HIDE);
 		break;
 		default:
 			return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -116,7 +154,7 @@ int btnControl(HWND *hWnd, HWND hWndParent, HINSTANCE hInst, LPSTR lpCaption,
 int txtControl(HWND *hWnd, HWND hWndParent, HINSTANCE hInst, LPSTR lpCaption,
 	int x, int y, int x2, int y2, HMENU hMenu)
 {
-	*hWnd = CreateWindow("Edit", lpCaption, WS_VISIBLE | WS_CHILD,
+	*hWnd = CreateWindow("Edit", lpCaption, WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
 		x, y, x2, y2, hWndParent, hMenu, hInst, NULL);
 	if(*hWnd == NULL)
 		return -1;

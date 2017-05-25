@@ -27,7 +27,9 @@ int run_code(int *argc, char **argv[])
 {
 	if(*argc > 1)
 		goto usage;
-	return WinMain(GetModuleHandle(NULL), NULL, **argv, SW_SHOWNORMAL);
+	FreeConsole();
+	WinMain(GetModuleHandle(NULL), NULL, **argv, SW_SHOWNORMAL);
+	return 0;
 
 usage:
 	fprintf(stdout, "Usage: %s", *argv[0]);
