@@ -11,7 +11,8 @@
 #include <stdio.h>
 #include "helper.h"
 
-#define IDC_SEXYBTN 1001
+#define IDC_BUTTON1 1001
+#define IDC_BUTTON2 1002
 
 CWND mainWnd;
 
@@ -75,6 +76,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nS
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hwndButton1;
+	HWND hwndButton2;
 
 	switch(msg) {
 		case WM_DESTROY:
@@ -87,9 +89,12 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			DestroyWindow(hwnd);
 		break;
 		case WM_CREATE:
-			if(btnControl(&hwndButton1, hwnd, GetModuleHandle(NULL), "Sexy Button",
-				20, 20, 175, 20, (HMENU)IDC_SEXYBTN) < 0)
+			if(btnControl(&hwndButton1, hwnd, GetModuleHandle(NULL), "&Connect",
+				20, 20, 175, 20, (HMENU)IDC_BUTTON1) < 0)
 				MessageBox(hwnd, "Cannot create sexy button.", "Error", MB_OK|MB_ICONERROR);
+			if(btnControl(&hwndButton2, hwnd, GetModuleHandle(NULL), "&Send",
+				640-150, 480-60, 130, 20, (HMENU)IDC_BUTTON2) < 0)
+				MessageBox(hwnd, "Cannot create send button.", "Error", MB_OK|MB_ICONERROR);
 		break;
 		default:
 			return DefWindowProc(hwnd, msg, wParam, lParam);
