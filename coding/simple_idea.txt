@@ -1,0 +1,1 @@
+Make simple.c into a winsock program.
