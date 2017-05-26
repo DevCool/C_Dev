@@ -15,8 +15,9 @@
 #define IDC_BUTTON2 1002
 #define IDC_EDIT1 1003
 
-CWND mainWnd;
+static CWND mainWnd;
 
+static void w100(HWND hwnd, BOOL bHide);
 LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, INT nShowCmd)
@@ -97,29 +98,17 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			}
 			if(LOWORD(wParam) == IDC_BUTTON1) {
 				dwTimer1 = GetTickCount();
-				SetWindowText(hwndText1, "Connected!");
-				while((GetTickCount()-dwTimer1) > 3);
-				ShowWindow(hwndButton1, SW_HIDE);
-				ShowWindow(hwndText1, SW_HIDE);
-				ShowWindow(hwndButton2, SW_SHOW);
+				SetDlgItemText(hwnd, IDC_EDIT1, "Connected!");
+				while(GetTickCount() < (dwTimer1 + 2000));
+				ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_HIDE);
+				ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_SHOW);
+				ShowWindow(GetDlgItem(hwnd, IDC_EDIT1), SW_HIDE);
 			}
 		break;
 		case WM_KEYDOWN:
 			if(wParam == VK_F5) {
 				bTest = !bTest;
-				if(bTest) {
-					dwTimer1 = GetTickCount();
-					SetWindowText(hwndText1, "Connected!");
-					while((GetTickCount()-dwTimer1) > 3);
-					ShowWindow(hwndButton1, SW_HIDE);
-					ShowWindow(hwndText1, SW_HIDE);
-					ShowWindow(hwndButton2, SW_SHOW);
-				} else {
-					SetWindowText(hwndText1, "Enter IP Address");
-					ShowWindow(hwndButton1, SW_SHOW);
-					ShowWindow(hwndText1, SW_SHOW);
-					ShowWindow(hwndButton2, SW_HIDE);
-				}
+				w100(hwnd, bTest);
 			}
 		break;
 		case WM_CREATE:
@@ -159,4 +148,25 @@ int txtControl(HWND *hWnd, HWND hWndParent, HINSTANCE hInst, LPSTR lpCaption,
 	if(*hWnd == NULL)
 		return -1;
 	return 0;
+}
+
+static void w100(HWND hwnd, BOOL bHide)
+{
+	DWORD dwTimer1;
+
+	if(bHide) {
+		dwTimer1 = GetTickCount();
+		SetDlgItemText(hwnd, IDC_EDIT1, "Connected!");
+		while(GetTickCount() < (dwTimer1 + 2000));
+		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_HIDE);
+		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_SHOW);
+		ShowWindow(GetDlgItem(hwnd, IDC_EDIT1), SW_HIDE);
+	} else {
+		dwTimer1 = GetTickCount();
+		SetDlgItemText(hwnd, IDC_EDIT1, "Enter IP Address");
+		while(GetTickCount() < (dwTimer1 + 2000));
+		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_SHOW);
+		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_HIDE);
+		ShowWindow(GetDlgItem(hwnd, IDC_EDIT1), SW_SHOW);
+	}
 }

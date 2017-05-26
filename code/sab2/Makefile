@@ -5,7 +5,7 @@ LIBS:=-lws2_32 -luser32 -lkernel32 -lgdi32
 
 SRC=main.c gui.c
 OBJ=$(SRC:%.c=%.obj)
-APP:=SAB2.exe
+APP:=SAB_Client.exe
 
 all: clean $(APP)
 
