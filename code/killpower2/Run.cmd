@@ -17,7 +17,7 @@ exit
 
 :run
 start cmd.exe /k client.exe 127.0.0.1
-server.exe "C:\Windows\System32\Notepad.exe"
+server.exe "C:\Windows\System32\shutdown.exe /s"
 pause
 goto menu
 
