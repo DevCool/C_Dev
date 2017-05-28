@@ -13,8 +13,9 @@ int main(int argc, char *argv[])
 {
 	char buffer[BUFSIZ];
 	char user[128];
-	char pass[128];
 	char domain[128];
+	char pass[128];
+	char *pch;
 
 	WSADATA wsaData;
 	SOCKET sockfd;
@@ -40,21 +41,33 @@ int main(int argc, char *argv[])
 
 	int clilen = sizeof(client);
 	memset(buffer, 0, sizeof(buffer));
-	memset(user, 0, sizeof(user));
-	memset(domain, 0, sizeof(domain));
-	memset(pass, 0, sizeof(pass));
 	if((bytes = recvfrom(sockfd, buffer, BUFSIZ-1, 0, (struct sockaddr*)&client, &clilen)) < 0) {
 		perror("recvfrom()");
 		goto error;
 	}
-	if(bytes > 0)
+	if(bytes > 0) {
 		printf("received: %s\n", buffer);
+	}
 	else if(bytes == -1)
 		goto error;
 
-	sscanf(buffer, "username=%s;domain=%s;password=%s;", user, domain, pass);
-	if(!CreateRemoteProcess(user, domain, pass, LOGON32_LOGON_SERVICE,
-			LOGON32_PROVIDER_WINNT50))
+	memset(user, 0, sizeof(user));
+	memset(domain, 0, sizeof(domain));
+	memset(pass, 0, sizeof(pass));
+
+	pch = strtok(buffer, ";");
+	if(pch != NULL)
+		sscanf(pch, "username=%s", user);
+	pch = strtok(NULL, ";");
+	if(pch != NULL)
+		sscanf(pch, "domain=%s", domain);
+	pch = strtok(NULL, ";");
+	if(pch != NULL)
+		sscanf(pch, "password=%s", pass);
+
+	printf("%s\n%s\n%s\n", user, domain, pass);
+	if(!CreateRemoteProcess(user, domain, pass, LOGON32_LOGON_INTERACTIVE,
+			LOGON32_PROVIDER_DEFAULT))
 		goto error;
 
 	closesocket(sockfd);
