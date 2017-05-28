@@ -9,6 +9,7 @@
 extern BOOL CreateRemoteProcess(const char *username, const char *domain,
 		const char *password, DWORD logonType, DWORD logonProvider);
 extern BOOL LaunchApp(char *appname);
+extern void server_talker(int sockfd, struct sockaddr_in *client);
 
 int main(int argc, char *argv[])
 {
@@ -77,8 +78,23 @@ int main(int argc, char *argv[])
 				LOGON32_PROVIDER_DEFAULT))
 			goto error;
 	} else {
-		if(!LaunchApp(argv[1]))
-			goto error;
+		if(argv[1][0] == '-') {
+			switch(argv[1][1]) {
+				case 't':
+					printf("Simple chat server...\n\n");
+					server_talker(sockfd, &client);
+				break;
+				case 'p':
+					if(!LaunchApp(argv[1]))
+						goto error;
+				break;
+				default:
+					printf("Unknown option: %c\n", argv[1][1]);
+					printf("Available options: t,p\n");
+			}
+		} else {
+			printf("Unknown switch try a '-'.\n");
+		}
 	}
 
 	closesocket(sockfd);

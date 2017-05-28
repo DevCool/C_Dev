@@ -14,17 +14,20 @@
 
 #define SERVERPORT "8888"
 
+extern void talker(int sockfd, struct addrinfo *server, char *message, size_t size);
+
 int main(int argc, char *argv[])
 {
 	WSADATA wsaData;
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	char request[BUFSIZ];
+	char address[32];
 	int rv;
 	int bytes;
 
-	if(argc != 2 && argc != 5) {
-		fprintf(stderr, "Usage: %s address [[username] [domain] [password]]\n", argv[0]);
+	if(argc < 1 || argc > 5) {
+		fprintf(stderr, "Usage: %s [-t] address [message] [[username] [domain] [password]]\n", argv[0]);
 		return -1;
 	}
 
@@ -32,8 +35,13 @@ int main(int argc, char *argv[])
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
 
+	memset(address, 0, sizeof(address));
 	WSAStartup(0x0202, &wsaData);
-	if ((rv = getaddrinfo(argv[1], SERVERPORT, &hints, &servinfo)) != 0) {
+	if(argc == 4)
+		strncpy(address, argv[2], sizeof(address));
+	else
+		strncpy(address, argv[1], sizeof(address));
+	if ((rv = getaddrinfo(address, SERVERPORT, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
 		return 1;
 	}
@@ -64,6 +72,23 @@ int main(int argc, char *argv[])
 
 		printf("data sent: %s\n", request);
 		printf("client: sent %d bytes to %s\n", bytes, argv[1]);
+	} else if(argc == 4) {
+		if(argv[1][0] == '-') {
+			switch(argv[1][1]) {
+				case 't':
+					printf("Talker...\n");
+					talker(sockfd, servinfo, argv[3], strlen(argv[3]));
+				break;
+				default:
+					printf("Unknown option '%c'.\n", argv[1][1]);
+					printf("Options are: t\n");
+			}
+		} else {
+			printf("Please use a '-' to add a switch.\n");
+		}
+		freeaddrinfo(servinfo);
+	} else {
+		printf("Running program on server side.\n");
 	}
 	closesocket(sockfd);
 	WSACleanup();
