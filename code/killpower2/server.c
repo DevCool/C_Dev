@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in server, client;
 	int bytes;
 
-	if(argc < 2 || argc > 3) {
+	if(argc < 1 || argc > 2) {
 		fprintf(stderr, "Usage: %s [program]\n", argv[0]);
 		return 0;
 	}

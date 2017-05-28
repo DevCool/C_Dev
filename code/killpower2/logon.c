@@ -10,6 +10,7 @@ BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password,
 {
 	HANDLE hToken;
 	HANDLE hPrimaryToken;
+	SECURITY_ATTRIBUTES sa;
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
@@ -25,9 +26,10 @@ BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password,
 		return FALSE;
 	}
 
-	if(!DuplicateTokenEx(hToken, TOKEN_QUERY | TOKEN_IMPERSONATE,
-			NULL, SecurityImpersonation, TokenPrimary,
-			&hPrimaryToken)) {
+	ZeroMemory(&sa, sizeof(SECURITY_ATTRIBUTES));
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	if(!DuplicateTokenEx(hToken, TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY,
+			&sa, SecurityImpersonation, TokenPrimary, &hPrimaryToken)) {
 		fprintf(stderr, "Error: Cannot duplicate token.\nError code: %lu\n",
 			GetLastError());
 		return FALSE;
@@ -40,7 +42,8 @@ BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password,
 	}
 
 	if(!CreateProcessAsUser(hPrimaryToken, NULL,
-			"C:\\Windows\\System32\\cmd.exe", NULL, NULL, FALSE, DETACHED_PROCESS,
+			"C:\\Windows\\System32\\cmd.exe", &sa, &sa, FALSE,
+			NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB,
 			NULL, NULL, &si, &pi)) {
 		fprintf(stderr, "Error: Cannot create the process.\nError code: %lu\n",
 			GetLastError());
