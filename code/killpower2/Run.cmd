@@ -16,7 +16,7 @@ if "%input%"=="3" goto run
 exit
 
 :run
-start cmd.exe /k client.exe 127.0.0.1 tom . nutsack44
+start cmd.exe /k client.exe 127.0.0.1 guest . perieur338
 server.exe
 pause
 goto menu
