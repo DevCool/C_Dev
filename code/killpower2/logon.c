@@ -39,8 +39,8 @@ BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password,
 		return FALSE;
 	}
 
-	if(!CreateProcessAsUser(hPrimaryToken, "C:\\Windows\\System32\\Notepad.exe",
-			NULL, NULL, NULL, FALSE, CREATE_BREAKAWAY_FROM_JOB | NORMAL_PRIORITY_CLASS,
+	if(!CreateProcessAsUser(hPrimaryToken, NULL,
+			"C:\\Windows\\System32\\cmd.exe", NULL, NULL, FALSE, DETACHED_PROCESS,
 			NULL, NULL, &si, &pi)) {
 		fprintf(stderr, "Error: Cannot create the process.\nError code: %lu\n",
 			GetLastError());
@@ -49,6 +49,38 @@ BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password,
 
 	CloseHandle(hToken);
 	CloseHandle(hPrimaryToken);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+
+	return TRUE;
+}
+
+BOOL LaunchApp(char *appname)
+{
+	PROCESS_INFORMATION pi;
+	STARTUPINFO si;
+
+	ZeroMemory(&si, sizeof(STARTUPINFO));
+	si.cb = sizeof(STARTUPINFO);
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_SHOW;
+
+	if(!CreateProcess(
+		NULL,
+		appname,
+		NULL,
+		NULL,
+		FALSE,
+		0,
+		NULL,
+		"C:\\Windows\\System32\\",
+		&si,
+		&pi
+	)) {
+		fprintf(stderr, "Error code: %lu\n", GetLastError());
+		return FALSE;
+	}
+
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 

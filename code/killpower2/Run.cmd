@@ -16,8 +16,8 @@ if "%input%"=="3" goto run
 exit
 
 :run
-start cmd.exe /k client.exe 127.0.0.1 guest . perieur338
-server.exe
+start cmd.exe /k client.exe 127.0.0.1
+server.exe "C:\Windows\System32\Notepad.exe"
 pause
 goto menu
 

@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
 	int rv;
 	int bytes;
 
-	if(argc != 5) {
-		fprintf(stderr, "Usage: %s address username domain password\n", argv[0]);
+	if(argc != 2 && argc != 5) {
+		fprintf(stderr, "Usage: %s address [[username] [domain] [password]]\n", argv[0]);
 		return -1;
 	}
 
@@ -47,25 +47,24 @@ int main(int argc, char *argv[])
 		}
 		break;
 	}
-
 	if(p == NULL) {
 		fprintf(stderr, "client: failed to create socket\n");
 		goto error;
 	}
 
-	memset(request, 0, sizeof(request));
-	snprintf(request, sizeof(request), "username=%s;domain=%s;password=%s;", argv[2], argv[3], argv[4]);
-	if((bytes = sendto(sockfd, request, strlen(request), 0,
-			p->ai_addr, p->ai_addrlen)) == -1) {
-		perror("client: sendto");
-		goto error;
+	if(argc == 5) {
+		memset(request, 0, sizeof(request));
+		snprintf(request, sizeof(request), "username=%s;domain=%s;password=%s;", argv[2], argv[3], argv[4]);
+		if((bytes = sendto(sockfd, request, strlen(request), 0,
+				p->ai_addr, p->ai_addrlen)) == -1) {
+			perror("client: sendto");
+			goto error;
+		}
+		freeaddrinfo(servinfo);
+
+		printf("data sent: %s\n", request);
+		printf("client: sent %d bytes to %s\n", bytes, argv[1]);
 	}
-
-	freeaddrinfo(servinfo);
-
-	printf("data sent: %s\n", request);
-	printf("client: sent %d bytes to %s\n", bytes, argv[1]);
-
 	closesocket(sockfd);
 	WSACleanup();
 	return 0;
