@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define REQSTR "GET /%s HTTP/1.0\r\nHost: http://%s/\r\nUser-Agent: fetch.c\r\n\r\n"
+
 #define MAXREQ 512
 #define MAXDATA 512
 
@@ -18,7 +20,7 @@ int main(int argc, char *argv[])
 	WSADATA wsaData;
 	SOCKET sockfd;
 	struct sockaddr_in addr;
-	struct hostent *hostinfo;
+	struct hostent hostinfo;
 	char request[MAXREQ];
 	char data[MAXDATA];
 	int total_bytes;
@@ -36,24 +38,26 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	hostinfo = gethostbyname("www.example.com");
+	hostinfo = *gethostbyname("www.example.com");
 	if(argc == 3)
-		hostinfo = gethostbyname(argv[1]);
+		hostinfo = *gethostbyname(argv[1]);
 
 	ZeroMemory(&addr, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(80);
-	memcpy(&addr.sin_addr.s_addr, hostinfo->h_addr, sizeof(hostinfo->h_length));
+	memcpy(&addr.sin_addr.s_addr, &hostinfo.h_addr, sizeof(hostinfo.h_length));
 
 	if(connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
 		fprintf(stderr, "Error couldn't connect to socket.\n");
-		return -1;
+		goto error;
 	}
-	printf("Connected to : %s.\n", hostinfo->h_addr);
+	printf("Connected to : %s.\n", hostinfo.h_addr);
 
 	memset(request, 0, sizeof(request));
 	if(argc == 3)
-		sprintf(request, "Get %s HTTP/1.0\r\n\r\n", argv[2]);
+		sprintf(request, REQSTR, argv[2], argv[1]);
+	else
+		sprintf(request, REQSTR, argv[1], "www.example.com");
 	printf("%s", request);
 
 	if(send(sockfd, request, strlen(request), 0) < 0) {
@@ -63,7 +67,6 @@ int main(int argc, char *argv[])
 	} else {
 		printf("Sent fetch message to server successfully!\n");
 	}
-	fflush(stdout);
 
 	bytes = 0;
 	total_bytes = 0;
@@ -77,7 +80,6 @@ int main(int argc, char *argv[])
 		total_bytes += bytes;
 		memset(data, 0, sizeof(data));
 	}
-	fflush(stdout);
 	if(bytes == 0)
 		puts("Connection closed by remote host.");
 	printf("\n\nTotal received bytes is %d.\n", total_bytes);
