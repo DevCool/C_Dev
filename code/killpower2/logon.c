@@ -5,53 +5,79 @@
 #include <windows.h>
 #include <stdio.h>
 
-BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password,
-		DWORD logonType, DWORD logonProvider)
+BOOL SetTokenPrivilege(HANDLE hToken, LPCSTR szPrivilege, BOOL bEnablePrivilege)
+{
+	TOKEN_PRIVILEGES tp;
+	LUID luid;
+
+	if(!LookupPrivilegeValue(NULL, szPrivilege, &luid)) {
+		printf("LookupPrivilege failed\n");
+		return FALSE;
+	}
+
+	tp.PrivilegeCount = 1;
+	tp.Privileges[0].Luid = luid;
+	if(bEnablePrivilege)
+		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	else
+		tp.Privileges[0].Attributes = 0;
+
+	/* Enable the privilege or disable all */
+	if(!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, 0)) {
+		printf("Adjusting token privileges failed.\n");
+		return FALSE;
+	}
+
+	if(GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+		printf("The token does not have the specified privilege.\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password)
 {
 	HANDLE hToken;
-	HANDLE hPrimaryToken;
-	SECURITY_ATTRIBUTES sa;
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 
-	ZeroMemory(&si, sizeof(STARTUPINFO));
-	si.cb = sizeof(STARTUPINFOW);
+	ZeroMemory(&si, sizeof(si));
+	ZeroMemory(&pi, sizeof(pi));
+	si.cb = sizeof(si);
+
+	if(!OpenProcessToken(GetCurrentProcess(), TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES,
+			&hToken)) {
+		fprintf(stderr, "Error: OpenProcessToken() function failed.\n"
+			"Error code %lu\n", GetLastError());
+		return FALSE;
+	}
+
+	if(!(SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE) &&
+			SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE) &&
+			SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE))) {
+		return FALSE;
+	}
+
+	if(!LogonUser(username, domain, password, LOGON32_LOGON_INTERACTIVE,
+			LOGON32_PROVIDER_DEFAULT, &hToken)) {
+		fprintf(stderr, "Error: LogonUser() function failed.\nError code %lu\n",
+			GetLastError());
+		return FALSE;
+	}
+
+	si.cb = sizeof(STARTUPINFO);
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_SHOWNORMAL;
-
-	if(!LogonUser(username, domain, password, logonType,
-			logonProvider, &hToken)) {
-		fprintf(stderr, "Error: LogonUser() function failed.\nError code: %lu\n",
-			GetLastError());
-		return FALSE;
-	}
-
-	ZeroMemory(&sa, sizeof(SECURITY_ATTRIBUTES));
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	if(!DuplicateTokenEx(hToken, TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY,
-			&sa, SecurityImpersonation, TokenPrimary, &hPrimaryToken)) {
-		fprintf(stderr, "Error: Cannot duplicate token.\nError code: %lu\n",
-			GetLastError());
-		return FALSE;
-	}
-
-	if(!ImpersonateLoggedOnUser(hToken)) {
-		fprintf(stderr, "Error: Cannot impersonate user account.\nError code: %lu\n",
-			GetLastError());
-		return FALSE;
-	}
-
-	if(!CreateProcessAsUser(hPrimaryToken, NULL,
-			"C:\\Windows\\System32\\cmd.exe", &sa, &sa, FALSE,
-			NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB,
+	if(!CreateProcessAsUser(hToken, "C:\\Windows\\System32\\Notepad.exe",
+			NULL, NULL, NULL, TRUE, CREATE_NEW_CONSOLE,
 			NULL, NULL, &si, &pi)) {
-		fprintf(stderr, "Error: Cannot create the process.\nError code: %lu\n",
+		fprintf(stderr, "Error: Cannot create the process.\nError code %lu\n",
 			GetLastError());
 		return FALSE;
 	}
 
 	CloseHandle(hToken);
-	CloseHandle(hPrimaryToken);
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 
