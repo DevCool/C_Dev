@@ -29,13 +29,13 @@ BOOL MByteToUnicode(LPCSTR mbStr, LPWSTR uStr, DWORD size)
 BOOL UnicodeToMByte(LPCWSTR uStr, LPSTR mbStr, DWORD size)
 {
 	DWORD minSize;
-	minSize = WideCharToMultiByte(CP_OEMCP, NULL, uStr, -1, NULL, 0, NULL, FALSE);
+	minSize = WideCharToMultiByte(CP_OEMCP, 0, uStr, -1, NULL, 0, NULL, FALSE);
 	if(size < minSize) {
 		return FALSE;
 	}
 
 	/* Convert string from Unicode to multibyte */
-	WideCharToMultiByte(CP_OEMCP, NULL, uStr, -1, mbStr, size, NULL, FALSE);
+	WideCharToMultiByte(CP_OEMCP, 0, uStr, -1, mbStr, size, NULL, FALSE);
 	return TRUE;
 }
 
