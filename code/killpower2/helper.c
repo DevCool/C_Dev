@@ -13,6 +13,32 @@
 
 typedef unsigned long long int size_t;
 
+BOOL MByteToUnicode(LPCSTR mbStr, LPWSTR uStr, DWORD size)
+{
+	DWORD minSize;
+	minSize = MultiByteToWideChar(CP_ACP, 0, mbStr, -1, NULL, 0);
+	if(size < minSize) {
+		return FALSE;
+	}
+
+	/* Convert string from multi-byte to unicode. */
+	MultiByteToWideChar(CP_ACP, 0, mbStr, -1, uStr, minSize);
+	return TRUE;
+}
+
+BOOL UnicodeToMByte(LPCWSTR uStr, LPSTR mbStr, DWORD size)
+{
+	DWORD minSize;
+	minSize = WideCharToMultiByte(CP_OEMCP, NULL, uStr, -1, NULL, 0, NULL, FALSE);
+	if(size < minSize) {
+		return FALSE;
+	}
+
+	/* Convert string from Unicode to multibyte */
+	WideCharToMultiByte(CP_OEMCP, NULL, uStr, -1, mbStr, size, NULL, FALSE);
+	return TRUE;
+}
+
 void talker(int sockfd, struct addrinfo *server, char *message)
 {
 	char buffer[BUFSIZ];

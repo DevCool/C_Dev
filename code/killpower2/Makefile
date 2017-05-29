@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=c89 -Wall -g
 LDFLAGS=-std=c89 -g
-LIB1=-lws2_32 -lkernel32 -ladvapi32
+LIB1=-lws2_32 -lkernel32 -ladvapi32 -luserenv
 LIB2=-lws2_32
 
 SRCS:=server.c helper.c logon.c client.c

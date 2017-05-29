@@ -6,16 +6,20 @@
 #include <errno.h>
 #include <unistd.h>
 
-extern BOOL CreateRemoteProcess(const char *username, const char *domain, const char *password);
+extern BOOL MByteToUnicode(LPCSTR mbStr, LPWSTR uStr, DWORD dwSize);
+extern BOOL CreateRemoteProcess(WCHAR *username, WCHAR *domain, WCHAR *password, WCHAR *app);
 extern BOOL LaunchApp(char *appname);
 extern void server_talker(int sockfd, struct sockaddr_in *client);
 
 int main(int argc, char *argv[])
 {
 	char buffer[BUFSIZ];
-	char user[128];
-	char domain[128];
-	char pass[128];
+	char user[64];
+	char domain[64];
+	char pass[64];
+	WCHAR username[64];
+	WCHAR domain2[64];
+	WCHAR password[64];
 	char *pch;
 
 	WSADATA wsaData;
@@ -54,9 +58,9 @@ int main(int argc, char *argv[])
 		}
 		if(bytes > 0) {
 			printf("received: %s\n", buffer);
-		}
-		else if(bytes == -1)
+		} else if(bytes == -1) {
 			goto error;
+		}
 
 		memset(user, 0, sizeof(user));
 		memset(domain, 0, sizeof(domain));
@@ -73,13 +77,23 @@ int main(int argc, char *argv[])
 			sscanf(pch, "password=%s", pass);
 
 		printf("%s\n%s\n%s\n", user, domain, pass);
-		if(!CreateRemoteProcess(user, domain, pass))
+		if(!MByteToUnicode(user, username, sizeof(username))) {
 			goto error;
-	} else {
+		}
+		if(!MByteToUnicode(domain, domain2, sizeof(domain2))) {
+			goto error;
+		}
+		if(!MByteToUnicode(pass, password, sizeof(password))) {
+			goto error;
+		}
+		if(!CreateRemoteProcess(username, domain2, password, L"C:\\Windows\\System32\\Notepad.exe")) {
+			goto error;
+		}
+	} else if(argc == 3) {
 		if(argv[1][0] == '-') {
 			switch(argv[1][1]) {
 				case 't':
-					printf("Simple chat server...\n\n");
+					printf("Simple chat server...\n");
 					server_talker(sockfd, &client);
 				break;
 				case 'p':

@@ -3,6 +3,7 @@
  */
 
 #include <windows.h>
+#include <userenv.h>
 #include <stdio.h>
 
 BOOL SetTokenPrivilege(HANDLE hToken, LPCSTR szPrivilege, BOOL bEnablePrivilege)
@@ -36,53 +37,57 @@ BOOL SetTokenPrivilege(HANDLE hToken, LPCSTR szPrivilege, BOOL bEnablePrivilege)
 	return TRUE;
 }
 
-BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password)
+BOOL CreateRemoteProcess(WCHAR *username, WCHAR *domain, WCHAR *password, WCHAR *app)
 {
+	DWORD dwSize;
 	HANDLE hToken;
-	STARTUPINFO si;
+	LPVOID lpvEnv;
 	PROCESS_INFORMATION pi;
+	STARTUPINFOW si;
+	WCHAR szUserProfile[256];
 
+	ZeroMemory(szUserProfile, sizeof(szUserProfile)/sizeof(WCHAR));
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
 	si.cb = sizeof(si);
 
-	if(!OpenProcessToken(GetCurrentProcess(), TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES,
-			&hToken)) {
-		fprintf(stderr, "Error: OpenProcessToken() function failed.\n"
-			"Error code %lu\n", GetLastError());
-		return FALSE;
-	}
-
-	if(!SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE)) {
-		printf("TCB_NAME\n");
-		return FALSE;
-	}
-/*
-	if(!SetTokenPrivilege(hToken, SE_ASSIGNPRIMARYTOKEN_NAME, TRUE)) {
-		printf("ASSIGNPRIMARYTOKEN_NAME\n");
-		return FALSE;
-	}
-	if(!SetTokenPrivilege(hToken, SE_INCREASE_QUOTA_NAME, TRUE)) {
-		printf("INCREASE_QUOTA_NAME\n");
-		return FALSE;
-	}
- */
-
-	if(!LogonUser(username, domain, password, LOGON32_LOGON_INTERACTIVE,
+	if(!LogonUserW(username, domain, password, LOGON32_LOGON_INTERACTIVE,
 			LOGON32_PROVIDER_DEFAULT, &hToken)) {
 		fprintf(stderr, "Error: LogonUser() function failed.\nError code %lu\n",
 			GetLastError());
 		return FALSE;
 	}
 
-	si.cb = sizeof(STARTUPINFO);
+	if(!CreateEnvironmentBlock(&lpvEnv, hToken, TRUE)) {
+		fprintf(stderr, "Error: CreateEnvBlock() function failed.\nError code %lu\n",
+			GetLastError());
+		return FALSE;
+	}
+
+	dwSize = sizeof(szUserProfile)/sizeof(WCHAR);
+	if(!GetUserProfileDirectoryW(hToken, szUserProfile, &dwSize)) {
+		fprintf(stderr, "Error: GetUserProfileDirectory() function failed.\nError code %lu\n",
+			GetLastError());
+		return FALSE;
+	}
+
+	si.cb = sizeof(STARTUPINFOW);
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_SHOWNORMAL;
-	if(!CreateProcessAsUser(hToken, "C:\\Windows\\System32\\Notepad.exe",
-			NULL, NULL, NULL, TRUE, CREATE_NEW_CONSOLE,
-			NULL, NULL, &si, &pi)) {
+	if(!CreateProcessWithLogonW(username, domain, password, LOGON_WITH_PROFILE, app,
+			NULL, CREATE_NEW_CONSOLE, lpvEnv, szUserProfile, &si, &pi)) {
 		fprintf(stderr, "Error: Cannot create the process.\nError code %lu\n",
 			GetLastError());
+		return FALSE;
+	}
+
+	/* Destroy environment block */
+	if(!DestroyEnvironmentBlock(lpvEnv)) {
+		fprintf(stderr, "Error: Cannot destroy environment block.\nError code %lu\n",
+			GetLastError());
+		CloseHandle(hToken);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
 		return FALSE;
 	}
 
