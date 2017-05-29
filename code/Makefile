@@ -3,7 +3,7 @@ CFLAGS=-std=c89 -Wall -g
 LIB1=
 LIB2=-lws2_32
 
-PROGRAMS:=ex1-1.exe test.exe someprog.exe servreq.exe
+PROGRAMS:=ex1-1.exe test.exe someprog.exe getln_dyn.exe servreq.exe
 
 all: clean $(PROGRAMS)
 
@@ -17,6 +17,9 @@ servreq.exe: servreq.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB2)
 
 someprog.exe: someprog.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
+
+getln_dyn.exe: getln_dyn.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
 
 clean:
