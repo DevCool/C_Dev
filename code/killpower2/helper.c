@@ -5,14 +5,24 @@
  *****************************************************
  */
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#if defined(_WIN32) || (_WIN64)
+	/* windows header files */
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+	#include <windows.h>
+	#include <tlhelp32.h>
+#endif
 
+/* standard header files */
 #include <stdio.h>
 #include <string.h>
 
+/* redefine size_t as what it should be,
+ * just in case I haven't included stddef.h
+ */
 typedef unsigned long long int size_t;
 
+#if defined(_WIN32) || (_WIN64)
 BOOL MByteToUnicode(LPCSTR mbStr, LPWSTR uStr, DWORD size)
 {
 	DWORD minSize;
@@ -38,6 +48,29 @@ BOOL UnicodeToMByte(LPCWSTR uStr, LPSTR mbStr, DWORD size)
 	WideCharToMultiByte(CP_OEMCP, 0, uStr, -1, mbStr, size, NULL, FALSE);
 	return TRUE;
 }
+
+DWORD FindProcessId(LPCSTR lpszProcessName, HANDLE *hProcess)
+{
+	PROCESSENTRY32 peInfo;
+	HANDLE procSnapshot;
+	peInfo.dwSize = sizeof(peInfo);
+	procSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if(procSnapshot == INVALID_HANDLE_VALUE)
+		return 0;
+
+	if(Process32First(procSnapshot, &peInfo))
+		while(Process32Next(procSnapshot, &peInfo)) {
+			if(strcmp(lpszProcessName, peInfo.szExeFile) == 0) {
+				hProcess = OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ,FALSE,peInfo.th32ProcessID);
+				printf("Process ID: %lu\n", peInfo.th32ProcessID);
+				break;
+			}
+		}
+
+	CloseHandle(procSnapshot);
+	return 0;
+}
+#endif
 
 void talker(int sockfd, struct addrinfo *server, char *message)
 {
