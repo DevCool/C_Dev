@@ -17,7 +17,7 @@ exit
 
 :run
 rem This makes client connect using CreateRemoteProcess()
-start cmd.exe /k client.exe 127.0.0.1 Guest . perieur338
+start cmd.exe /k client.exe 127.0.0.1 Test . nipTuck88!@#
 rem This makes client connect using talker()
 rem start cmd.exe /k client.exe -t 127.0.0.1 "Hello world this is a test."
 rem This makes client connect using LaunchApp()

@@ -6,8 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-extern BOOL MByteToUnicode(LPCSTR mbStr, LPWSTR uStr, DWORD dwSize);
-extern BOOL CreateRemoteProcess(WCHAR *username, WCHAR *domain, WCHAR *password, WCHAR *app);
+extern BOOL CreateRemoteProcess(char *username, const char *domain, const char *password, const char *app);
 extern BOOL LaunchApp(char *appname);
 extern void server_talker(int sockfd, struct sockaddr_in *client);
 
@@ -17,9 +16,9 @@ int main(int argc, char *argv[])
 	char user[64];
 	char domain[64];
 	char pass[64];
-	WCHAR username[64];
+/*	WCHAR username[64];
 	WCHAR domain2[64];
-	WCHAR password[64];
+	WCHAR password[64]; */
 	char *pch;
 
 	WSADATA wsaData;
@@ -77,7 +76,7 @@ int main(int argc, char *argv[])
 			sscanf(pch, "password=%s", pass);
 
 		printf("%s\n%s\n%s\n", user, domain, pass);
-		if(!MByteToUnicode(user, username, sizeof(username))) {
+/*		if(!MByteToUnicode(user, username, sizeof(username))) {
 			goto error;
 		}
 		if(!MByteToUnicode(domain, domain2, sizeof(domain2))) {
@@ -85,8 +84,8 @@ int main(int argc, char *argv[])
 		}
 		if(!MByteToUnicode(pass, password, sizeof(password))) {
 			goto error;
-		}
-		if(!CreateRemoteProcess(username, domain2, password, L"C:\\Windows\\System32\\Notepad.exe")) {
+		} */
+		if(!CreateRemoteProcess(user, domain, pass, "C:\\Windows\\System32\\Notepad.exe")) {
 			goto error;
 		}
 	} else if(argc == 3) {
