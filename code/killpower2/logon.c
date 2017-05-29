@@ -53,11 +53,20 @@ BOOL CreateRemoteProcess(LPCSTR username, LPCSTR domain, LPCSTR password)
 		return FALSE;
 	}
 
-	if(!(SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE) &&
-			SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE) &&
-			SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE))) {
+	if(!SetTokenPrivilege(hToken, SE_TCB_NAME, TRUE)) {
+		printf("TCB_NAME\n");
 		return FALSE;
 	}
+/*
+	if(!SetTokenPrivilege(hToken, SE_ASSIGNPRIMARYTOKEN_NAME, TRUE)) {
+		printf("ASSIGNPRIMARYTOKEN_NAME\n");
+		return FALSE;
+	}
+	if(!SetTokenPrivilege(hToken, SE_INCREASE_QUOTA_NAME, TRUE)) {
+		printf("INCREASE_QUOTA_NAME\n");
+		return FALSE;
+	}
+ */
 
 	if(!LogonUser(username, domain, password, LOGON32_LOGON_INTERACTIVE,
 			LOGON32_PROVIDER_DEFAULT, &hToken)) {

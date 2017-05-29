@@ -16,8 +16,19 @@ if "%input%"=="3" goto run
 exit
 
 :run
-start cmd.exe /k client.exe 127.0.0.1 guest . perieur338
-server.exe
+rem This makes client connect using CreateRemoteProcess()
+rem start cmd.exe /k client.exe 127.0.0.1 Test . nipTuck88!@#
+rem This makes client connect using talker()
+rem start cmd.exe /k client.exe -t 127.0.0.1 "Hello world this is a test."
+rem This makes client connect using LaunchApp()
+start cmd.exe /k client.exe 127.0.0.1
+rem ****************************************************************************
+rem This is normal server using CreateRemoteProcess()
+rem server.exe
+rem This is server using server_talker()
+rem server.exe -t
+rem This is server using LaunchApp()
+server.exe -p "C:\Windows\System32\cmd.exe"
 rem "C:\Windows\System32\shutdown.exe /s"
 pause
 goto menu

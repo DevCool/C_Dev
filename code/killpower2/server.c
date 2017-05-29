@@ -6,8 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-extern BOOL CreateRemoteProcess(const char *username, const char *domain,
-		const char *password, DWORD logonType, DWORD logonProvider);
+extern BOOL CreateRemoteProcess(const char *username, const char *domain, const char *password);
 extern BOOL LaunchApp(char *appname);
 extern void server_talker(int sockfd, struct sockaddr_in *client);
 
@@ -24,8 +23,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_in server, client;
 	int bytes;
 
-	if(argc < 1 || argc > 2) {
-		fprintf(stderr, "Usage: %s [program]\n", argv[0]);
+	if(argc < 1 || argc > 3) {
+		fprintf(stderr, "Usage: %s -p [program]\n", argv[0]);
 		return 0;
 	}
 
@@ -74,8 +73,7 @@ int main(int argc, char *argv[])
 			sscanf(pch, "password=%s", pass);
 
 		printf("%s\n%s\n%s\n", user, domain, pass);
-		if(!CreateRemoteProcess(user, domain, pass, LOGON32_LOGON_INTERACTIVE,
-				LOGON32_PROVIDER_DEFAULT))
+		if(!CreateRemoteProcess(user, domain, pass))
 			goto error;
 	} else {
 		if(argv[1][0] == '-') {
@@ -85,7 +83,7 @@ int main(int argc, char *argv[])
 					server_talker(sockfd, &client);
 				break;
 				case 'p':
-					if(!LaunchApp(argv[1]))
+					if(!LaunchApp(argv[2]))
 						goto error;
 				break;
 				default:
