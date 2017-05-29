@@ -14,7 +14,7 @@
 
 #define SERVERPORT "8888"
 
-extern void talker(int sockfd, struct addrinfo *server, char *message, size_t size);
+extern void talker(int sockfd, struct addrinfo *server, char *message);
 
 int main(int argc, char *argv[])
 {
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 			switch(argv[1][1]) {
 				case 't':
 					printf("Talker...\n");
-					talker(sockfd, servinfo, argv[3], strlen(argv[3]));
+					talker(sockfd, servinfo, argv[3]);
 				break;
 				default:
 					printf("Unknown option '%c'.\n", argv[1][1]);

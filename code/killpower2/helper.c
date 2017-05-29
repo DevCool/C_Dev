@@ -13,8 +13,9 @@
 
 typedef unsigned long long int size_t;
 
-void talker(int sockfd, struct addrinfo *server, char *message, size_t size)
+void talker(int sockfd, struct addrinfo *server, char *message)
 {
+	char buffer[BUFSIZ];
 	struct sockaddr_in serv = *((struct sockaddr_in*)(server->ai_addr));
 	int addrlen = sizeof(serv);
 	int bytes;
@@ -29,14 +30,15 @@ void talker(int sockfd, struct addrinfo *server, char *message, size_t size)
 			inet_ntoa(serv.sin_addr));
 	}
 
-	bytes = recvfrom(sockfd, message, size-1, 0,
+	memset(buffer, 0, sizeof(buffer));
+	bytes = recvfrom(sockfd, buffer, BUFSIZ-1, 0,
 			(struct sockaddr*)&serv, &addrlen);
 	if(bytes < 0) {
 		fprintf(stderr, "Lost %d bytes from %s.\n",
 			bytes, inet_ntoa(serv.sin_addr));
 	} else {
 		printf("%d bytes received from %s.\nClient: %s\n",
-			bytes, inet_ntoa(serv.sin_addr), message);
+			bytes, inet_ntoa(serv.sin_addr), buffer);
 	}
 }
 
