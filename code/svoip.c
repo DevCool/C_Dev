@@ -1,10 +1,11 @@
 /********************************************************************
- * svoip.c - Going to be a simple VOIP (Voice Over IP) application. *
+ * svoip.c - Going to be a simple VOIP (Speak Over NET) application *
  ********************************************************************
  * By Philip R. Simonson                                            *
  ********************************************************************
  */
 
+#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -19,14 +20,21 @@
 #define ALIAS "random_str"
 #define MYPORT "31337"
 
-int record_file(void);
+/* helper functions */
 void *get_in_addr(struct sockaddr *sa);
+
+/* setup functions */
 int setup_server(int *sockfd, struct sockaddr_in *their_addr);
 int setup_client(int *sockfd, const char *hostname, struct addrinfo *their_addr);
+
+/* file functions */
+int record_file(void);
 int send_file(int sockfd, struct addrinfo *client, const char *filename);
 int recv_file(int sockfd, struct sockaddr_in *server, const char *filename);
 int play_file(const char *filename);
 
+/* main() - entry point for application
+ */
 int main(int argc, char *argv[])
 {
 	WSADATA wsaData;
@@ -233,17 +241,15 @@ int send_file(int sockfd, struct addrinfo *client, const char *filename)
 
 	bytes = 0;
 	total_bytes = 0;
-	while((bytes = fread(buffer, 1, CHUNK, file)) > 0) {
-		if(sendto(sockfd, buffer, bytes, 0, client->ai_addr, client->ai_addrlen) != bytes) {
-			fprintf(stderr, "Couldn't send all of the data.\n");
-			break;
-		}
+	while((bytes = fread(buffer, 1, CHUNK, file)) != 0) {
 		total_bytes += bytes;
+		if(sendto(sockfd, buffer, bytes, 0, client->ai_addr, client->ai_addrlen) == -1) {
+			fprintf(stderr, "Couldn't send all of the data.\n");
+			continue;
+		}
 	}
 	fclose(file);
-	if(bytes < 0)
-		fprintf(stderr, "Error: Could not send data.\n");
-	else
+	if(bytes == 0)
 		printf("Sent %d bytes of data.\n", total_bytes);
 
 	return 0;
@@ -272,17 +278,15 @@ int recv_file(int sockfd, struct sockaddr_in *server, const char *filename)
 	bytes = 0;
 	total_bytes = 0;
 	addrlen = sizeof(server);
-	while((bytes = recvfrom(sockfd, buffer, CHUNK, 0, (struct sockaddr*)&server, &addrlen)) > 0) {
+	while((bytes = recvfrom(sockfd, buffer, CHUNK, 0, (struct sockaddr*)&server, &addrlen)) != 0) {
+		total_bytes += bytes;
 		if(fwrite(buffer, 1, bytes, file) != bytes) {
 			fprintf(stderr, "Couldn't write all of the data.\n");
 			break;
 		}
-		total_bytes += bytes;
 	}
 	fclose(file);
-	if(bytes < 0)
-		fprintf(stderr, "Error: Could not receive data.\n");
-	else
+	if(bytes == 0)
 		printf("Received %d bytes of data.\n", total_bytes);
 
 	return 0;

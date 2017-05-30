@@ -4,7 +4,7 @@ LIB1=
 LIB2=-lws2_32
 LIB3=-lwinmm -lws2_32
 
-PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe
+PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe sndrec.exe
 
 all: clean $(PROGRAMS)
 
@@ -22,6 +22,9 @@ someprog.exe: someprog.c.obj
 
 svoip.exe: svoip.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB3)
+
+sndrec.exe: sndrec.c.obj
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB2)
 
 getln_dyn.exe: getln_dyn.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
