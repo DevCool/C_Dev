@@ -16,30 +16,23 @@ if "%input%"=="3" goto run
 exit
 
 :login
-rem This makes client connect using CreateRemoteProcess()
-start cmd.exe /k client.exe 127.0.0.1 Test . nipTuck88!@#
-rem This is normal server using CreateRemoteProcess()
-server.exe
-pause
+start cmd.exe /k server.exe
+start cmd.exe /k Run.cmd a
 goto run
 
 :talker
-rem This makes client connect using talker()
-start cmd.exe /k client.exe -t 127.0.0.1 "Hello world this is a test."
-rem This is server using server_talker()
-server.exe -t
-pause
+start cmd.exe /k server.exe -t
+start cmd.exe /k Run.cmd b
 goto run
 
 :shutdown
-rem This makes client connect using LaunchApp()
-start cmd.exe /c client.exe 127.0.0.1
-rem This is server using LaunchApp()
-server.exe -p "C:\Windows\System32\shutdown.exe /s"
+start cmd.exe /c server.exe -p "C:\Windows\System32\shutdown.exe /s"
+start cmd.exe /k Run.cmd c
 exit
 
 :run
 cls
+set decision=""
 echo What would you like to do?
 echo    1. Run program as different user.
 echo    2. Server/client communication.
