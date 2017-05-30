@@ -70,15 +70,15 @@ char *getln(int *iSize, bool bCR)
 		} else if(c == 0x08) {
 			buf[pos--] = 0;
 			if(pos < size) {
-				size -= BUFSIZE;
+				size = pos;
 				buf = realloc(buf, size);
 				if(!buf)
 					break;
 			}
 		} else {
 			buf[pos] = c;
+			++pos;
 		}
-		++pos;
 
 		if(pos >= size) {
 			size += BUFSIZE;
