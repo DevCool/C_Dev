@@ -21,19 +21,17 @@
 
 int record_file(void);
 void *get_in_addr(struct sockaddr *sa);
-int setup_server(int *sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen);
-int setup_client(int *sockfd, const char *hostname, struct sockaddr_in *their_addr,
-	socklen_t *addrlen);
-int send_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, const char *filename);
-int recv_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, const char *filename);
+int setup_server(int *sockfd, struct addrinfo *their_addr);
+int setup_client(int *sockfd, const char *hostname, struct addrinfo *their_addr);
+int send_file(int sockfd, struct sockaddr *their_addr, const char *filename);
+int recv_file(int sockfd, struct sockaddr *their_addr, const char *filename);
 int play_file(const char *filename);
 
 int main(int argc, char *argv[])
 {
 	WSADATA wsaData;
 	int sockfd;
-	struct sockaddr_in their_addr;
-	socklen_t addr_len;
+	struct addrinfo addr;
 
 	if(argc > 2) {
 		fprintf(stderr, "Usage: %s [address]\n", argv[0]);
@@ -42,20 +40,24 @@ int main(int argc, char *argv[])
 
 	WSAStartup(0x0202, &wsaData);
 	if(argc == 1) {
-		if(setup_server(&sockfd, &their_addr, &addr_len))
+		if(setup_server(&sockfd, &addr))
 			goto error;
-		if(recv_file(sockfd, &their_addr, &addr_len, "tmp.wav"))
+		printf("IP   : %s\nPORT : %s\n", inet_ntoa(((struct sockaddr_in*)addr.ai_addr)->sin_addr),
+			MYPORT);
+		if(recv_file(sockfd, addr.ai_addr, "tmp.wav"))
 			goto error;
-		if(!PlaySound("tmp.wav", NULL, SND_FILENAME))
+		if(play_file("tmp.wav"))
 			goto error;
 		if(remove("tmp.wav"))
 			goto error;
 	} else {
-		if(setup_client(&sockfd, argv[1], &their_addr, &addr_len))
+		if(setup_client(&sockfd, argv[1], &addr))
 			goto error;
-		if(record_file() != 0)
+		printf("IP   : %s\nPORT : %s\n", inet_ntoa(((struct sockaddr_in*)addr.ai_addr)->sin_addr),
+			MYPORT);
+		if(record_file())
 			goto error;
-		if(send_file(sockfd, &their_addr, &addr_len, "tmp.wav"))
+		if(send_file(sockfd, addr.ai_addr, "tmp.wav"))
 			goto error;
 		if(remove("tmp.wav"))
 			goto error;
@@ -66,7 +68,8 @@ int main(int argc, char *argv[])
 	return 0;
 
 error:
-	close(sockfd);
+	if(sockfd != 0)
+		close(sockfd);
 	WSACleanup();
 	return 1;
 }
@@ -78,18 +81,16 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int setup_server(int *sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen)
+int setup_server(int *sockfd, struct addrinfo *their_addr)
 {
 	struct addrinfo hints, *servinfo, *p;
-	struct sockaddr_in client_addr;
-	socklen_t addr_len;
 	int rv;
 	
 	printf("*****************************\n"
 		"* Tiny VOIP Application     *\n"
 		"* By 5n4k3                  *\n"
 		"*****************************\n\n");
-	memset(&client_addr, 0, sizeof(client_addr));
+
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -121,20 +122,21 @@ int setup_server(int *sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen
 		return 2;
 	}
 	freeaddrinfo(servinfo);
+	*their_addr = *p;
 	printf("listener: waiting to recvfrom...\n");
-
-	addr_len = sizeof(client_addr);
-	*their_addr = client_addr;
-	*addrlen = addr_len;
 
 	return 0;
 }
 
-int setup_client(int *sockfd, const char *hostname, struct sockaddr_in *server_addr,
-	socklen_t *addrlen)
+int setup_client(int *sockfd, const char *hostname, struct addrinfo *their_addr)
 {
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
+
+	printf("*****************************\n"
+		"* Tiny VOIP Application     *\n"
+		"* By 5n4k3                  *\n"
+		"*****************************\n\n");
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -159,10 +161,8 @@ int setup_client(int *sockfd, const char *hostname, struct sockaddr_in *server_a
 		fprintf(stderr, "talker: failed to create socket.\n");
 		return 2;
 	}
-
-	server_addr = (struct sockaddr_in *)get_in_addr(p->ai_addr);
-	*addrlen = sizeof(*server_addr);
 	freeaddrinfo(servinfo);
+	*their_addr = *p;
 
 	return 0;
 }
@@ -202,7 +202,7 @@ int record_file(void)
 
 #define CHUNK 1024
 
-int send_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, const char *filename)
+int send_file(int sockfd, struct sockaddr *their_addr, const char *filename)
 {
 	FILE *file;
 	char buffer[CHUNK];
@@ -227,7 +227,7 @@ int send_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, co
 			perror("fread()");
 			return -1;
 		}
-		if(sendto(sockfd, buffer, bytes, 0, (struct sockaddr*)their_addr, *addrlen) != bytes) {
+		if(sendto(sockfd, buffer, bytes, 0, their_addr, sizeof(*their_addr)) != bytes) {
 			fprintf(stderr, "Couldn't send all of the data.\n");
 			break;
 		}
@@ -239,12 +239,13 @@ int send_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, co
 	return 0;
 }
 
-int recv_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, const char *filename)
+int recv_file(int sockfd, struct sockaddr *their_addr, const char *filename)
 {
 	FILE *file;
 	char buffer[CHUNK];
 	char fname[BUFSIZ];
 	char cwd[128];
+	int addrlen = sizeof(*their_addr);
 	int total_bytes;
 	int bytes;
 
@@ -259,7 +260,7 @@ int recv_file(int sockfd, struct sockaddr_in *their_addr, socklen_t *addrlen, co
 	}
 
 	total_bytes = 0;
-	while((bytes = recvfrom(sockfd, buffer, CHUNK, 0, (struct sockaddr*)their_addr, addrlen))) {
+	while((bytes = recvfrom(sockfd, buffer, CHUNK, 0, their_addr, &addrlen))) {
 		if(bytes < 0) {
 			perror("recvfrom()");
 			return -1;
