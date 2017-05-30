@@ -51,7 +51,7 @@ char *getln(int *iSize, bool bCR)
 	pos = 0;
 	while(1) {
 		c = getchar();
-		if(c == -1 || c == (5 << 2)) {
+		if(c == -1 || c == 0b00010011) {
 			if(pos >= size && bCR) {
 				size += BUFSIZE;
 				buf = realloc(buf, size+1);
