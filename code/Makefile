@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-std=c89 -Wall -g
 LIB1=
 LIB2=-lws2_32
-LIB3=-lwinmm
+LIB3=-lwinmm -lws2_32
 
 PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe
 
