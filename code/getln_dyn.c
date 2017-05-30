@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 
 	while((buffer = getln(&size, 0)) != NULL)
 		if(size > 1)
-			printf("Buffer is...\n%s\n", buffer);
+			printf("Last string size [%ull] : Buffer is...\n%s\n", size, buffer);
 		else
 			break;
 
@@ -67,6 +67,14 @@ char *getln(int *iSize, bool bCR)
 			if(iSize != NULL)
 				*iSize = size;
 			return buf;
+		} else if(c == 0x08) {
+			buf[pos--] = 0;
+			if(pos < size) {
+				size -= BUFSIZE;
+				buf = realloc(buf, size);
+				if(!buf)
+					break;
+			}
 		} else {
 			buf[pos] = c;
 		}
