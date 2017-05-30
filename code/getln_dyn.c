@@ -22,16 +22,23 @@ char *getln(int *iSize, bool bCR);
 
 int main(int argc, char *argv[])
 {
+	FILE *file;
 	char *buffer;
 	int size;
 
+	if((file = fopen("temp.txt", "a+")) == NULL) {
+		fprintf(stderr, "Cannot open file for writing.\n");
+		return 1;
+	}
+
 	while((buffer = getln(&size, 0)) != NULL)
 		if(size > 1)
-			printf("Last string size [%ull] : Buffer is...\n%s\n", size, buffer);
+			fwrite(buffer, 1, size, file);
 		else
 			break;
 
 	free(buffer);
+	fclose(file);
 	return 0;
 }
 
@@ -52,13 +59,15 @@ char *getln(int *iSize, bool bCR)
 	while(1) {
 		c = getchar();
 		if(c == -1 || c == 0b00010011) {
-			if(pos >= size && bCR) {
-				size += BUFSIZE;
-				buf = realloc(buf, size+1);
-				if(!buf)
-					break;
-				buf[pos++] = 10;
-				buf[pos] = 0;
+			if(bCR) {
+				if(pos >= size) {
+					size += BUFSIZE;
+					buf = realloc(buf, size+1);
+					if(!buf)
+						break;
+					buf[pos++] = 10;
+					buf[pos] = 0;
+				}
 			} else {
 				buf[pos] = 0;
 			}
@@ -68,7 +77,8 @@ char *getln(int *iSize, bool bCR)
 				*iSize = size;
 			return buf;
 		} else if(c == 0x08) {
-			buf[pos--] = 0;
+			buf[pos] = 0;
+			--pos;
 			if(pos < size) {
 				size = pos;
 				buf = realloc(buf, size);
