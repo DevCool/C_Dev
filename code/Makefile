@@ -2,8 +2,9 @@ CC=gcc
 CFLAGS=-std=c89 -Wall -g
 LIB1=
 LIB2=-lws2_32
+LIB3=-lwinmm
 
-PROGRAMS:=ex1-1.exe test.exe someprog.exe getln_dyn.exe servreq.exe
+PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe
 
 all: clean $(PROGRAMS)
 
@@ -18,6 +19,9 @@ servreq.exe: servreq.c.obj
 
 someprog.exe: someprog.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
+
+svoip.exe: svoip.c.obj
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB3)
 
 getln_dyn.exe: getln_dyn.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
