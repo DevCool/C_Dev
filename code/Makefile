@@ -6,7 +6,7 @@ LIB3=-lwinmm -lws2_32
 
 PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe sndrec.exe http_get.exe
 
-all: clean $(PROGRAMS)
+all: $(PROGRAMS)
 
 ex1-1.exe: ex1-1.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
