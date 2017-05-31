@@ -38,7 +38,6 @@ int getln(char *s, size_t size, int ch)
 	int c, i, j;
 
 	j = 0;
-	memset(s, 0, size);
 	for(i = 0; (c = getchar()) != EOF && c != ch; ++i)
 		if(i < size-2) {
 			s[i] = c;

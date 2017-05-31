@@ -66,15 +66,19 @@ int main(int argc, char *argv[])
 
 	total_bytes = 0;
 	addrlen = sizeof(their_addr);
-	while((bytesRead = recvfrom(sockfd, buf, CHUNK, 0,
-		(struct sockaddr *)&their_addr, &addrlen)) != 0) {
-		bytesWritten = get_file(sockfd, &their_addr, buf, bytesRead, &total_bytes);
-	}
-	if(bytesWritten == -1) {
-		perror("fwrite()");
-		close(sockfd);
-		WSACleanup();
-		exit(1);
+	while(1) {
+		if((bytesRead = recvfrom(sockfd, buf, CHUNK, 0,
+			(struct sockaddr *)&their_addr, &addrlen)) != 0) {
+			bytesWritten = get_file(sockfd, &their_addr, buf, bytesRead, &total_bytes);
+		}
+		if(bytesWritten == -1) {
+			perror("fwrite()");
+			close(sockfd);
+			WSACleanup();
+			exit(1);
+		}
+		if(bytesRead == 0)
+			break;
 	}
 
 	printf("listener: got file from %s\n",
