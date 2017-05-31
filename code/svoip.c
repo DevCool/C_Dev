@@ -43,13 +43,13 @@ void clear_frame(frame_t *frame);
 void *get_in_addr(struct sockaddr *sa);
 
 /* setup functions */
-int setup_server(int *sockfd, struct sockaddr *their_addr);
-int setup_client(int *sockfd, const char *hostname, struct sockaddr *their_addr);
+int setup_server(void);
+int setup_client(const char *hostname);
 
 /* file functions */
 int record_file(void);
-int send_file(int sockfd, struct sockaddr *client, const char *filename, frame_t *packet);
-int recv_file(int sockfd, struct sockaddr *server, const char *filename, frame_t *packet);
+int send_file(int sockfd, struct sockaddr_storage *client, const char *filename, frame_t *packet);
+int recv_file(int sockfd, struct sockaddr_storage *server, const char *filename, frame_t *packet);
 int play_file(const char *filename);
 
 /* main() - entry point for application
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 {
 	WSADATA wsaData;
 	int sockfd;
-	struct sockaddr client, addr;
+	struct sockaddr_storage client, addr;
 	frame_t frame;
 
 	if(argc > 2) {
@@ -72,24 +72,24 @@ int main(int argc, char *argv[])
 
 	WSAStartup(0x0202, &wsaData);
 	if(argc == 1) {
-		if(setup_server(&sockfd, &client))
-			goto error;
-		printf("IP   : %s\nPORT : %s\n", inet_ntoa(((struct sockaddr_in *)&client)->sin_addr), MYPORT);
+		sockfd = setup_server();
 		if(recv_file(sockfd, &client, "test.wav", &frame))
 			goto error;
+		printf("IP   : %s\nPORT : %s\n", inet_ntoa(((struct sockaddr_in *)&client)->sin_addr), MYPORT);
 		if(play_file("tmp.wav"))
 			goto error;
 		if(remove("tmp.wav"))
 			goto error;
 	} else {
-		if(setup_client(&sockfd, argv[1], &addr))
+		sockfd = setup_client(argv[1]);
+		puts("Press any key to record message...");
+		getch();
+		if(record_file() != 0)
 			goto error;
 		printf("IP   : %s\nPORT : %s\n", inet_ntoa(((struct sockaddr_in *)&addr)->sin_addr), MYPORT);
-		if(record_file())
+		if(send_file(sockfd, &addr, "tmp.wav", &frame) != 0)
 			goto error;
-		if(send_file(sockfd, &addr, "tmp.wav", &frame))
-			goto error;
-		if(remove("tmp.wav"))
+		if(remove("tmp.wav") != 0)
 			goto error;
 	}
 	if(sockfd != 0)
@@ -108,7 +108,7 @@ void clear_frame(frame_t *frame)
 {
 	frame_t ftmp;
 	memset(&ftmp, 0, sizeof(ftmp));
-	memset(&ftmp.packet, 0, sizeof(ftmp.packet));
+/*	memset(&ftmp.packet, 0, sizeof(ftmp.packet)); */
 }
 
 void *get_in_addr(struct sockaddr *sa)
@@ -118,9 +118,10 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int setup_server(int *sockfd, struct sockaddr *client)
+int setup_server(void)
 {
 	struct addrinfo hints, *servinfo, *p;
+	int sockfd;
 	int rv;
 	
 	printf("*****************************\n"
@@ -128,7 +129,6 @@ int setup_server(int *sockfd, struct sockaddr *client)
 		"* By 5n4k3                  *\n"
 		"*****************************\n\n");
 
-	memset(client, 0, sizeof(struct sockaddr));
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -141,14 +141,14 @@ int setup_server(int *sockfd, struct sockaddr *client)
 
 	/* loop through all the results and bind to the first it can */
 	for(p = servinfo; p != NULL; p = p->ai_next) {
-		if((*sockfd = socket(p->ai_family, p->ai_socktype,
+		if((sockfd = socket(p->ai_family, p->ai_socktype,
 			p->ai_protocol)) == -1) {
 			perror("listener: socket()");
 			continue;
 		}
 
-		if(bind(*sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			closesocket(*sockfd);
+		if(bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+			close(sockfd);
 			perror("listener: bind()");
 			continue;
 		}
@@ -161,13 +161,13 @@ int setup_server(int *sockfd, struct sockaddr *client)
 	}
 	freeaddrinfo(servinfo);
 	printf("listener: waiting to recvfrom...\n");
-	client = p->ai_addr;
-	return 0;
+	return sockfd;
 }
 
-int setup_client(int *sockfd, const char *hostname, struct sockaddr *client)
+int setup_client(const char *hostname)
 {
 	struct addrinfo hints, *servinfo, *p;
+	int sockfd;
 	int rv;
 
 	printf("*****************************\n"
@@ -175,11 +175,6 @@ int setup_client(int *sockfd, const char *hostname, struct sockaddr *client)
 		"* By 5n4k3                  *\n"
 		"*****************************\n\n");
 
-	memset(client, 0, sizeof(struct sockaddr));
-#if defined(DEBUG)
-	printf("Packet arrived: %s\nPacket data: %s\n", (!frame_tmp.bArrived) ? "FALSE" : "TRUE",
-		frame_tmp.packet.data);
-#endif
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
@@ -191,18 +186,16 @@ int setup_client(int *sockfd, const char *hostname, struct sockaddr *client)
 
 	/* loop through all the results and make a socket */
 	for(p = servinfo; p != NULL; p = p->ai_next) {
-		if((*sockfd = socket(p->ai_family, p->ai_socktype,
+		if((sockfd = socket(p->ai_family, p->ai_socktype,
 			p->ai_protocol)) == -1) {
 			perror("talker: socket()");
 			continue;
 		}
-
-		if(connect(*sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			closesocket(*sockfd);
+		if(connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+			close(sockfd);
 			perror("client: connect()");
 			continue;
 		}
-
 		break;
 	}
 	if(p == NULL) {
@@ -210,8 +203,8 @@ int setup_client(int *sockfd, const char *hostname, struct sockaddr *client)
 		return 2;
 	}
 	freeaddrinfo(servinfo);
-	client = p->ai_addr;
-	return 0;
+	puts("client: socket created.");
+	return sockfd;
 }
 
 int record_file(void)
@@ -247,7 +240,7 @@ int record_file(void)
 	return mci_error;
 }
 
-int send_file(int sockfd, struct sockaddr *client, const char *filename, frame_t *frame)
+int send_file(int sockfd, struct sockaddr_storage *client, const char *filename, frame_t *frame)
 {
 	struct sockaddr_in cli;
 	FILE *file;
@@ -305,7 +298,7 @@ int send_file(int sockfd, struct sockaddr *client, const char *filename, frame_t
 	return 0;
 }
 
-int recv_file(int sockfd, struct sockaddr *server, const char *filename, frame_t *frame)
+int recv_file(int sockfd, struct sockaddr_storage *server, const char *filename, frame_t *frame)
 {
 	struct sockaddr_in addr;
 	FILE *file;
