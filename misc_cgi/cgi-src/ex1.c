@@ -16,22 +16,28 @@
 
 void header(const char *mime_type);
 void startup(const char *title);
-void title(const char *title);
+void print_p(const char *paragraph);
 void footer(const char *copyright);
 char *getvartext(char *query, char ch, const char *token);
 
 int main(int argc, char **argv, char **envp)
 {
-	char buffer[BUFSIZ];
-	char *query;
-	char *data;
+	char *query, *data, *env;
 
 	header("text/html");
 	startup("Simple Webpage");
-	printf("<p align=\"center\"><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-	if((query = getenv("QUERY_STRING"))) {
-		strncpy(buffer, query, sizeof(buffer));
-		if((data = getvartext(buffer, '=', "&")) != NULL) {
+	env = getenv("QUERY_STRING");
+	if(!env) {
+		printf("<p>align=\"center\"><h3>Sorry but the environment variable QUERY_STRING is NULL.</h3></p>");
+	} else {
+		query = malloc(strlen(env)+1);
+		if(!query) {
+			print_p("Cannot allocate memory for new QUERY_STRING...");
+			goto end_code;
+		}
+		strncpy(query, env, strlen(env)+1);
+		printf("<p align=\"center\"><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
+		if((data = getvartext(query, '=', "&")) != NULL) {
 			printf("<tr><th>%s</th>", data);
 			free(data);
 		}
@@ -39,8 +45,11 @@ int main(int argc, char **argv, char **envp)
 			printf("<td>%s</td></tr>", data[1]);
 			free(data);
 		}
+		printf("</table></p>");
 	}
-	printf("</table></p>");
+
+end_code:
+	if(query != NULL) free(query);
 	footer("Copyright (C) 2017");
 	return 0;
 }
@@ -56,6 +65,11 @@ void startup(const char *title)
 	"color: #7A7A7A; background-color: #2A2A2A; font-size: 15px; clear: center; text-align: center; }</style>" \
 	"</head><body bgcolor=\"#585858\">", title);
 	printf("<p><header>%s</header></p>", title);
+}
+
+void print_p(const char *paragraph)
+{
+	printf("<P>%s</P>", paragraph);
 }
 
 void footer(const char *copyright)
