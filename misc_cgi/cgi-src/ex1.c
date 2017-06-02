@@ -1,7 +1,18 @@
+/******************************************************
+ * ex1.c - Example 1, how to write a CGI program in C *
+ * for displaying information. On the form that re-   *
+ * quests it.                                         *
+ ******************************************************
+ * dev: Philip "5n4k3" Simonson                       *
+ ******************************************************
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+
+/* #define DEBUG */
 
 void header(const char *mime_type);
 void startup(const char *title);
@@ -14,12 +25,11 @@ int main(int argc, char **argv, char **envp)
 	char buffer[BUFSIZ];
 	char *query;
 	char *data;
-	int i;
 
 	header("text/html");
 	startup("Simple Webpage");
 	printf("<p align=\"center\"><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-	if(query = getenv("QUERY_STRING")) {
+	if((query = getenv("QUERY_STRING"))) {
 		strncpy(buffer, query, sizeof(buffer));
 		if((data = getvartext(buffer, '=', "&")) != NULL) {
 			printf("<tr><th>%s</th>", data);
@@ -54,43 +64,23 @@ void footer(const char *copyright)
 	printf("</body></html>");
 }
 
-char *strch(const char *buf, char ch)
-{
-	char *tmp, *a;
-	int i;
-
-	tmp = realloc(NULL, strlen(buf)+1);
-	if(!tmp) return NULL;
-	a = tmp;
-	while(*(buf+i) != 0) {
-		++i;
-		if(*(buf+i) == ch)
-			break;
-	}
-	while(*(buf+i) != 0) {
-		*a++ = *(buf+i);
-		++i;
-	}
-	return tmp;
-}
-
-char *__qstr;
+static char *__qstr;
 
 char *getvartext(char *query, char ch, const char *token)
 {
 	char *tmp, *buf, *s;
 
 	s = query ? query : __qstr;
-	if(!s)
-		return NULL;
-	tmp = strtok(query, token);
-	if(!tmp) {
+	if((tmp = strtok(s, token)) == NULL) {
 		__qstr = NULL;
 		return NULL;
 	}
-	buf = strch(tmp, ch);
+	buf = strrchr(tmp, ch);
 	if(!buf)
 		return NULL;
+#if defined(DEBUG)
+	printf("buf = %s\n", buf);
+#endif
 	__qstr = s;
-	return s;
+	return buf;
 }
