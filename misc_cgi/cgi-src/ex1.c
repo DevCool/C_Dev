@@ -18,7 +18,6 @@ void header(const char *mime_type);
 void startup(const char *title);
 void print_p(const char *paragraph);
 void footer(const char *copyright);
-char *getvartext(char *query, char ch, const char *token);
 
 int main(int argc, char **argv, char **envp)
 {
@@ -29,6 +28,7 @@ int main(int argc, char **argv, char **envp)
 	env = getenv("QUERY_STRING");
 	if(!env) {
 		printf("<p>align=\"center\"><h3>Sorry but the environment variable QUERY_STRING is NULL.</h3></p>");
+		goto end_code;
 	} else {
 		query = malloc(strlen(env)+1);
 		if(!query) {
@@ -37,19 +37,17 @@ int main(int argc, char **argv, char **envp)
 		}
 		strncpy(query, env, strlen(env)+1);
 		printf("<p align=\"center\"><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-		if((data = getvartext(query, '=', "&")) != NULL) {
+		if((data = strtok(query, "&"))) {
 			printf("<tr><th>%s</th>", data);
-			free(data);
 		}
-		if((data = getvartext(NULL, '=', "&")) != NULL) {
+		if((data = strtok(NULL, "&"))) {
 			printf("<td>%s</td></tr>", data[1]);
-			free(data);
 		}
 		printf("</table></p>");
+		free(query);
 	}
 
 end_code:
-	if(query != NULL) free(query);
 	footer("Copyright (C) 2017");
 	return 0;
 }
@@ -76,25 +74,4 @@ void footer(const char *copyright)
 {
 	printf("<p><footer>%s</footer></p>", copyright);
 	printf("</body></html>");
-}
-
-static char *__qstr;
-
-char *getvartext(char *query, char ch, const char *token)
-{
-	char *tmp, *buf, *s;
-
-	s = query ? query : __qstr;
-	if((tmp = strtok(s, token)) == NULL) {
-		__qstr = NULL;
-		return NULL;
-	}
-	buf = strrchr(tmp, ch);
-	if(!buf)
-		return NULL;
-#if defined(DEBUG)
-	printf("buf = %s\n", buf);
-#endif
-	__qstr = s;
-	return buf;
 }
