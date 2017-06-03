@@ -19,40 +19,125 @@ void startup(const char *title);
 void print_p(const char *paragraph);
 void footer(const char *copyright);
 char *getvar(char *s, const char *token, char ch);
-/* void test(void); */
+int test(void);
+void test2(void);
+int countfile(const char *filename);
+void writefile(const char *filename, const char *data, int iSwitch);
+char *readfile(const char *filename, int i);
 
 int main(int argc, char **argv, char **envp)
 {
-	char *query, *data, *env;
-
 	header("text/html");
 	startup("Simple Webpage");
+	if(!test())
+		test2();
+	footer("Copyright (C) 2017");
+	return 0;
+}
+
+int test(void)
+{
+	char *query, *data, *env;
+	int i;
+
 	env = getenv("QUERY_STRING");
 	if(!env) {
 		printf("<p>align=\"center\"><h3>Sorry but the environment variable QUERY_STRING is NULL.</h3></p>");
-		goto end_code;
+		return 1;
 	} else {
 		query = strdup(env);
 		if(!query) {
 			print_p("Cannot allocate memory for new QUERY_STRING...");
-			goto end_code;
+			return 1;
 		}
-		printf("<center><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-		while(data != NULL) {
+		i = 0;
+		do {
+			
 			data = getvar(query, "&", '=');
-			printf("<tr><th>%s</th>", data);
+			writefile("data.dat", data, i);
+			i = !i;
 			while(data != NULL) {
 				data = getvar(NULL, "&", '=');
-				printf("<td>%s</td></tr>", data);
+				writefile("data.dat", data, i);
+				i = !i;
 			}
-		}
-		printf("</table></center>");
+		} while(data != NULL);
 		free(query);
 	}
 
-end_code:
-	footer("Copyright (C) 2017");
 	return 0;
+}
+
+void test2(void)
+{
+	int i, j, lines;
+	char *data;
+
+	lines = countfile("data.dat");
+	printf("<center><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
+	i = 0;
+	while(j < lines) {
+		memset(data, 0, sizeof(data));
+		data = readfile("data.dat", i);
+		while(!i) {
+			printf("<tr><th>%s</th>", data);
+			memset(data, 0, sizeof(data));
+			data = readfile("data.dat", i);
+			printf("<td>%s</td></tr>", data);
+			i = !i;
+		}
+	}
+	printf("</table></center>");
+}
+
+int countfile(const char *filename)
+{
+	FILE *file;
+	int lines, c;
+
+	if((file = fopen(filename, "rt")) == NULL) {
+		print_p("Cannot open file.\n");
+		return -1;
+	}
+	lines = 0;
+	while((c = fgetc(file)) != EOF)
+		if(c == '\n')
+			++lines;
+	fclose(file);
+	return lines;
+}
+
+void writefile(const char *filename, const char *data, int iSwitch)
+{
+	FILE *file;
+
+	if((file = fopen(filename, "at")) == NULL) {
+		print_p("Sorry cannot write the file.");
+		return;
+	}
+	if(iSwitch == 0)
+		fprintf(file, "username=%s&", data);
+	else
+		fprintf(file, "password=%s\n", data);
+	fclose(file);
+	print_p("File was appended to...");
+}
+
+char *readfile(const char *filename, int i)
+{
+	FILE *file;
+	char data[256];
+
+	if((file = fopen(filename, "rt")) == NULL) {
+		print_p("Sorry cannot open the file.");
+		return;
+	}
+	memset(data, 0, sizeof(data));
+	if(i == 1)
+		fgets(data, '\n', file);
+	else
+		fgets(data, '\n', file);
+	fclose(file);
 }
 
 void header(const char *mime_type)
@@ -110,7 +195,7 @@ char *getvar(char *s, const char *token, char ch)
 
 /* test() - a function for testing out my getvar function.
  */
-void test(void)
+void test3(void)
 {
 	char *string = "username=AUserName&password=APassWord";
 	char *data, *tmp;
