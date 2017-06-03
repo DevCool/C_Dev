@@ -18,6 +18,8 @@ void header(const char *mime_type);
 void startup(const char *title);
 void print_p(const char *paragraph);
 void footer(const char *copyright);
+char *getvar(char *s, const char *token, char ch);
+/* void test(void); */
 
 int main(int argc, char **argv, char **envp)
 {
@@ -30,19 +32,18 @@ int main(int argc, char **argv, char **envp)
 		printf("<p>align=\"center\"><h3>Sorry but the environment variable QUERY_STRING is NULL.</h3></p>");
 		goto end_code;
 	} else {
-		query = malloc(strlen(env)+1);
+		query = strdup(env);
 		if(!query) {
 			print_p("Cannot allocate memory for new QUERY_STRING...");
 			goto end_code;
 		}
-		strncpy(query, env, strlen(env)+1);
 		printf("<p align=\"center\"><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-		if((data = strtok(query, "&"))) {
+		do {
+			data = getvar(query, "&", '=');
 			printf("<tr><th>%s</th>", data);
-		}
-		if((data = strtok(NULL, "&"))) {
-			printf("<td>%s</td></tr>", data[1]);
-		}
+			data = getvar(NULL, "&", '=');
+			printf("<td>%s</td></tr>", data);
+		} while(data != NULL);
 		printf("</table></p>");
 		free(query);
 	}
@@ -74,4 +75,41 @@ void footer(const char *copyright)
 {
 	printf("<p><footer>%s</footer></p>", copyright);
 	printf("</body></html>");
+}
+
+char *__getvar;
+
+char *getvar(char *s, const char *token, char ch)
+{
+	char *sbeg, *send;
+
+	sbeg = s ? s : __getvar;
+	if(!sbeg)
+		return NULL;
+	sbeg = strtok(s, token);
+	if(!sbeg) {
+		__getvar = NULL;
+		return NULL;
+	}
+	send = strrchr(sbeg, ch);
+	if(!send)
+		return NULL;
+	__getvar = send;
+	return send;
+}
+
+/* test() - a function for testing out my getvar function.
+ */
+void test(void)
+{
+	char *string = "username=AUserName&password=APassWord";
+	char *data, *tmp;
+
+	tmp = strdup(string);
+	data = getvar(tmp, "&", '=');
+	while(data != NULL) {
+		printf("data = %s\n", data);
+		data = getvar(NULL, "&", '=');
+	}
+	free(tmp);
 }
