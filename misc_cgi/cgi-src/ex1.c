@@ -37,14 +37,16 @@ int main(int argc, char **argv, char **envp)
 			print_p("Cannot allocate memory for new QUERY_STRING...");
 			goto end_code;
 		}
-		printf("<p align=\"center\"><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-		do {
+		printf("<center><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
+		while(data != NULL) {
 			data = getvar(query, "&", '=');
 			printf("<tr><th>%s</th>", data);
-			data = getvar(NULL, "&", '=');
-			printf("<td>%s</td></tr>", data);
-		} while(data != NULL);
-		printf("</table></p>");
+			while(data != NULL) {
+				data = getvar(NULL, "&", '=');
+				printf("<td>%s</td></tr>", data);
+			}
+		}
+		printf("</table></center>");
 		free(query);
 	}
 
@@ -77,6 +79,14 @@ void footer(const char *copyright)
 	printf("</body></html>");
 }
 
+char *strch(char *s, char ch)
+{
+	while(s && *s != 0)
+		if(*s++ == ch)
+			return s;
+	return NULL;
+}
+
 char *__getvar;
 
 char *getvar(char *s, const char *token, char ch)
@@ -91,7 +101,7 @@ char *getvar(char *s, const char *token, char ch)
 		__getvar = NULL;
 		return NULL;
 	}
-	send = strrchr(sbeg, ch);
+	send = strch(sbeg, ch);
 	if(!send)
 		return NULL;
 	__getvar = send;
