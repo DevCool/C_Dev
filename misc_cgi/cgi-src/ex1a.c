@@ -22,7 +22,8 @@ void print_p(const char *paragraph);
 void footer(const char *copyright);
 char *getvar(char *s, const char *token, char ch);
 int countfile(const char *filename);
-int readfile(FILE *file, int i);
+int readfile(const char *filename);
+char *strip(char *s, int size);
 void test2(void);
 
 int main(int argc, char *argv[])
@@ -36,8 +37,6 @@ int main(int argc, char *argv[])
 
 void test2(void)
 {
-	FILE *file;
-	int i, j, lines;
 	char cwd[256];
 
 	if(getcwd(cwd, 256) == NULL) {
@@ -46,21 +45,12 @@ void test2(void)
 	}
 	strncat(cwd, "\\", 256);
 	strncat(cwd, DATAFILE, 256);
-	if((file = fopen(cwd, "rt")) == NULL) {
-		print_p("Cannot read data file sorry :(");
-		return;
-	}
 	printf("<center><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
-	i = 0;
-	lines = countfile(DATAFILE);
-	while(j < lines) {
-		readfile(file, i);
-		i = !i;
-	}
+	if(readfile(cwd))
+		print_p("Sorry couldn't read the file properly.");
 
 error:
 	printf("</table></center>");
-	fclose(file);
 }
 
 int countfile(const char *filename)
@@ -80,20 +70,42 @@ int countfile(const char *filename)
 	return lines;
 }
 
-int readfile(FILE *file, int i)
+int readfile(const char *filename)
 {
+	FILE *file;
 	char data[256];
+	char *tmp, *dat;
 
-	memset(data, 0, sizeof(data));
-	if(!i) {
-		fgets(data, 256, file);
-		printf("<tr><th>%s</th>");
-	} else {
-		fgets(data, 256, file);
-		printf("<td>%s</td></tr>");
+	if((file = fopen(filename, "rt")) == NULL) {
+		print_p("Cannot read the data file.");
+		return 1;
 	}
+	memset(data, 0, sizeof(data));
+	while(fgets(data, sizeof(data), file) != NULL) {
+		tmp = strip(data, sizeof(data));
+		dat = getvar(tmp, "&", '=');
+		printf("<tr><th>%s</th>", dat);
+		dat = getvar(NULL, "&", '=');
+		printf("<td>%s</td></tr>", dat);
+	}
+}
 
-	return 0;
+char *strip(char *s, int size)
+{
+	char data[size];
+	char *ret;
+	int i;
+
+	memset(data, 0, size);
+	i = 0;
+	while(i < size) {
+		if(s[i] != '\n' || s[i] != '\r')
+			data[i] = s[i];
+		++i;
+	}
+	data[i] = 0;
+	ret = data;
+	return ret;
 }
 
 void header(const char *mime_type)
