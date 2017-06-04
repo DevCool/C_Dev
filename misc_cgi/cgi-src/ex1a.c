@@ -1,7 +1,7 @@
 /******************************************************
- * ex1.c - Example 1, how to write a CGI program in C *
- * for displaying information. On the form that re-   *
- * quests it.                                         *
+ * ex1a.c - Example, how to write a CGI program in C  *
+ * for displaying information. On the page that this  *
+ * program makes.                                     *
  ******************************************************
  * dev: Philip "5n4k3" Simonson                       *
  ******************************************************
@@ -13,70 +13,89 @@
 #include <string.h>
 
 /* #define DEBUG */
+#define DATAFILE "data.dat"
 
 void header(const char *mime_type);
 void startup(const char *title);
 void print_p(const char *paragraph);
 void footer(const char *copyright);
 char *getvar(char *s, const char *token, char ch);
-int test(void);
-void writefile(const char *filename, const char *data, int iSwitch);
+int countfile(const char *filename);
+int readfile(FILE *file, int i);
+void test2(void);
 
-int main(int argc, char **argv, char **envp)
+int main(int argc, char *argv[])
 {
 	header("text/html");
-	startup("Simple Webpage");
-	test();
+	startup("Simple Webpage #2");
+	test2();
 	footer("Copyright (C) 2017");
 	return 0;
 }
 
-int test(void)
+void test2(void)
 {
-	char *query, *data, *env;
-	int i;
+	FILE *file;
+	int i, j, lines;
 
-	env = getenv("QUERY_STRING");
-	if(!env) {
-		printf("<p>align=\"center\"><h3>Sorry but the environment variable QUERY_STRING is NULL.</h3></p>");
-		return 1;
-	} else {
-		query = strdup(env);
-		if(!query) {
-			print_p("Cannot allocate memory for new QUERY_STRING...");
+	if((file = fopen(DATAFILE, "rt")) == NULL) {
+		print_p("Cannot read data file sorry :(");
+		return;
+	}
+	printf("<center><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
+	i = 0;
+	lines = countfile(DATAFILE);
+	while(j < lines && !i) {
+		if(readfile(file, i))
+			goto error;
+		i = !i;
+		while(j < lines && i) {
+			if(readfile(file, i))
+				goto error;
+			i = !i;
+		}
+	}
+
+error:
+	printf("</table></center>");
+	fclose(file);
+}
+
+int countfile(const char *filename)
+{
+	FILE *file;
+	int lines, c;
+
+	if((file = fopen(filename, "rt")) == NULL) {
+		print_p("Cannot open file.\n");
+		return -1;
+	}
+	lines = 0;
+	while((c = fgetc(file)) != EOF)
+		if(c == '\n')
+			++lines;
+	fclose(file);
+	return lines;
+}
+
+int readfile(FILE *file, int i)
+{
+	char data[256];
+
+	memset(data, 0, sizeof(data));
+	if(!i) {
+		if(fgets(data, 256, file) == NULL) {
 			return 1;
 		}
-		i = 0;
-		do {
-			
-			data = getvar(query, "&", '=');
-			writefile("data.dat", data, i);
-			i = !i;
-			while((data = getvar(NULL, "&", '=')) != NULL) {
-				writefile("data.dat", data, i);
-				i = !i;
-			}
-		} while(data != NULL);
-		free(query);
+		printf("<tr><th>%s</th>");
+	} else {
+		if(fgets(data, 256, file) == NULL) {
+			return 2;
+		}
+		printf("<td>%s</td></tr>");
 	}
 
 	return 0;
-}
-
-void writefile(const char *filename, const char *data, int iSwitch)
-{
-	FILE *file;
-
-	if((file = fopen(filename, "at")) == NULL) {
-		print_p("Sorry cannot write the file.");
-		return;
-	}
-	if(iSwitch == 0)
-		fprintf(file, "username=%s&", data);
-	else
-		fprintf(file, "password=%s\n", data);
-	fclose(file);
-	print_p("File was appended to...");
 }
 
 void header(const char *mime_type)
@@ -130,20 +149,4 @@ char *getvar(char *s, const char *token, char ch)
 		return NULL;
 	__getvar = send;
 	return send;
-}
-
-/* test() - a function for testing out my getvar function.
- */
-void test3(void)
-{
-	char *string = "username=AUserName&password=APassWord";
-	char *data, *tmp;
-
-	tmp = strdup(string);
-	data = getvar(tmp, "&", '=');
-	while(data != NULL) {
-		printf("data = %s\n", data);
-		data = getvar(NULL, "&", '=');
-	}
-	free(tmp);
 }
