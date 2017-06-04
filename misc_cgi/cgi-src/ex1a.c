@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <unistd.h>
 
 /* #define DEBUG */
 #define DATAFILE "data.dat"
@@ -37,23 +38,24 @@ void test2(void)
 {
 	FILE *file;
 	int i, j, lines;
+	char cwd[256];
 
-	if((file = fopen(DATAFILE, "rt")) == NULL) {
+	if(getcwd(cwd, 256) == NULL) {
+		print_p("Cannot get the current working directory.");
+		return;
+	}
+	strncat(cwd, "\\", 256);
+	strncat(cwd, DATAFILE, 256);
+	if((file = fopen(cwd, "rt")) == NULL) {
 		print_p("Cannot read data file sorry :(");
 		return;
 	}
 	printf("<center><table><caption>User List</caption><tr><th>Usernames</th><td>Identification</td></tr>");
 	i = 0;
 	lines = countfile(DATAFILE);
-	while(j < lines && !i) {
-		if(readfile(file, i))
-			goto error;
+	while(j < lines) {
+		readfile(file, i);
 		i = !i;
-		while(j < lines && i) {
-			if(readfile(file, i))
-				goto error;
-			i = !i;
-		}
 	}
 
 error:
@@ -84,14 +86,10 @@ int readfile(FILE *file, int i)
 
 	memset(data, 0, sizeof(data));
 	if(!i) {
-		if(fgets(data, 256, file) == NULL) {
-			return 1;
-		}
+		fgets(data, 256, file);
 		printf("<tr><th>%s</th>");
 	} else {
-		if(fgets(data, 256, file) == NULL) {
-			return 2;
-		}
+		fgets(data, 256, file);
 		printf("<td>%s</td></tr>");
 	}
 
