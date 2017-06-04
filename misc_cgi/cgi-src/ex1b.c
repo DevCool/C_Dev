@@ -15,7 +15,7 @@ int main(int argc, char *argv[], char **envp)
 	header("text/html");
 	startup("Simple Webpage #3");
 	if(getcwd(cwd, sizeof(cwd)) == NULL) {
-		printf("Couldn't get current working directory.");
+		printf("<p align=\"center\">Couldn't get current working directory.</p>");
 	} else {
 		strncat(cwd, "\\", sizeof(cwd));
 		strncat(cwd, DATAFILE, sizeof(cwd));
@@ -24,6 +24,7 @@ int main(int argc, char *argv[], char **envp)
 		} else {
 			fclose(file);
 		}
+		printf("<p align=\"center\">Data records file cleared!</p>");
 	}
 	footer("Copyright (C)2017, 5n4k3");
 	return 0;
@@ -36,7 +37,7 @@ void header(const char *mime_type)
 
 void startup(const char *title)
 {
-	printf("<!DOCTYPE HTML><html><head><title>%s</title><style>header, footer { padding: 1em; color: \"#8A8A8A\"; background-color: \"#2A2A2A\"; "\
+	printf("<!DOCTYPE HTML><html><head><title>%s</title><style>header, footer { padding: 1em; color: #8A8A8A; background-color: #2A2A2A; "\
 		"text-align: center; clear: center; }</style></head><body bgcolor=\"#5B5B5B\"><p><header>%s</header></p>", title, title);
 }
 

@@ -21,16 +21,8 @@ header, footer {
 function testFunc() {
 	document.location = "/cgi-bin/ex1a.exe";
 }
-var textFile = null;
-function newFile(text) {
-	var data = new Blob([text], {type: 'text/plain'});
-	// manually revoke the object
-	if(textFile !== null) {
-		window.URL.revokeObjectURL(textFile);
-	}
-	textFile = window.URL.createObjectURL(data);
-	alert("Reset the data.dat file.");
-	return textFile;
+function clearFile() {
+	document.location = "/cgi-bin/ex1b.exe";
 }
 </script></head>
 <body bgcolor="#5C5C5C">
@@ -42,7 +34,7 @@ function newFile(text) {
 		<tr><th>Username</th><td><input type="text" name="username"></td></tr>
 		<tr><th>Password</th><td><input type="password" name="password"></td></tr>
 	</table>
-	<p align="center"><input type="submit" /><input type="button" name="viewBtn" value="View Records" onclick="testFunc()" /><input type="button" value="Clear Records" onclick="newFile('/cgi-bin/data.dat')" /></p>
+	<p align="center"><input type="submit" /><input type="button" name="viewBtn" value="View Records" onclick="testFunc()" /><input type="button" value="Clear Records" onclick="clearFile()" /></p>
 </form></div>
 
 <p><footer>Copyright (C) 2017, 5n4k3</footer></p>
