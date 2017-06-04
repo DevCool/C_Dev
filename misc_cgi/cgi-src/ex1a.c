@@ -23,7 +23,7 @@ void footer(const char *copyright);
 char *getvar(char *s, const char *token, char ch);
 int countfile(const char *filename);
 int readfile(const char *filename);
-char *strip(char *s, int size);
+void strip(char *s, int size);
 void test2(void);
 
 int main(int argc, char *argv[])
@@ -74,7 +74,7 @@ int readfile(const char *filename)
 {
 	FILE *file;
 	char data[256];
-	char *tmp, *dat;
+	char *tmp;
 
 	if((file = fopen(filename, "rt")) == NULL) {
 		print_p("Cannot read the data file.");
@@ -82,30 +82,35 @@ int readfile(const char *filename)
 	}
 	memset(data, 0, sizeof(data));
 	while(fgets(data, sizeof(data), file) != NULL) {
-		tmp = strip(data, sizeof(data));
-		dat = getvar(tmp, "&", '=');
-		printf("<tr><th>%s</th>", dat);
-		dat = getvar(NULL, "&", '=');
-		printf("<td>%s</td></tr>", dat);
+		strip(data, sizeof(data));
+		tmp = getvar(data, "&", '=');
+		printf("<tr><th>%s</th>", tmp);
+		while((tmp = getvar(NULL, "&", '='))) {
+			printf("<td>%s</td></tr>", tmp);
+		}
+		memset(data, 0, sizeof(data));
 	}
 }
 
-char *strip(char *s, int size)
+void strip(char *s, int size)
 {
 	char data[size];
-	char *ret;
 	int i;
 
 	memset(data, 0, size);
-	i = 0;
-	while(i < size) {
-		if(s[i] != '\n' || s[i] != '\r')
+	for(i = 0; i < size; ++i)
+		if(s[i] == '\n' || s[i] == '\r')
+			continue;
+		else
 			data[i] = s[i];
-		++i;
-	}
 	data[i] = 0;
-	ret = data;
-	return ret;
+	memset(s, 0, size);
+	for(i = 0; i < size; ++i)
+		if(data[i] == '\n' || data[i] == '\r')
+			continue;
+		else
+			s[i] = data[i];
+	s[i] = 0;
 }
 
 void header(const char *mime_type)
