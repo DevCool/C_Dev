@@ -80,7 +80,6 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 	HWND hwndButton1;
 	HWND hwndButton2;
 	HWND hwndText1;
-	DWORD dwTimer1;
 	BOOL bTest = FALSE;
 
 	switch(msg) {
@@ -97,19 +96,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 			if(HIWORD(wParam) == 0) {
 			}
 			if(LOWORD(wParam) == IDC_BUTTON1) {
-				dwTimer1 = GetTickCount();
-				SetDlgItemText(hwnd, IDC_EDIT1, "Connected!");
-				while(GetTickCount() < (dwTimer1 + 2000));
-				ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_HIDE);
-				ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_SHOW);
-				ShowWindow(GetDlgItem(hwnd, IDC_EDIT1), SW_HIDE);
+				w100(hwnd, TRUE);
 			}
 		break;
 		case WM_KEYDOWN:
-			if(wParam == VK_F5) {
-				bTest = !bTest;
-				w100(hwnd, bTest);
-			}
+			/* Key handling code here */
 		break;
 		case WM_CREATE:
 			if(btnControl(&hwndButton1, hwnd, GetModuleHandle(NULL), "&Connect",
@@ -156,14 +147,14 @@ static void w100(HWND hwnd, BOOL bHide)
 
 	if(bHide) {
 		dwTimer1 = GetTickCount();
-		SetDlgItemText(hwnd, IDC_EDIT1, "Connected!");
+		SetWindowText(GetDlgItem(hwnd, IDC_EDIT1), "Connected!");
 		while(GetTickCount() < (dwTimer1 + 2000));
 		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_HIDE);
 		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_SHOW);
 		ShowWindow(GetDlgItem(hwnd, IDC_EDIT1), SW_HIDE);
 	} else {
 		dwTimer1 = GetTickCount();
-		SetDlgItemText(hwnd, IDC_EDIT1, "Enter IP Address");
+		SetWindowText(GetDlgItem(hwnd, IDC_EDIT1), "Enter IP Address");
 		while(GetTickCount() < (dwTimer1 + 2000));
 		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON1), SW_SHOW);
 		ShowWindow(GetDlgItem(hwnd, IDC_BUTTON2), SW_HIDE);

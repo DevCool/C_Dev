@@ -242,7 +242,6 @@ int record_file(void)
 
 int send_file(int sockfd, struct sockaddr_storage *client, const char *filename, frame_t *frame)
 {
-	struct sockaddr_in cli;
 	FILE *file;
 	char *buf;
 	char cwd[256];
@@ -265,17 +264,14 @@ int send_file(int sockfd, struct sockaddr_storage *client, const char *filename,
 
 	bytes = 0;
 	total_bytes = 0;
-	cli = *((struct sockaddr_in *)client);
-	client_len = sizeof(cli);
 	frame->bArrived = false;
 	while(frame->bArrived == 0) {
 		bytes = fread(frame->packet.data, 1, MAXDATA, file);
 		if(bytes > 0) {
 			total_bytes += bytes;
-			if(total_bytes == MAXDATA) {
+			if(bytes == MAXDATA) {
 				frame->bArrived = true;
 			}
-			continue;
 		}
 		if(bytes == 0)
 			break;
@@ -288,13 +284,15 @@ int send_file(int sockfd, struct sockaddr_storage *client, const char *filename,
 		WSACleanup();
 		exit(1);
 	}
-	if((bytes = sendto(sockfd, buf, sizeof(frame_t), 0, (struct sockaddr *)&cli, client_len)) == -1) {
+	memcpy(buf, frame, sizeof(frame_t));
+	client_len = sizeof(struct sockaddr_storage);
+	if(sendto(sockfd, buf, sizeof(frame_t), 0, (struct sockaddr *)client, client_len) == -1) {
 		fprintf(stderr, "Couldn't send all of the data.\n");
+	} else {
+		printf("Sent %d bytes of data.\n", total_bytes);
 	}
 	free(buf);
 	fclose(file);
-	if(bytes == 0)
-		printf("Sent %d bytes of data.\n", total_bytes);
 	return 0;
 }
 

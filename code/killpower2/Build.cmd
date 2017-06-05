@@ -47,7 +47,7 @@ goto menu
 :build
 cls
 echo Building...
-set PATH=C:\Program Files\mingw-w64\x86_64-7.1.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH%
+set PATH=C:\mingw-w64\mingw64\bin;C:\mingw-w64\mingw64\x86_64-w64-mingw64\bin;%PATH%
 mingw32-make
 pause
 goto menu
@@ -55,7 +55,7 @@ goto menu
 :clean
 cls
 echo Cleaning...
-set PATH=C:\Program Files\mingw-w64\x86_64-7.1.0-posix-seh-rt_v5-rev0\mingw64\bin;%PATH%
+set PATH=C:\mingw-w64\mingw64\bin;C:\mingw-w64\mingw64\x86_64-w64-mingw64\bin;%PATH%
 mingw32-make clean
 pause
 goto menu
