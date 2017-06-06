@@ -4,7 +4,7 @@ LIB1=
 LIB2=-lws2_32
 LIB3=-lwinmm -lws2_32
 
-PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe sndrec.exe http_get.exe
+PROGRAMS:=ex1-1.exe test.exe someprog.exe svoip.exe getln_dyn.exe servreq.exe sndrec.exe http_get.exe sendmsg.exe
 
 all: $(PROGRAMS)
 
@@ -19,6 +19,9 @@ servreq.exe: servreq.c.obj
 
 someprog.exe: someprog.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB1)
+
+sendmsg.exe: sendmsg.c.obj
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB2)
 
 svoip.exe: svoip.c.obj
 	$(CC) $(CFLAGS) $^ -o $@ $(LIB3)
