@@ -1,0 +1,16 @@
+*** pow.c	2017-06-08 04:22:37.559681502 -0400
+--- pow_patch.c	2017-06-09 21:22:10.085031333 -0400
+***************
+*** 4,12 ****
+--- 4,14 ----
+  	int exp;
+  	int pow = 1;
+  
++         /* loop that goes up to 16 */
+  	for(exp = 0; exp < 16; exp++) {
+  		printf("2 to the power of %d is %d\n",exp,pow);
+  		pow *= 2;
+  	}
++         /* return successful execution */
+  	return 0;
+  }
