@@ -1,0 +1,5 @@
+;!@Install@!UTF-8!
+Title="SAB Installer v1.0"
+BeginPrompt="Do you want to install S.A.B. v0.02?"
+RunProgram="install.bat"
+;!@InstallEnd@!
