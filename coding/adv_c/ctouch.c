@@ -115,14 +115,13 @@ void writemain(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
     writefunc(filename,prototypes,ptcnt);
 }
 
-void strip(char *s) {
-    while(*s++ != 0)
-        if(*s == ';') {
-            *s = 0;
-            break;
-        } else {
-            continue;
-        }
+char *strip(const char *s) {
+    char *endp;
+    if(s == NULL)
+        return NULL;
+    endp = strpbrk(s,";");
+    *endp = 0;
+    return endp;
 }
 
 void writefunc(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
@@ -138,11 +137,9 @@ void writefunc(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
     while(i < ptcnt) {
         strip(prototypes[i]);
         fprintf(fout,"%s {\n}\n\n",prototypes[i]);
-        fputc('\n',fout);
         ++i;
     }
     fclose(fout);
-    fputc('\n',fout);
     puts("Functions written to file.");
 }
 
