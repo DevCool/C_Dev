@@ -1,11 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 
 #define MAXBUF 512
 
 int getln(char *str,size_t size);
-void writefile(FILE *fp,char *s);
+void writefile(const char *filename,char *s);
+void writemain(const char *filename);
+void writefunc(const char *filename);
 
 int main(int argc,char *argv[]) {
     FILE *file;
@@ -17,10 +20,6 @@ int main(int argc,char *argv[]) {
         fprintf(stderr,"Usage: %s source.c\n",argv[0]);
         return 0;
     }
-    if((file = fopen(argv[1],"at")) == NULL) {
-        fprintf(stderr,"Error: could not create source file.\n");
-        return 1;
-    }
     printf("C Touch - Create a C language template.\n\n");
     printf("To stop entering includes send EOF on\nblank line.\n");
     printf("Enter include files:\n");
@@ -28,18 +27,18 @@ int main(int argc,char *argv[]) {
         i = getln(s,sizeof(s));
         if(i <= 0)
             break;
-        writefile(file,s);
+        writefile(argv[1],s);
     }
 
     printf("\n\nTo stop entering function headers send EOF on\nblank line.\n");
     printf("Enter function headers:\n");
-    while(c != 'n' || c != 'N') {
+    while(1) {
         i = getln(s,sizeof(s));
         if(i <= 0)
             break;
-        writefile(file,s);
+        writefile(argv[1],s);
     }
-    fclose(file);
+    writemain(argv[1]);
     return 0;
 }
 
@@ -65,9 +64,11 @@ int getln(char *str,size_t size) {
     return i;
 }
 
-void writefile(FILE *fp,char *s) {
+void writefile(const char *filename,char *s) {
+    FILE *fp;
     int res;
 
+    fp = fopen(filename,"at");
     if(fp == NULL) {
         fprintf(stderr, "Error: no such file.\n");
         return;
@@ -77,6 +78,88 @@ void writefile(FILE *fp,char *s) {
         fprintf(stderr, "Error: cannot write to file.\n");
         return;
     }
+    fputc('\n',fp);
+    fclose(fp);
     puts("File was appended to.");
+}
+
+#define MAINFUNC\
+    "int main(int argc, char *argv[]) {\n"\
+    "\treturn 0;\n}"
+
+void writemain(const char *filename) {
+    char bfile[256];
+    FILE *fp;
+    int res;
+
+    fp = fopen(filename,"at");
+    if(fp == NULL) {
+        fprintf(stderr,"Error: no such file.\n");
+        return;
+    }
+    res = fprintf(fp,"%s",MAINFUNC);
+    if(res < 0) {
+        fprintf(stderr,"Error: cannot write to file.\n");
+        return;
+    }
+    fputc('\n',fp);
+    puts("main() was written to file.");
+    fclose(fp);
+    memset(bfile,0,sizeof(bfile));
+    sprintf(bfile,"cp %s %s.old",filename,filename);
+    system(bfile);
+    writefunc(filename);
+}
+
+void writefunc(const char *filename) {
+    FILE *fp,*fout;
+    char buf[512];
+    char s[512];
+    int c;
+
+    if((fp = fopen(filename,"rt")) == NULL) {
+        fprintf(stderr,"Error: cannot open file.\n");
+        return;
+    }
+    if((fout = fopen("tmpfile.txt","at")) == NULL) {
+        fprintf(stderr,"Error: cannot open output file.\n");
+        return;
+    }
+    memset(buf,0,sizeof(buf));
+    while(fgets(buf,sizeof(buf),fp) != NULL)
+        fprintf(fout,"%s",buf);
+    fputc('\n',fout);
+    rewind(fp);
+    memset(buf,0,sizeof(buf));
+    while(fgets(buf,sizeof(buf),fp) != NULL) {
+        memset(s,0,sizeof(s));
+        sscanf(buf,"%s;\n",s);
+        if(strncmp(buf,"int main",8) == 0) {
+            break;
+        }
+        fprintf(fout,"%s {\n}\n",s);
+    }
+    do {
+        fprintf(fout,"%s",buf);
+    } while(fgets(buf,sizeof(buf),fp));
+    fputc('\n',fout);
+    fclose(fp);
+    fclose(fout);
+    if((fp = fopen("tmpfile.txt","rt")) == NULL) {
+        fprintf(stderr,"Error: cannot open file for reading.\n");
+        return;
+    }
+    if((fout = fopen(filename,"wt")) == NULL) {
+        fprintf(stderr,"Error: cannot open file for writing.\n");
+        fclose(fp);
+        return;
+    }
+    while((c = fgetc(fp)) != EOF) {
+        fputc(c,fout);
+    }
+    fclose(fp);
+    fclose(fout);
+    remove("tmpfile.txt");
+    puts("Functions written to file.");
 }
 
