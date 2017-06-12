@@ -130,18 +130,18 @@ void writefunc(const char *filename) {
         fprintf(fout,"%s",buf);
     fputc('\n',fout);
     rewind(fp);
+    memset(s,0,sizeof(s));
     memset(buf,0,sizeof(buf));
     while(fgets(buf,sizeof(buf),fp) != NULL) {
-        memset(s,0,sizeof(s));
-        sscanf(buf,"%s;\n",s);
         if(strncmp(buf,"int main",8) == 0) {
             break;
+        } else {
+            sscanf(buf,"%s;\n",s);
+            fprintf(fout,"%s {\n}\n",s);
         }
-        fprintf(fout,"%s {\n}\n",s);
+        memset(s,0,sizeof(s));
+        memset(buf,0,sizeof(buf));
     }
-    do {
-        fprintf(fout,"%s",buf);
-    } while(fgets(buf,sizeof(buf),fp));
     fputc('\n',fout);
     fclose(fp);
     fclose(fout);
