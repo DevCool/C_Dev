@@ -114,7 +114,7 @@ void writemain(const char *filename) {
 void writefunc(const char *filename) {
     FILE *fp,*fout;
     char buf[512];
-    char s[512];
+    char *tmp;
     int c;
 
     if((fp = fopen(filename,"rt")) == NULL) {
@@ -128,19 +128,19 @@ void writefunc(const char *filename) {
     memset(buf,0,sizeof(buf));
     while(fgets(buf,sizeof(buf),fp) != NULL)
         fprintf(fout,"%s",buf);
-    fputc('\n',fout);
     rewind(fp);
-    memset(s,0,sizeof(s));
     memset(buf,0,sizeof(buf));
     while(fgets(buf,sizeof(buf),fp) != NULL) {
         if(strncmp(buf,"int main",8) == 0) {
             break;
-        } else {
-            sscanf(buf,"%s;\n",s);
-            fprintf(fout,"%s {\n}\n",s);
+        } else if(strncmp(buf,"#include",8) == 0) {
+            continue;
         }
-        memset(s,0,sizeof(s));
-        memset(buf,0,sizeof(buf));
+        tmp = strtok(buf,";");
+        if(tmp != NULL) {
+            fprintf(fout,"%s {\n}\n\n",tmp);
+            tmp = NULL;
+        }
     }
     fputc('\n',fout);
     fclose(fp);
