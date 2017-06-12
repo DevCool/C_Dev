@@ -4,17 +4,19 @@
 #include <string.h>
 
 #define MAXBUF 512
+#define MAXLINES 80
 
 int getln(char *str,size_t size);
 void writefile(const char *filename,char *s);
-void writemain(const char *filename);
-void writefunc(const char *filename);
+void writemain(const char *filename,char prototypes[][MAXBUF],int ptcnt);
+void writefunc(const char *filename,char prototypes[][MAXBUF],int ptcnt);
 
 int main(int argc,char *argv[]) {
     FILE *file;
     char s[MAXBUF];
+    char s2[MAXLINES][MAXBUF];
     char c;
-    int i;
+    int i, j;
 
     if(argc != 2) {
         fprintf(stderr,"Usage: %s source.c\n",argv[0]);
@@ -32,13 +34,18 @@ int main(int argc,char *argv[]) {
 
     printf("\n\nTo stop entering function headers send EOF on\nblank line.\n");
     printf("Enter function headers:\n");
+    j = 0;
     while(1) {
         i = getln(s,sizeof(s));
         if(i <= 0)
             break;
-        writefile(argv[1],s);
+        if(j < MAXLINES) {
+            strncpy(s2[j],s,MAXBUF);
+            writefile(argv[1],s);
+            ++j;
+        }
     }
-    writemain(argv[1]);
+    writemain(argv[1],s2,j);
     return 0;
 }
 
@@ -87,7 +94,7 @@ void writefile(const char *filename,char *s) {
     "int main(int argc, char *argv[]) {\n"\
     "\treturn 0;\n}"
 
-void writemain(const char *filename) {
+void writemain(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
     char bfile[256];
     FILE *fp;
     int res;
@@ -105,61 +112,37 @@ void writemain(const char *filename) {
     fputc('\n',fp);
     puts("main() was written to file.");
     fclose(fp);
-    memset(bfile,0,sizeof(bfile));
-    sprintf(bfile,"cp %s %s.old",filename,filename);
-    system(bfile);
-    writefunc(filename);
+    writefunc(filename,prototypes,ptcnt);
 }
 
-void writefunc(const char *filename) {
-    FILE *fp,*fout;
-    char buf[512];
-    char *tmp;
-    int c;
+void strip(char *s) {
+    while(*s++ != 0)
+        if(*s == ';') {
+            *s = 0;
+            break;
+        } else {
+            continue;
+        }
+}
 
-    if((fp = fopen(filename,"rt")) == NULL) {
-        fprintf(stderr,"Error: cannot open file.\n");
-        return;
-    }
-    if((fout = fopen("tmpfile.txt","at")) == NULL) {
+void writefunc(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
+    FILE *fout;
+    int i;
+
+    if((fout = fopen(filename,"at")) == NULL) {
         fprintf(stderr,"Error: cannot open output file.\n");
         return;
     }
-    memset(buf,0,sizeof(buf));
-    while(fgets(buf,sizeof(buf),fp) != NULL)
-        fprintf(fout,"%s",buf);
-    rewind(fp);
-    memset(buf,0,sizeof(buf));
-    while(fgets(buf,sizeof(buf),fp) != NULL) {
-        if(strncmp(buf,"int main",8) == 0) {
-            break;
-        } else if(strncmp(buf,"#include",8) == 0) {
-            continue;
-        }
-        tmp = strtok(buf,";");
-        if(tmp != NULL) {
-            fprintf(fout,"%s {\n}\n\n",tmp);
-            tmp = NULL;
-        }
-    }
+    i = 0;
     fputc('\n',fout);
-    fclose(fp);
+    while(i < ptcnt) {
+        strip(prototypes[i]);
+        fprintf(fout,"%s {\n}\n\n",prototypes[i]);
+        fputc('\n',fout);
+        ++i;
+    }
     fclose(fout);
-    if((fp = fopen("tmpfile.txt","rt")) == NULL) {
-        fprintf(stderr,"Error: cannot open file for reading.\n");
-        return;
-    }
-    if((fout = fopen(filename,"wt")) == NULL) {
-        fprintf(stderr,"Error: cannot open file for writing.\n");
-        fclose(fp);
-        return;
-    }
-    while((c = fgetc(fp)) != EOF) {
-        fputc(c,fout);
-    }
-    fclose(fp);
-    fclose(fout);
-    remove("tmpfile.txt");
+    fputc('\n',fout);
     puts("Functions written to file.");
 }
 
