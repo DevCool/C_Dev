@@ -111,7 +111,6 @@ void writeln(const char *filename) {
         return;
     }
     fclose(fp);
-    puts("Status: newline written to file.");
 }
 
 void writefile(const char *filename,char *s) {
@@ -130,7 +129,6 @@ void writefile(const char *filename,char *s) {
     }
     fputc('\n',fp);
     fclose(fp);
-    puts("File was appended to.");
 }
 
 #define MAINFUNC\
@@ -167,8 +165,21 @@ char *strip(char *s) {
     return s;
 }
 
+char *datatype(const char *s) {
+    char tmp[128], *s2;
+    int spn;
+    if(s == NULL)
+        return NULL;
+    spn = strcspn(s," ");
+    memset(tmp,0,sizeof(tmp));
+    memcpy(tmp,s,spn);
+    s2 = tmp;
+    return s2;
+}
+
 void writefunc(const char *filename,char *prototypes[],int ptcnt) {
     FILE *fout;
+    char *dtype;
     int i;
 
     if((fout = fopen(filename,"at")) == NULL) {
@@ -179,7 +190,17 @@ void writefunc(const char *filename,char *prototypes[],int ptcnt) {
     fputc('\n',fout);
     while(i < ptcnt) {
         strip(prototypes[i]);
-        fprintf(fout,"%s {\n}\n\n",prototypes[i]);
+        dtype = datatype(prototypes[i]);
+        if(strcmp(dtype,"int") == 0)
+            fprintf(fout,"%s {\n\treturn 0;\t/* returns 0 for success */\n}\n\n",prototypes[i]);
+        else if(strcmp(dtype,"void") == 0)
+            fprintf(fout,"%s {\n}\n\n",prototypes[i]);
+        else if(strcmp(dtype,"char") == 0)
+            fprintf(fout,"%s {\n\treturn -1;\t/* returns -1 (EOF) */\n}\n\n",prototypes[i]);
+        else if(strcmp(dtype,"char*") == 0)
+            fprintf(fout,"%s {\n\treturn NULL;\t/* returns NULL char pointer */\n}\n\n",prototypes[i]);
+        else
+            fprintf(fout,"%s {\n}\n\n",prototypes[i]);
         ++i;
     }
     fclose(fout);
