@@ -7,6 +7,7 @@
 #define MAXLINES 80
 
 char *getln(size_t *i);
+void writeln(const char *filename);
 void writefile(const char *filename,char *s);
 void writemain(const char *filename,char *prototypes[],int ptcnt);
 void writefunc(const char *filename,char *prototypes[],int ptcnt);
@@ -32,6 +33,7 @@ int main(int argc,char *argv[]) {
             break;
         writefile(argv[1],s);
     }
+    writeln(argv[1]);
 
     printf("\n\nTo stop entering function headers send EOF on\nblank line.\n");
     printf("Enter function headers:\n");
@@ -48,6 +50,7 @@ int main(int argc,char *argv[]) {
             ++j;
         }
     }
+    writeln(argv[1]);
     writemain(argv[1],s2,j);
     for(i = 0; i < j; ++i)
         free(s2[i]);
@@ -66,7 +69,7 @@ char *getln(size_t *i) {
         while(1) {
             c = getchar();
             if(c == EOF || c == 0x0A) {
-                *(str+pos) = 0;
+                *(str+pos) = 0x00;
                 *i = pos;
                 return str;
             } else {
@@ -84,6 +87,25 @@ char *getln(size_t *i) {
     }
     puts("Out of memory.");
     return NULL;
+}
+
+void writeln(const char *filename) {
+    FILE *fp;
+    int res;
+
+    fp = fopen(filename,"at");
+    if(fp == NULL) {
+        fprintf(stderr, "Error: cannot open file.\n");
+        return;
+    }
+    res = fputc('\n',fp);
+    if(res < 0) {
+        fprintf(stderr, "Error: cannot write newline to file.\n");
+        fclose(fp);
+        return;
+    }
+    fclose(fp);
+    puts("Status: newline written to file.");
 }
 
 void writefile(const char *filename,char *s) {
