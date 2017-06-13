@@ -3,19 +3,20 @@
 #include <stddef.h>
 #include <string.h>
 
-#define MAXBUF 2
+#define MAXBUF 512
 #define MAXLINES 80
 
-char *getln(size_t *i);
+int getln(char *str,size_t size);
 void writefile(const char *filename,char *s);
-void writemain(const char *filename,char *prototypes[],int ptcnt);
-void writefunc(const char *filename,char *prototypes[],int ptcnt);
+void writemain(const char *filename,char prototypes[][MAXBUF],int ptcnt);
+void writefunc(const char *filename,char prototypes[][MAXBUF],int ptcnt);
 
 int main(int argc,char *argv[]) {
     FILE *file;
-    char *s, *s2[MAXLINES];
-    size_t i;
-    int j;
+    char s[MAXBUF];
+    char s2[MAXLINES][MAXBUF];
+    char c;
+    int i, j;
 
     if(argc != 2) {
         fprintf(stderr,"Usage: %s source.c\n",argv[0]);
@@ -25,9 +26,7 @@ int main(int argc,char *argv[]) {
     printf("To stop entering includes send EOF on\nblank line.\n");
     printf("Enter include files:\n");
     while(1) {
-        s = getln(&i);
-        if(s == NULL)
-            exit(1);
+        i = getln(s,sizeof(s));
         if(i <= 0)
             break;
         writefile(argv[1],s);
@@ -37,53 +36,39 @@ int main(int argc,char *argv[]) {
     printf("Enter function headers:\n");
     j = 0;
     while(1) {
-        s = getln(&i);
-        if(s == NULL)
-            exit(1);
+        i = getln(s,sizeof(s));
         if(i <= 0)
             break;
         if(j < MAXLINES) {
-            s2[j] = s;
-            writefile(argv[1],s2[j]);
+            strncpy(s2[j],s,MAXBUF);
+            writefile(argv[1],s);
             ++j;
         }
     }
     writemain(argv[1],s2,j);
-    for(i = 0; i < j; ++i)
-        free(s2[i]);
     return 0;
 }
 
-char *getln(size_t *i) {
-    size_t pos, size;
-    char *str;
-    char c;
+int getln(char *str,size_t size) {
+    int c,i,j;
 
-    size = MAXBUF*sizeof(char);
-    str = malloc(size);
-    if(str != NULL) {
-        pos = 0;
-        while(1) {
-            c = getchar();
-            if(c == EOF || c == 0x0A) {
-                *(str+pos) = 0;
-                *i = pos;
-                return str;
-            } else {
-                *(str+pos) = c;
-            }
-            ++pos;
-
-            if(pos >= size) {
-                size += MAXBUF*sizeof(char);
-                str = realloc(str,size);
-                if(str == NULL)
-                    break;
-            }
-        }
+    if(str == NULL)
+    return -1;
+    j = 0;
+    memset(str,0,size);
+    for(i = 0; (c = getchar()) != EOF && c != 0x0D; ++i)
+	if(i < size-1) {
+		str[i] = c;
+		++j;
+	}
+    if(c == 0x0D) {
+	str[i] = c;
+	++i;
+	++j;
     }
-    puts("Out of memory.");
-    return NULL;
+    ++j;
+    str[j] = 0;
+    return i;
 }
 
 void writefile(const char *filename,char *s) {
@@ -109,7 +94,7 @@ void writefile(const char *filename,char *s) {
     "int main(int argc, char *argv[]) {\n"\
     "\treturn 0;\n}"
 
-void writemain(const char *filename,char *prototypes[],int ptcnt) {
+void writemain(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
     char bfile[256];
     FILE *fp;
     int res;
@@ -130,16 +115,16 @@ void writemain(const char *filename,char *prototypes[],int ptcnt) {
     writefunc(filename,prototypes,ptcnt);
 }
 
-char *strip(char *s) {
-    int spn;
+char *strip(const char *s) {
+    char *endp;
     if(s == NULL)
         return NULL;
-    spn = strcspn(s,";");
-    s[spn] = 0;
-    return s;
+    endp = strpbrk(s,";");
+    *endp = 0;
+    return endp;
 }
 
-void writefunc(const char *filename,char *prototypes[],int ptcnt) {
+void writefunc(const char *filename,char prototypes[][MAXBUF],int ptcnt) {
     FILE *fout;
     int i;
 
