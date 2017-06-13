@@ -1,3 +1,9 @@
+/*******************************************************************
+ * ctouch.c - simple program to make a template C source file.
+ * by Philip "5n4k3" Simonson.
+ *******************************************************************
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
