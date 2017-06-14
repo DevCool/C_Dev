@@ -17,7 +17,7 @@
 char *getln(size_t *i);
 void writeln(const char *filename);
 void writefile(const char *filename,char *s);
-void writemain(const char *filename,char *prototypes[],int ptcnt);
+void writemain(const char *filename);
 void writefunc(const char *filename,char *prototypes[],int ptcnt);
 void writemake(int argc,char** argv[]);
 
@@ -63,7 +63,8 @@ int main(int argc,char *argv[]) {
         }
         writeln(argv[k]);
         if(strstr(argv[k],"main") != NULL)
-            writemain(argv[k],s2,j);
+            writemain(argv[k]);
+        writefunc(argv[k],s2,j);
         for(i = 0; i < j; ++i)
             if(s2[i] != NULL)
                 free(s2[i]);
@@ -144,7 +145,7 @@ void writefile(const char *filename,char *s) {
     "int main(int argc, char *argv[]) {\n"\
     "\treturn 0;\n}"
 
-void writemain(const char *filename,char *prototypes[],int ptcnt) {
+void writemain(const char *filename) {
     char bfile[256];
     FILE *fp;
     int res;
@@ -162,7 +163,6 @@ void writemain(const char *filename,char *prototypes[],int ptcnt) {
     fputc('\n',fp);
     puts("main() was written to file.");
     fclose(fp);
-    writefunc(filename,prototypes,ptcnt);
 }
 
 char *strip(char *s) {
