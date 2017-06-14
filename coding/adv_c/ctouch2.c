@@ -62,7 +62,8 @@ int main(int argc,char *argv[]) {
             }
         }
         writeln(argv[k]);
-        writemain(argv[k],s2,j);
+        if(strstr(argv[k],"main") != NULL)
+            writemain(argv[k],s2,j);
         for(i = 0; i < j; ++i)
             if(s2[i] != NULL)
                 free(s2[i]);
