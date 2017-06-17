@@ -8,6 +8,9 @@
 char* getline(void);
 char* strip_line(const char *s);
 
+/* getline() - func to get user input (a line of text) with
+ * out the use of fgets() function.
+ */
 char* getline(void) {
 	char *buf, c;
 	int i, j;
@@ -52,6 +55,8 @@ char* getline(void) {
 	return NULL;	/* returns NULL char pointer */
 }
 
+/* strip_line() - strips last character off the given string.
+ */
 char* strip_line(const char *s) {
 	char *ret;
 

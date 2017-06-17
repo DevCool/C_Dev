@@ -4,17 +4,17 @@ LDFLAGS?=
 SRC=main.c helper.c 
 OBJ=$(SRC:.c=.c.o)
 
-all: progname
+all: getline
 
 %.c.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-progname: $(OBJ)
+getline: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean
 
 clean:
 	@echo "Cleaning project..."
-	rm -f *.o progname
+	rm -f *.o getline
 	@echo "Done cleaning."
