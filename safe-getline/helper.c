@@ -3,8 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 
+/* how big can the buffer grow */
 #define MAXLINE 1
 
+/* function prototypes */
 char* getline(void);
 char* strip_line(const char *s);
 
@@ -68,5 +70,24 @@ char* strip_line(const char *s) {
 	}
 	puts("Error: Out of memory.");
 	return NULL;	/* returns NULL char pointer */
+}
+
+/* test() - tests out how good my functions are.
+ */
+void test(void) {
+	char *buf, *strip;
+
+	printf("Enter your password: ");
+	buf = getline();
+	if(buf != NULL) {
+		strip = strip_line(buf);
+		if(strncmp(strip, "n385neJ", strlen(strip)+1) == 0)
+			puts("You've entered the passcode correctly.");
+		else
+			puts("You were wrong!");
+		free(strip);
+		free(buf);
+	}
+	puts("End of test.");
 }
 
