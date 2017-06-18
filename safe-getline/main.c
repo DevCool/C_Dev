@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern char* getline(void);
+extern char* getline1(void);
 extern char* strip_line(const char *s);
 extern void test(void);
 extern void test2(void);
@@ -14,7 +14,7 @@ int main(void) {
 
 	test();
 	printf("Enter a line of text below...\n");
-	buf = getline();
+	buf = getline1();
 	if(buf != NULL) {
 		printf("Your line of text is..\n%s\n", buf);
 		printf("Your line of text stripped is..\n%s\n", (strip = strip_line(buf)));

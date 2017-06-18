@@ -11,7 +11,7 @@ typedef unsigned long int size_t;
 #define LINESIZE 80
 
 /* function prototypes */
-char* getline(void);
+char* getline1(void);
 int getline2(char* s, int size);
 void pzero(char* s, size_t size);
 char* strip_line(const char *s);
@@ -19,7 +19,7 @@ char* strip_line(const char *s);
 /* getline() - func to get user input (a line of text) with
  * out the use of fgets() function.
  */
-char* getline(void) {
+char* getline1(void) {
 	char *buf, c;
 	int i, j;
 
@@ -106,11 +106,12 @@ void pzero(char* s, size_t size) {
  */
 char* strip_line(const char* s) {
 	char *ret;
+	int len = strlen(s);
 
-	ret = malloc(strlen(s));
+	ret = malloc(len);
 	if(ret != NULL) {
-		memcpy(ret, s, strlen(s)-1);
-		*(ret+strlen(s)) = 0x00;
+		strncpy(ret, s, len-1);
+		*(ret+len+1) = 0x00;
 		return ret;
 	}
 	puts("Error: Out of memory.");
@@ -125,7 +126,7 @@ void test(void) {
 	printf(" *** Test 1 ***\n\n");
 	buf = strip = NULL;
 	printf("Enter your password: ");
-	buf = getline();
+	buf = getline1();
 	if(buf != NULL) {
 		strip = strip_line(buf);
 		if(strncmp(strip, "n385neJ", strlen(strip)+1) == 0)
@@ -160,5 +161,6 @@ void test2(void) {
 			puts("Access denied!");
 	} while(1);
 	printf("\nEnd of test 2.\n");
+	free(tmp);
 }
 

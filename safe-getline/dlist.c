@@ -50,11 +50,10 @@ DLIST* DLIST_add(DLIST *list, char *data, unsigned char set) {
 void DLIST_destroy(DLIST *list) {
 	DLIST *tmp;
 	assert(list != NULL);
-	tmp = list;
-	while(tmp != NULL) {
+	while(list != NULL) {
+		tmp = list;
 		list = list->next;
 		free(tmp);
-		tmp = list;
 	}
 }
 
