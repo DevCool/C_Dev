@@ -59,15 +59,23 @@ char* getline(void) {
 	return NULL;	/* returns NULL char pointer */
 }
 
-/* getline2() - gets a line of text with allocating memory for it
+/* getline2() - gets a line of text with allocating memory for it. Plus
+ * it removes a character when you backspace.
  */
 int getline2(char* s, int size) {
 	int c, i, j;
 
 	j = 0;
-	for(i = 0; (c = getchar()) != EOF && c != 0x0A; i++)
-		if(i < size-1) {
+	for(i = 0; (c = getchar()) != EOF && c != 0x0A; )
+		if(i < size-2) {
+			if(c == 0x08) {
+				*(s+i) = 0;
+				if(i > 0)
+					--i;
+				continue;
+			}
 			*(s+i) = c;
+			++i;
 			++j;
 		}
 	if(c == 0x0A) {
