@@ -3,6 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 
+/* define size_t */
+typedef unsigned long int size_t;
+
 /* how big can the buffer grow */
 #define MAXLINE 1
 #define LINESIZE 80
@@ -10,6 +13,7 @@
 /* function prototypes */
 char* getline(void);
 int getline2(char* s, int size);
+void pzero(char* s, size_t size);
 char* strip_line(const char *s);
 
 /* getline() - func to get user input (a line of text) with
@@ -23,6 +27,7 @@ char* getline(void) {
 	buf = malloc(j);
 	if(buf != NULL) {
 		i = 0;
+		pzero(buf, j);
 		while(1) {
 			c = getchar();
 			if(c == (~(1)+1) || c == 0x0A) {
@@ -88,6 +93,15 @@ int getline2(char* s, int size) {
 	return i;
 }
 
+/* pzero() - zero block of memory that s is pointing at.
+ */
+void pzero(char* s, size_t size) {
+	size_t i;
+
+	for(i = 0; i < size; i++)
+		*(s+i) = 0x00;
+}
+
 /* strip_line() - strips last character off the given string.
  */
 char* strip_line(const char* s) {
@@ -135,7 +149,7 @@ void test2(void) {
 		if(tmp != NULL)
 			free(tmp);
 		printf("LOGON: ");
-		memset(s, 0, sizeof(s));
+		pzero(s, sizeof(s));
 		getline2(s, sizeof(s));
 		tmp = strip_line(s);
 		if(strncmp(tmp, "]exit", strlen(tmp)+1) == 0)
