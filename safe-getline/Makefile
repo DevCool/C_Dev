@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS?=-std=c89 -Wall -Wextra -pedantic
 LDFLAGS?=
-SRC=main.c helper.c 
+SRC=main.c helper.c dlist.c
 OBJ=$(SRC:.c=.c.o)
 
 all: getline
