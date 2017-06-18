@@ -6,6 +6,7 @@
 
 /* include ncurses and string headers */
 #include <ncurses.h>
+#include <unistd.h>
 #include <string.h>
 
 /* main() - entry point for all programs.
@@ -34,8 +35,12 @@ int main(void) {
 	 * printing each one. */
 	for(i = 0; i < 3; i++) {
 		move(scrnY/2+i, scrnX/2-strlen(msgs[i]));
-		for(j = 0; j < strlen(msgs[i]); j++)
+		for(j = 0; j < strlen(msgs[i]); j++) {
 			addch(msgs[i][j]);
+			refresh();
+			beep();
+			napms(175);
+		}
 		refresh();
 	}
 
