@@ -4,6 +4,7 @@
 extern char* getline(void);
 extern char* strip_line(const char *s);
 extern void test(void);
+extern void test2(void);
 
 /* main() - entry point for my program.
  */
@@ -19,6 +20,8 @@ int main(void) {
 		free(strip);
 		free(buf);
 	}
+	/* my other getline function - getline2() */
+	test2();
 	printf("End of program!\n");
 	return 0;
 }

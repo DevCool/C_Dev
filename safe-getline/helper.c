@@ -5,9 +5,11 @@
 
 /* how big can the buffer grow */
 #define MAXLINE 1
+#define LINESIZE 80
 
 /* function prototypes */
 char* getline(void);
+int getline2(char* s, int size);
 char* strip_line(const char *s);
 
 /* getline() - func to get user input (a line of text) with
@@ -57,9 +59,30 @@ char* getline(void) {
 	return NULL;	/* returns NULL char pointer */
 }
 
+/* getline2() - gets a line of text with allocating memory for it
+ */
+int getline2(char* s, int size) {
+	int c, i, j;
+
+	j = 0;
+	for(i = 0; (c = getchar()) != EOF && c != 0x0A; i++)
+		if(i < size-1) {
+			*(s+i) = c;
+			++j;
+		}
+	if(c == 0x0A) {
+		*(s+i) = 0x0A;
+		++i;
+		++j;
+	}
+	*(s+j) = 0;
+	++j;
+	return i;
+}
+
 /* strip_line() - strips last character off the given string.
  */
-char* strip_line(const char *s) {
+char* strip_line(const char* s) {
 	char *ret;
 
 	ret = malloc(strlen(s));
@@ -77,6 +100,8 @@ char* strip_line(const char *s) {
 void test(void) {
 	char *buf, *strip;
 
+	printf(" *** Test 1 ***\n\n");
+	buf = strip = NULL;
 	printf("Enter your password: ");
 	buf = getline();
 	if(buf != NULL) {
@@ -89,5 +114,29 @@ void test(void) {
 		free(buf);
 	}
 	puts("End of test.");
+}
+
+/* test2() - tests out how good my getline2 function is.
+ */
+void test2(void) {
+	char s[BUFSIZ], *tmp;
+
+	tmp = NULL;
+	printf("\n *** Test 2 ***\n\n");
+	do {
+		if(tmp != NULL)
+			free(tmp);
+		printf("LOGON: ");
+		memset(s, 0, sizeof(s));
+		getline2(s, sizeof(s));
+		tmp = strip_line(s);
+		if(strncmp(tmp, "]exit", strlen(tmp)+1) == 0)
+			break;
+		else if(strncmp(tmp, "aw96b6", strlen(tmp)+1) == 0)
+			puts("Access granted!");
+		else
+			puts("Access denied!");
+	} while(1);
+	printf("\nEnd of test 2.\n");
 }
 
