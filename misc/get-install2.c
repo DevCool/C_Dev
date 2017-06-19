@@ -132,6 +132,7 @@ int dl_url(const char *host, char *path) {
 	curl_easy_setopt(myHandle, CURLOPT_WRITEFUNCTION, writebuf);
 	curl_easy_setopt(myHandle, CURLOPT_WRITEDATA, (void *)&output);
 	curl_easy_setopt(myHandle, CURLOPT_URL, url);
+	curl_easy_setopt(myHandle, CURLOPT_FOLLOWLOCATION, 1L);
 	result = curl_easy_perform(myHandle);
 	curl_easy_cleanup(myHandle);
 
@@ -153,10 +154,10 @@ int dl_url(const char *host, char *path) {
 	if((bytes = fwrite(output.data, 1, output.size, file)) != output.size) {
 		fprintf(stderr, "Error: Failed to write %ul bytes of data.\n", bytes);
 		return 1;
+	} else {
+		puts("File transfer complete.");
 	}
 	fclose(file);
-	if(bytes == 0)
-		puts("File transfer complete.");
 
 	if(output.data) {
 		free(output.data);
