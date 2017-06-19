@@ -82,7 +82,7 @@ char *strip_line(char *s, int size) {
 }
 
 /* defined HTTP header */
-#define HTTP_HEADER "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: closed\r\n\r\n"
+#define HTTP_HEADER "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
 
 /* dl_url() - downloads a file from a URL.
  */
@@ -146,8 +146,10 @@ int dl_url(const char *host, char *path) {
 			continue;
 		} else {
 			printf("Received %d bytes of data from %s.\n", bytes, host);
-			if(fwrite(data, 1, bytes, file) < 0)
+			if((bytes = fwrite(data, 1, bytes, file)) < 0)
 				fprintf(stderr, "Error: writing to file %s.\n", fname);
+			else
+				printf("%d bytes written to file %s.\n", bytes, fname);
 		}
 	} while(bytes != 0);
 	fclose(file);
