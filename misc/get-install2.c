@@ -1,6 +1,6 @@
 /*
  *************************************************************
- * get-install.c - Program to get a specific url and download
+ * get-install2.c - Program to get a specific url and download
  * that whatever the URL contains.
  * by 5n4k3
  *************************************************************
@@ -125,7 +125,7 @@ int dl_url(const char *host, char *path) {
 
 	/* get remote file */
 	memset(url, 0, sizeof(url));
-	if(strchr(path, '/') != 0)
+	if(*(path+0) == '/')
 		snprintf(url, sizeof(url), "http://%s%s", host, path);
 	else
 		snprintf(url, sizeof(url), "http://%s/%s", host, path);
@@ -133,6 +133,8 @@ int dl_url(const char *host, char *path) {
 	curl_easy_setopt(myHandle, CURLOPT_WRITEDATA, (void *)&output);
 	curl_easy_setopt(myHandle, CURLOPT_URL, url);
 	curl_easy_setopt(myHandle, CURLOPT_FOLLOWLOCATION, 1L);
+	puts("Downloading file...");
+
 	result = curl_easy_perform(myHandle);
 	curl_easy_cleanup(myHandle);
 
@@ -151,8 +153,15 @@ int dl_url(const char *host, char *path) {
 		fprintf(stderr, "Cannot open output file for writing.\n");
 		return 1;
 	}
-	if((bytes = fwrite(output.data, 1, output.size, file)) != output.size) {
-		fprintf(stderr, "Error: Failed to write %ul bytes of data.\n", bytes);
+	bytes = fwrite(output.data, 1L, output.size, file);
+	if(bytes != output.size) {
+		fprintf(stderr, "Error: Failed to write %u bytes of data.\n", bytes);
+		fclose(file);
+		if(output.data) {
+			free(output.data);
+			output.data = 0;
+			output.size = 0;
+		}
 		return 1;
 	} else {
 		puts("File transfer complete.");
