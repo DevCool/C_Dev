@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <unistd.h>
 #include <time.h>
 
@@ -15,11 +16,9 @@
 #include <netdb.h>
 
 #define HTTP_LOCATION 512
-#define HTTP_MAXHEADER 7
-#define HTTP_INFO 128
+#define HTTP_INFO 512
 
 struct _HTTPHEADERstruct {
-    char *data[HTTP_MAXHEADER];
     int result;
     char info[HTTP_INFO];
     char loc[HTTP_LOCATION];
@@ -27,11 +26,12 @@ struct _HTTPHEADERstruct {
 typedef struct _HTTPHEADERstruct HTTPHEADER;
 
 void timer(int sec);
-void get_httpheader(HTTPHEADER *header);
+void get_httpheader(HTTPHEADER *header, char *data, size_t size);
 
 #define HTTP_REQUEST "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
 
 int main(int argc, char **argv) {
+    HTTPHEADER header;
     struct addrinfo hints, *servinfo;
     int sockfd;
     char request[BUFSIZ];
@@ -60,8 +60,6 @@ int main(int argc, char **argv) {
     }
     puts("Connected.");
 
-    puts("Waiting 2 seconds...");
-    timer(2);
     memset(request, 0, sizeof(request));
     snprintf(request, sizeof(request), HTTP_REQUEST, argv[2], argv[1]);
     bytes = send(sockfd, request, strlen(request), 0);
@@ -85,21 +83,30 @@ int main(int argc, char **argv) {
     scanf("%c", &c);
     fflush(stdin);
     if(c == 'y' || c == 'Y') {
-        data[bytes] = 0;
-        printf("Domain requested data below...\n\n%s\n", data);
+        get_httpheader(&header, data, sizeof(data));
+        printf("Domain requested data below...\n\n%s\n", header.info);
     } else {
         puts("You didn't want to see the requested data?");
     }
     
-    puts("Waiting for 2 seconds...");
-    timer(2);
     puts("Disconnected.");
     close(sockfd);
     return 0;
 }
 
-void get_httpheader(HTTPHEADER *header) {
+void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
+    char *pos;
+    size_t len;
 
+    if(data == NULL)
+        return;
+    memset(header, 0, sizeof(HTTPHEADER));
+    data[size] = 0;
+    pos = strstr(data, "\r\n\r\n");
+    if(pos == NULL)
+        return;
+    memcpy(header->info, data, pos-data);
+    header->info[pos-data] = 0;
 }
 
 void timer(int sec) {
