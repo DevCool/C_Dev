@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     int sockfd;
     char request[BUFSIZ];
     char data[BUFSIZ];
-    int bytes;
+    int bytes, c;
 
     if(argc != 3) {
         fprintf(stderr, "Usage: %s <hostname> <urlpath>\n", argv[0]);
@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
     }
     puts("Connected.");
 
+    puts("Waiting 2 seconds...");
     timer(2);
     memset(request, 0, sizeof(request));
     snprintf(request, sizeof(request), HTTP_REQUEST, argv[2], argv[1]);
@@ -80,7 +81,18 @@ int main(int argc, char **argv) {
     } else
         puts("Request received.");
 
-    timer(3);
+    printf("Did you want to see the received transmission (Y/N)? ");
+    scanf("%c", &c);
+    fflush(stdin);
+    if(c == 'y' || c == 'Y') {
+        data[bytes] = 0;
+        printf("Domain requested data below...\n\n%s\n", data);
+    } else {
+        puts("You didn't want to see the requested data?");
+    }
+    
+    puts("Waiting for 2 seconds...");
+    timer(2);
     puts("Disconnected.");
     close(sockfd);
     return 0;
