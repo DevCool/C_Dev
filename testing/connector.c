@@ -4,6 +4,8 @@
  ************************************************************
  */
 
+
+/* standard headers */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,12 +13,15 @@
 #include <unistd.h>
 #include <time.h>
 
+/* linux network headers */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
+#define CHUNK_SIZE 256
 #define HTTP_LOCATION 512
 
+/* My HTTP header struct */
 struct _HTTPHEADERstruct {
     int result;
     char loc[HTTP_LOCATION];
@@ -24,19 +29,26 @@ struct _HTTPHEADERstruct {
 };
 typedef struct _HTTPHEADERstruct HTTPHEADER;
 
-void timer(int sec);
+/* My function prototypes */
+char *get_httpdata(int sockfd, size_t *total);
 void destroy_headerinfo(HTTPHEADER *header);
 void get_httpheader(HTTPHEADER *header, char *data, size_t size);
 void get_headerinfo(HTTPHEADER *header);
+void timer(int sec);
 
+
+/* The request string you have to send to a HTTP server */
 #define HTTP_REQUEST "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
 
+/* main() - entry point for program.
+ */
 int main(int argc, char **argv) {
     HTTPHEADER header;
     struct addrinfo hints, *servinfo;
     int sockfd;
     char request[BUFSIZ];
-    char data[BUFSIZ];
+    char *data;
+    size_t total_bytes;
     int bytes, c;
 
     if(argc != 3) {
@@ -71,20 +83,16 @@ int main(int argc, char **argv) {
     } else
         puts("Request sent.");
 
-    memset(data, 0, sizeof(data));
-    bytes = recv(sockfd, data, sizeof(data), 0);
-    if(bytes < 0) {
-        fprintf(stderr, "Error: Couldn't receive data.\n");
+    if((data = get_httpdata(sockfd, &total_bytes)) == NULL) {
         close(sockfd);
         return 1;
-    } else
-        puts("Request received.");
+    }
 
     printf("Did you want to see the received transmission (Y/N)? ");
     scanf("%c", &c);
     fflush(stdin);
     if(c == 'y' || c == 'Y') {
-        get_httpheader(&header, data, sizeof(data));
+        get_httpheader(&header, data, total_bytes);
         printf("Domain requested data below...\n\n%s\n\nProcessing data...\n",
                 header.info);
         get_headerinfo(&header);
@@ -96,10 +104,44 @@ int main(int argc, char **argv) {
     }
     
     puts("Disconnected.");
+    free(data);
     close(sockfd);
     return 0;
 }
 
+/* get_httpdata() - function to get website data.
+ */
+char *get_httpdata(int sockfd, size_t *total) {
+    char buffer[CHUNK_SIZE];
+    char *data = NULL;
+    size_t size = 0;
+    size_t total_bytes = 0;
+    size_t bytes;
+
+    while((bytes = recv(sockfd, buffer, CHUNK_SIZE, 0)) > 0) {
+        if(total_bytes >= size) {
+            size += CHUNK_SIZE;
+            data = realloc(data, size);
+            if(data == NULL)
+                return NULL;
+        }
+        memcpy(&data[total_bytes], buffer, bytes);
+        total_bytes += bytes;
+    }
+
+    if(bytes == 0) {
+        printf("Transfer of %u bytes received successfully.\n", total_bytes);
+        *total = total_bytes;
+        return data;
+    } else {
+        fprintf(stderr, "Transfer of %u bytes failed.\n", bytes);
+        free(data);
+    }
+    return NULL;
+}
+
+/* destroy_headerinfo() - destroys the http header info structure.
+ */
 void destroy_headerinfo(HTTPHEADER *header) {
     if(header == NULL)
         return;
@@ -108,6 +150,8 @@ void destroy_headerinfo(HTTPHEADER *header) {
     header->result = 0;
 }
 
+/* get_httpheader() - strips the header out of the data.
+ */
 void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
     char *pos;
     size_t len;
@@ -124,11 +168,16 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
     header->info[pos-data] = 0;
 }
 
+/* get_headerinfo() - strips out the http response and location if
+ * one exists.
+ */
 void get_headerinfo(HTTPHEADER *header) {
     sscanf(header->info, "HTTP/1.1 %d %*[^\r]\r\nLocation: %s\r\n",
             &header->result, header->loc);
 }
 
+/* timer() - function for a simple timer.
+ */
 void timer(int sec) {
     clock_t start = clock();
 
