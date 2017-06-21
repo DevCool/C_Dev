@@ -23,8 +23,10 @@
 
 /* My HTTP header struct */
 struct _HTTPHEADERstruct {
+    int info_size;
     int result;
     char loc[HTTP_LOCATION];
+    char *data;
     char *info;
 };
 typedef struct _HTTPHEADERstruct HTTPHEADER;
@@ -98,6 +100,7 @@ int main(int argc, char **argv) {
         get_headerinfo(&header);
         printf("Response: %d\nLocation: %s\n\n", header.result,
                 header.loc);
+        printf("Data below...\n%s\n", header.data);
         destroy_headerinfo(&header);
     } else {
         puts("You didn't want to see the requested data?");
@@ -146,8 +149,10 @@ void destroy_headerinfo(HTTPHEADER *header) {
     if(header == NULL)
         return;
     free(header->info);
+    free(header->data);
     memset(header->loc, 0, sizeof(HTTP_LOCATION));
     header->result = 0;
+    header->info_size = 0;
 }
 
 /* get_httpheader() - strips the header out of the data.
@@ -166,6 +171,10 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
     header->info = malloc((pos-data)+1);
     memcpy(header->info, data, pos-data);
     header->info[pos-data] = 0;
+    header->info_size = pos-data+2;
+    header->data = malloc((size-(pos-data))+1);
+    memcpy(header->data, &data[header->info_size], size-(pos-data));
+    header->data[(size-(pos-data))+1] = 0;
 }
 
 /* get_headerinfo() - strips out the http response and location if
