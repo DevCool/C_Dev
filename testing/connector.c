@@ -126,7 +126,7 @@ char *get_httpdata(int sockfd, size_t *total) {
 
     while((bytes = recv(sockfd, buffer, CHUNK_SIZE, 0)) > 0) {
         if(total_bytes >= size) {
-            size += CHUNK_SIZE;
+            size += bytes;
             data = realloc(data, size);
             if(data == NULL)
                 return NULL;
