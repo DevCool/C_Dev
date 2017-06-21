@@ -16,17 +16,18 @@
 #include <netdb.h>
 
 #define HTTP_LOCATION 512
-#define HTTP_INFO 512
 
 struct _HTTPHEADERstruct {
     int result;
-    char info[HTTP_INFO];
     char loc[HTTP_LOCATION];
+    char *info;
 };
 typedef struct _HTTPHEADERstruct HTTPHEADER;
 
 void timer(int sec);
+void destroy_headerinfo(HTTPHEADER *header);
 void get_httpheader(HTTPHEADER *header, char *data, size_t size);
+void get_headerinfo(HTTPHEADER *header);
 
 #define HTTP_REQUEST "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
 
@@ -84,7 +85,12 @@ int main(int argc, char **argv) {
     fflush(stdin);
     if(c == 'y' || c == 'Y') {
         get_httpheader(&header, data, sizeof(data));
-        printf("Domain requested data below...\n\n%s\n", header.info);
+        printf("Domain requested data below...\n\n%s\n\nProcessing data...\n",
+                header.info);
+        get_headerinfo(&header);
+        printf("Response: %d\nLocation: %s\n\n", header.result,
+                header.loc);
+        destroy_headerinfo(&header);
     } else {
         puts("You didn't want to see the requested data?");
     }
@@ -92,6 +98,14 @@ int main(int argc, char **argv) {
     puts("Disconnected.");
     close(sockfd);
     return 0;
+}
+
+void destroy_headerinfo(HTTPHEADER *header) {
+    if(header == NULL)
+        return;
+    free(header->info);
+    memset(header->loc, 0, sizeof(HTTP_LOCATION));
+    header->result = 0;
 }
 
 void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
@@ -105,8 +119,14 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
     pos = strstr(data, "\r\n\r\n");
     if(pos == NULL)
         return;
+    header->info = malloc((pos-data)+1);
     memcpy(header->info, data, pos-data);
     header->info[pos-data] = 0;
+}
+
+void get_headerinfo(HTTPHEADER *header) {
+    sscanf(header->info, "HTTP/1.1 %d %*[^\r]\r\nLocation: %s\r\n",
+            &header->result, header->loc);
 }
 
 void timer(int sec) {
