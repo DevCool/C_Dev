@@ -1,5 +1,8 @@
 /************************************************************
- * Program to get HTTP header info.
+ * Program     : Connector
+ * Description : Program to get HTTP header info.
+ * Version     : 0.2
+ ************************************************************
  * by Philip "5n4k3" Simonson
  ************************************************************
  */
