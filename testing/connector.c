@@ -172,8 +172,25 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
  * one exists.
  */
 void get_headerinfo(HTTPHEADER *header) {
-    sscanf(header->info, "HTTP/1.1 %d %*[^\r]\r\nLocation: %s\r\n",
-            &header->result, header->loc);
+    char *tok;
+    char found = 0;
+
+    tok = strtok(header->info, "\r\n");
+    if(strncmp(tok, "HTTP/", 5) == 0)
+        sscanf(tok, "HTTP/1.1 %d %*[^\r]\r\n", &header->result);
+
+    while(tok != NULL) {
+        tok = strtok(NULL, "\r\n");
+        if(tok == NULL)
+            return;
+        if(strncmp(tok, "Location:", 9) == 0) {
+            sscanf(tok, "Location: %s\r\n", header->loc);
+            found = 1;
+        }
+    }
+
+    if(!found)
+        snprintf(header->loc, 5, "None");
 }
 
 /* timer() - function for a simple timer.
