@@ -27,6 +27,7 @@
 /* My HTTP header struct */
 struct _HTTPHEADERstruct {
     int info_size;
+    float version;
     int result;
     char loc[HTTP_LOCATION];
     char *data;
@@ -34,23 +35,30 @@ struct _HTTPHEADERstruct {
 };
 typedef struct _HTTPHEADERstruct HTTPHEADER;
 
-/* My function prototypes */
+/* My http function prototypes */
+int handle_redirect(HTTPHEADER *header);
 char *get_httpdata(int sockfd, size_t *total);
+
+/* My info header function prototypes */
+HTTPHEADER setup_headerinfo(void);
 void destroy_headerinfo(HTTPHEADER *header);
 void get_httpheader(HTTPHEADER *header, char *data, size_t size);
 void get_headerinfo(HTTPHEADER *header);
+
+/* My misc function prototypes */
 void timer(int sec);
 
 
 /* The request string you have to send to a HTTP server */
-#define HTTP_REQUEST "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
+#define HTTP_REQUEST "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n"
+#define HTTP_REDIRECT "GET %s HTTP/%.1f\r\nHost: %s\r\n\r\n"
 
 /* main() - entry point for program.
  */
 int main(int argc, char **argv) {
     HTTPHEADER header;
     struct addrinfo hints, *servinfo;
-    int sockfd;
+    int sockfd, newsockfd;
     char request[BUFSIZ];
     char *data;
     size_t total_bytes;
@@ -76,6 +84,7 @@ int main(int argc, char **argv) {
         close(sockfd);
         return 1;
     }
+    freeaddrinfo(servinfo);
     puts("Connected.");
 
     memset(request, 0, sizeof(request));
@@ -88,28 +97,89 @@ int main(int argc, char **argv) {
     } else
         puts("Request sent.");
 
+    header = setup_headerinfo();
     if((data = get_httpdata(sockfd, &total_bytes)) == NULL) {
+        fprintf(stderr, "Cannot get website data.\n");
         close(sockfd);
         return 1;
     }
 
+    get_httpheader(&header, data, total_bytes);
+    get_headerinfo(&header);
+#if !defined(NDEBUG)
+    printf("Website Info...\n===================\n%s\n===================\n",
+            header.info);
+    printf("Version: %.1f\nResult: %d\nLocation: %s\n",
+            header.version, header.result, header.loc);
+#endif
+
+    if(header.result == 301 || header.result == 302) {
+        if((newsockfd = handle_redirect(&header)) < 0) {
+            free(data);
+            destroy_headerinfo(&header);
+            return 1;
+        } else {
+            char domain[BUFSIZ];
+            char uripath[BUFSIZ];
+            /* clear variables for new location storage */
+            memset(request, 0, sizeof(request));
+            memset(domain, 0, sizeof(domain));
+            memset(uripath, 0, sizeof(uripath));
+            free(data);
+            destroy_headerinfo(&header);
+            sscanf(header.loc, "http://%[^/]%s", domain, uripath);
+            snprintf(request, sizeof(request), HTTP_REDIRECT, uripath,
+                    1.0, domain);
+            data = get_httpdata(newsockfd, &total_bytes);
+            if(data == NULL) {
+                fprintf(stderr, "Cannot get website data.\n");
+                close(newsockfd);
+                return 1;
+            } else {
+                get_httpheader(&header, data, total_bytes);
+                get_headerinfo(&header);
+
+                /* send request to new connection */
+                bytes = send(newsockfd, request, strlen(request), 0);
+                if(bytes < 0) {
+                    fprintf(stderr, "Cannot send HTTP request to site.\n");
+                    close(newsockfd);
+                    return 1;
+                } else {
+#if !defined(NDEBUG)
+                    printf("Website Info...\n====================\n%s\n"\
+                            "=====================\n", header.info);
+                    printf("Version: %.1f\nResult: %d\nLocation: %s\n",
+                            header.version, header.result, header.loc);
+#endif
+                    sockfd = newsockfd;
+                }
+            }
+        }
+    }
+
     printf("Did you want to see the received transmission (Y/N)? ");
-    scanf("%c", &c);
-    fflush(stdin);
+    c = getchar();
+    getchar();
     if(c == 'y' || c == 'Y') {
-        get_httpheader(&header, data, total_bytes);
         printf("Domain requested data below...\n\n%s\n\nProcessing data...\n",
                 header.info);
-        get_headerinfo(&header);
         printf("Response: %d\nLocation: %s\n\n", header.result,
                 header.loc);
-        printf("Data below...\n%s\n", header.data);
-        destroy_headerinfo(&header);
     } else {
         puts("You didn't want to see the requested data?");
     }
-    
+   
+    printf("Did you want to see the data received (Y/N)? ");
+    c = getchar();
+    getchar();
+    if(c == 'y' || c == 'Y')
+        printf("Data below...\n\n%s\n", header.data);
+    else
+        printf("You chose not to see the data.\n");
+
     puts("Disconnected.");
+    destroy_headerinfo(&header);
     free(data);
     close(sockfd);
     return 0;
@@ -146,6 +216,55 @@ char *get_httpdata(int sockfd, size_t *total) {
     return NULL;
 }
 
+/* handle_redirect() - handles HTTP redirection.
+ */
+int handle_redirect(HTTPHEADER *header) {
+    struct addrinfo hints, *servinfo = NULL;
+    char domain[256];
+    char uripath[1024];
+    int sockfd, res;
+
+    memset(&hints, 0, sizeof(hints));
+    memset(domain, 0, sizeof(domain));
+    memset(uripath, 0, sizeof(uripath));
+
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    
+    if((res = sscanf(header->loc, "http://%[^/]/%s", domain, uripath)) < 1 || res > 2) {
+        fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
+        return -1;
+    }
+    if(getaddrinfo(domain, "80", &hints, &servinfo) < 0) {
+        fprintf(stderr, "Could not get addr info.\n");
+        return -1;
+    }
+    if((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+        fprintf(stderr, "Could not open a new socket.\n");
+        return -1;
+    }
+    if(connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen) < 0) {
+        fprintf(stderr, "Could not connect to new server.\n");
+        return -1;
+    }
+    freeaddrinfo(servinfo);
+
+    puts("Connected.");
+    return sockfd;
+}
+
+/* setup_headerinfo() - initializes the http header info structure.
+ */
+HTTPHEADER setup_headerinfo(void) {
+    HTTPHEADER header;
+    memset(&header, 0, sizeof(header));
+    header.info = NULL;
+    header.data = NULL;
+    header.result = 0;
+    header.version = 0.0;
+    return header;
+}
+
 /* destroy_headerinfo() - destroys the http header info structure.
  */
 void destroy_headerinfo(HTTPHEADER *header) {
@@ -156,53 +275,52 @@ void destroy_headerinfo(HTTPHEADER *header) {
     memset(header->loc, 0, sizeof(HTTP_LOCATION));
     header->result = 0;
     header->info_size = 0;
+    header->version = 0.0;
 }
 
 /* get_httpheader() - strips the header out of the data.
  */
 void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
-    char *pos;
-    size_t len;
+    char *info = NULL;
 
     if(data == NULL)
         return;
-    memset(header, 0, sizeof(HTTPHEADER));
     data[size] = 0;
-    pos = strstr(data, "\r\n\r\n");
-    if(pos == NULL)
-        return;
-    header->info = malloc((pos-data)+1);
-    memcpy(header->info, data, pos-data);
-    header->info[pos-data] = 0;
-    header->info_size = pos-data+2;
-    header->data = malloc((size-(pos-data))+1);
-    memcpy(header->data, &data[header->info_size], size-(pos-data));
-    header->data[(size-(pos-data))+1] = 0;
+    info = strstr(data, "\r\n\r\n");
+    header->info_size = info-data;
+    header->info = malloc(header->info_size+1);
+    memcpy(header->info, data, header->info_size);
+    header->info[header->info_size+1] = 0;
+    header->data = malloc((size-header->info_size)+1);
+    memcpy(header->data, &data[header->info_size],
+            size-header->info_size);
+    header->data[(size-header->info_size)+1] = 0;
 }
 
 /* get_headerinfo() - strips out the http response and location if
  * one exists.
  */
 void get_headerinfo(HTTPHEADER *header) {
-    char *tok;
+    char *data = strdup(header->info);
+    char *tok = NULL;
     char found = 0;
 
-    tok = strtok(header->info, "\r\n");
+    tok = strtok(data, "\r\n");
     if(strncmp(tok, "HTTP/", 5) == 0)
-        sscanf(tok, "HTTP/1.1 %d %*[^\r]\r\n", &header->result);
+        sscanf(tok, "HTTP/%f %d %*[^\r]\r\n",
+                &header->version, &header->result);
 
-    while(tok != NULL) {
-        tok = strtok(NULL, "\r\n");
-        if(tok == NULL)
-            return;
+    while(tok != NULL && !found) {
         if(strncmp(tok, "Location:", 9) == 0) {
             sscanf(tok, "Location: %s\r\n", header->loc);
             found = 1;
         }
+        tok = strtok(NULL, "\r\n");
     }
 
     if(!found)
         snprintf(header->loc, 5, "None");
+    free(data);
 }
 
 /* timer() - function for a simple timer.
