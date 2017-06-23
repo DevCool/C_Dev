@@ -124,8 +124,8 @@ int main(int argc, char **argv) {
             memset(request, 0, sizeof(request));
             memset(uripath, 0, sizeof(uripath));
             free(data);
-            destroy_headerinfo(&header);
             sscanf(header.loc, "http://%[^/]%s", domain, uripath);
+            destroy_headerinfo(&header);
             snprintf(request, sizeof(request), HTTP_REQUEST, uripath, domain);
             bytes = send(sockfd, request, strlen(request), 0);
             if(bytes < 0) {
@@ -139,6 +139,7 @@ int main(int argc, char **argv) {
                 close(sockfd);
                 return 1;
             } else {
+                header = setup_headerinfo();
                 get_httpheader(&header, data, total_bytes);
                 get_headerinfo(&header);
 
