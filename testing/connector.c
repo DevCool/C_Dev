@@ -50,8 +50,7 @@ void timer(int sec);
 
 
 /* The request string you have to send to a HTTP server */
-#define HTTP_REQUEST "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n"
-#define HTTP_REDIRECT "GET %s HTTP/%.1f\r\nHost: %s\r\n\r\n"
+#define HTTP_REQUEST "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: HTTPTool/1.0\r\n\r\n"
 
 /* main() - entry point for program.
  */
@@ -114,7 +113,7 @@ int main(int argc, char **argv) {
 #endif
 
     if(header.result == 301 || header.result == 302) {
-        if((newsockfd = handle_redirect(&header)) < 0) {
+        if((sockfd = handle_redirect(&header)) < 0) {
             free(data);
             destroy_headerinfo(&header);
             return 1;
@@ -123,37 +122,32 @@ int main(int argc, char **argv) {
             char uripath[BUFSIZ];
             /* clear variables for new location storage */
             memset(request, 0, sizeof(request));
-            memset(domain, 0, sizeof(domain));
             memset(uripath, 0, sizeof(uripath));
             free(data);
             destroy_headerinfo(&header);
             sscanf(header.loc, "http://%[^/]%s", domain, uripath);
-            snprintf(request, sizeof(request), HTTP_REDIRECT, uripath,
-                    1.0, domain);
-            data = get_httpdata(newsockfd, &total_bytes);
+            snprintf(request, sizeof(request), HTTP_REQUEST, uripath, domain);
+            bytes = send(sockfd, request, strlen(request), 0);
+            if(bytes < 0) {
+                fprintf(stderr, "Cannot send HTTP request to site.\n");
+                close(sockfd);
+                return 1;
+            }
+            data = get_httpdata(sockfd, &total_bytes);
             if(data == NULL) {
                 fprintf(stderr, "Cannot get website data.\n");
-                close(newsockfd);
+                close(sockfd);
                 return 1;
             } else {
                 get_httpheader(&header, data, total_bytes);
                 get_headerinfo(&header);
 
-                /* send request to new connection */
-                bytes = send(newsockfd, request, strlen(request), 0);
-                if(bytes < 0) {
-                    fprintf(stderr, "Cannot send HTTP request to site.\n");
-                    close(newsockfd);
-                    return 1;
-                } else {
 #if !defined(NDEBUG)
-                    printf("Website Info...\n====================\n%s\n"\
-                            "=====================\n", header.info);
-                    printf("Version: %.1f\nResult: %d\nLocation: %s\n",
-                            header.version, header.result, header.loc);
+                printf("Website Info...\n====================\n%s\n"\
+                        "=====================\n", header.info);
+                printf("Version: %.1f\nResult: %d\nLocation: %s\n",
+                        header.version, header.result, header.loc);
 #endif
-                    sockfd = newsockfd;
-                }
             }
         }
     }
