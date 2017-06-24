@@ -24,6 +24,7 @@
 #define CHUNK_SIZE 256
 #define HTTP_LOCATION 512
 #define HTTP_CTYPE 256
+#define HTTP_PROTO 6
 
 /* My Found enumeration */
 enum _HTTPFOUND {
@@ -37,6 +38,7 @@ struct _HTTPHEADERstruct {
     int info_size;
     float version;
     int result;
+    char proto[HTTP_PROTO];
     char loc[HTTP_LOCATION];
     char ctype[HTTP_CTYPE];
     char *data;
@@ -74,6 +76,7 @@ int main(int argc, char **argv) {
     char *data;
     size_t total_bytes;
     int bytes, c;
+    int res;
 
     if(argc != 3) {
         fprintf(stderr, "Usage: %s <hostname> <urlpath>\n", argv[0]);
@@ -124,7 +127,8 @@ int main(int argc, char **argv) {
             header.version, header.result, header.loc);
 #endif
 
-    while(header.result == 301 || header.result == 302) {
+    res = header.result;
+    while(res == 301 || res == 302) {
         if((sockfd = handle_redirect(&header)) < 0) {
             free(data);
             destroy_headerinfo(&header);
@@ -161,6 +165,7 @@ int main(int argc, char **argv) {
                 printf("Version: %.1f\nResult: %d\nLocation: %s\n",
                         header.version, header.result, header.loc);
 #endif
+                res = header.result;
             }
         }
     }
@@ -239,12 +244,9 @@ int handle_redirect(HTTPHEADER *header) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     
-    if((res = sscanf(header->loc, "http://%[^/]%s", domain, uripath)) < 1 || res > 2) {
+    if((res = sscanf(header->loc, "http://%[^/]%s", domain, uripath)) != 2) {
         fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
         return -1;
-    } else if((res = sscanf(header->loc, "https://%[^/]%s", domain, uripath)) < 1 || res > 2) {
-        fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
-        return -2;
     }
     if(getaddrinfo(domain, "80", &hints, &servinfo) < 0) {
         fprintf(stderr, "Could not get addr info.\n");
@@ -273,6 +275,7 @@ int create_conn(const char *domain) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
+
     if(getaddrinfo(domain, "80", &hints, &servinfo) < 0) {
         fprintf(stderr, "Error: Cannot get address information.\n");
         return -1;
@@ -338,16 +341,17 @@ int http_download(HTTPHEADER *header, int *sockfd, const char *domain,
     printf("Filename: %s.%s\n", fname, ext);
     snprintf(filename, sizeof(filename), "%s.%s", fname, ext);
     snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
-    bytes = send(*sockfd, request, strlen(request), 0);
-    if(bytes < 0) {
-        fprintf(stderr, "Error: Sending request string.\n");
-        return 2;
-    }
 
     if((*sockfd = create_conn(domain)) < 0) {
         fprintf(stderr, "Error: Could not reconnect to host.\n");
         return -1;
     }
+    bytes = send(*sockfd, request, strlen(request), 0);
+    if(bytes < 0) {
+        fprintf(stderr, "Error: Sending request string.\n");
+        return -1;
+    }
+
     if((file = fopen(filename, "wb")) == NULL) {
         fprintf(stderr, "Error: Cannot open file for writing.\n");
         return -1;
@@ -376,11 +380,10 @@ int http_download(HTTPHEADER *header, int *sockfd, const char *domain,
  */
 HTTPHEADER setup_headerinfo(void) {
     HTTPHEADER header;
-    memset(&header, 0, sizeof(header));
+    memset(&header, 0, sizeof(HTTPHEADER));
     header.info = NULL;
     header.data = NULL;
-    header.result = 0;
-    header.version = 0.0;
+    strncpy(header.proto, "http", 5);
     return header;
 }
 
@@ -391,11 +394,7 @@ void destroy_headerinfo(HTTPHEADER *header) {
         return;
     free(header->info);
     free(header->data);
-    memset(header->loc, 0, sizeof(HTTP_LOCATION));
-    memset(header->ctype, 0, sizeof(HTTP_CTYPE));
-    header->result = 0;
-    header->info_size = 0;
-    header->version = 0.0;
+    memset(header, 0, sizeof(HTTPHEADER));
 }
 
 /* get_httpheader() - strips the header out of the data.
