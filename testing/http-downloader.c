@@ -22,6 +22,7 @@
 #include <netdb.h>
 
 #define CHUNK_SIZE 256
+#define HTTP_INFOSIZE 2048
 #define HTTP_LOCATION 512
 #define HTTP_CTYPE 256
 #define HTTP_PROTO 6
@@ -61,6 +62,7 @@ void get_headerinfo(HTTPHEADER *header);
 int create_conn(const char *domain);
 int get_filename(const char *path, char *fname, char *ext);
 void timer(int sec);
+void clear_filebuffer(FILE *fp);
 
 
 /* The request string you have to send to a HTTP server */
@@ -169,7 +171,8 @@ int main(int argc, char **argv) {
     }
 
     printf("Did you want to see the received transmission (Y/N)? ");
-    scanf("%c%[*]", &c);
+    scanf("%c", &c);
+    clear_filebuffer(stdin);
     if(c == 'y' || c == 'Y') {
         printf("Domain requested data below...\n\n%s\n\nProcessing data...\n",
                 header.info);
@@ -178,11 +181,11 @@ int main(int argc, char **argv) {
     } else {
         puts("You didn't want to see the requested data?");
     }
-   
-    if(strcmp(header.ctype, "text/plain") != 0
-            || strcmp(header.ctype, "text/html") != 0) {
+  
+    if(header.result != 404) {
         printf("Did you want to download the file (Y/N)? ");
-        scanf("%c%[*]", &c);
+        scanf("%c", &c);
+        clear_filebuffer(stdin);
         if(c == 'y' || c == 'Y') {
             free(data);
             close(sockfd);
@@ -426,7 +429,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
  * one exists.
  */
 void get_headerinfo(HTTPHEADER *header) {
-    char info[1024];
+    char info[HTTP_INFOSIZE];
     char *tok = NULL;
     char found[FOUND_COUNT];
 
@@ -468,4 +471,11 @@ void timer(int sec) {
         if(secs >= 5)
             break;
     }
+}
+
+/* clear_filebuffer() - function to clear input buffer.
+ */
+void clear_filebuffer(FILE *fp) {
+    int c;
+    while((c = getc(stdin)) != EOF && c != 0x0A);
 }
