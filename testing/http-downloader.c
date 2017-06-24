@@ -47,7 +47,7 @@ typedef struct _HTTPHEADERstruct HTTPHEADER;
 /* My http function prototypes */
 int handle_redirect(HTTPHEADER *header);
 char *get_httpdata(int sockfd, size_t *total);
-int http_download(HTTPHEADER *header, int sockfd, const char *domain, const char *uri);
+int http_download(HTTPHEADER *header, int *sockfd, const char *domain, const char *uri);
 
 /* My info header function prototypes */
 HTTPHEADER setup_headerinfo(void);
@@ -56,6 +56,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size);
 void get_headerinfo(HTTPHEADER *header);
 
 /* My misc function prototypes */
+int create_conn(const char *domain);
 int get_filename(const char *path, char *fname, char *ext);
 void timer(int sec);
 
@@ -180,8 +181,10 @@ int main(int argc, char **argv) {
             || strcmp(header.ctype, "text/html") == 0) {
         printf("Did you want to download the file (Y/N)? ");
         scanf("%c%[*]", &c);
-        if(c == 'y' || c == 'Y')
-            http_download(&header, sockfd, argv[1], argv[2]);
+        if(c == 'y' || c == 'Y') {
+            close(sockfd);
+            http_download(&header, &sockfd, argv[1], argv[2]);
+        }
     }
     puts("Disconnected.");
     destroy_headerinfo(&header);
@@ -239,6 +242,9 @@ int handle_redirect(HTTPHEADER *header) {
     if((res = sscanf(header->loc, "http://%[^/]%s", domain, uripath)) < 1 || res > 2) {
         fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
         return -1;
+    } else if((res = sscanf(header->loc, "https://%[^/]%s", domain, uripath)) < 1 || res > 2) {
+        fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
+        return -2;
     }
     if(getaddrinfo(domain, "80", &hints, &servinfo) < 0) {
         fprintf(stderr, "Could not get addr info.\n");
@@ -255,6 +261,33 @@ int handle_redirect(HTTPHEADER *header) {
     freeaddrinfo(servinfo);
 
     puts("Connected.");
+    return sockfd;
+}
+
+/* create_conn() - creates a new connection to the requested host.
+ */
+int create_conn(const char *domain) {
+    struct addrinfo hints, *servinfo;
+    int sockfd;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    if(getaddrinfo(domain, "80", &hints, &servinfo) < 0) {
+        fprintf(stderr, "Error: Cannot get address information.\n");
+        return -1;
+    }
+    if((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+        fprintf(stderr, "Error: Could not create a socket.\n");
+        return -1;
+    }
+    if(connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen) < 0) {
+        fprintf(stderr, "Error: Could not connect to server.\n"\
+                "Host might be unreachable...\n");
+        return -1;
+    }
+    freeaddrinfo(servinfo);
+    puts("Connected");
     return sockfd;
 }
 
@@ -285,7 +318,7 @@ int get_filename(const char *path, char *fname, char *ext) {
 /* http_download() - content-type not text/plain or text/html then
  * download the content.
  */
-int http_download(HTTPHEADER *header, int sockfd, const char *domain,
+int http_download(HTTPHEADER *header, int *sockfd, const char *domain,
         const char *uri) {
     FILE *file = NULL;
     char filename[261];
@@ -305,18 +338,22 @@ int http_download(HTTPHEADER *header, int sockfd, const char *domain,
     printf("Filename: %s.%s\n", fname, ext);
     snprintf(filename, sizeof(filename), "%s.%s", fname, ext);
     snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
-    bytes = send(sockfd, request, strlen(request), 0);
+    bytes = send(*sockfd, request, strlen(request), 0);
     if(bytes < 0) {
         fprintf(stderr, "Error: Sending request string.\n");
         return 2;
     }
 
+    if((*sockfd = create_conn(domain)) < 0) {
+        fprintf(stderr, "Error: Could not reconnect to host.\n");
+        return -1;
+    }
     if((file = fopen(filename, "wb")) == NULL) {
         fprintf(stderr, "Error: Cannot open file for writing.\n");
         return -1;
     }
     total_bytes = 0;
-    while((bytesRead = recv(sockfd, data, CHUNK_SIZE, 0)) > 0) {
+    while((bytesRead = recv(*sockfd, data, CHUNK_SIZE, 0)) > 0) {
         bytesWritten = fwrite(data, 1, bytes, file);
         if(bytesWritten < 0)
             fprintf(stderr, "Error: Writing data.. trying again.\n");
