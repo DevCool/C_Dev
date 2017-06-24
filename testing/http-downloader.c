@@ -127,8 +127,7 @@ int main(int argc, char **argv) {
             header.version, header.result, header.loc);
 #endif
 
-    res = header.result;
-    while(res == 301 || res == 302) {
+    while(header.result == 301 || header.result == 302) {
         if((sockfd = handle_redirect(&header)) < 0) {
             free(data);
             destroy_headerinfo(&header);
@@ -165,14 +164,12 @@ int main(int argc, char **argv) {
                 printf("Version: %.1f\nResult: %d\nLocation: %s\n",
                         header.version, header.result, header.loc);
 #endif
-                res = header.result;
             }
         }
     }
 
     printf("Did you want to see the received transmission (Y/N)? ");
-    c = getchar();
-    getchar();
+    scanf("%c%[*]", &c);
     if(c == 'y' || c == 'Y') {
         printf("Domain requested data below...\n\n%s\n\nProcessing data...\n",
                 header.info);
