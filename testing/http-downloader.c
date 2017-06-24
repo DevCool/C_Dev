@@ -426,23 +426,28 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
  * one exists.
  */
 void get_headerinfo(HTTPHEADER *header) {
-    char *data = strdup(header->info);
+    char info[1024];
     char *tok = NULL;
-    char found[FOUND_COUNT] = {0};
+    char found[FOUND_COUNT];
 
-    tok = strtok(data, "\r\n");
+    strncpy(info, header->info, sizeof(info));
+    tok = strtok(info, "\r\n");
     if(strncmp(tok, "HTTP/", 5) == 0)
         sscanf(tok, "HTTP/%f %d %*[^\r]\r\n",
                 &header->version, &header->result);
 
     while(tok != NULL) {
         if(strncmp(tok, "Location:", 9) == 0) {
-            sscanf(tok, "Location: %s\r\n", header->loc);
-            found[FOUND_LOC] = 1;
+            if(sscanf(tok, "Location: %s\r\n", header->loc) != 1)
+                found[FOUND_LOC] = 0;
+            else
+                found[FOUND_LOC] = 1;
         }
         if(strncmp(tok, "Content-Type:", 13) == 0) {
-            sscanf(tok, "Content-Type: %s\r\n", header->ctype);
-            found[FOUND_CTYPE] = 1;
+            if(sscanf(tok, "Content-Type: %s\r\n", header->ctype) != 1)
+                found[FOUND_CTYPE] = 0;
+            else
+                found[FOUND_CTYPE] = 1;
         }
         tok = strtok(NULL, "\r\n");
     }
@@ -450,8 +455,7 @@ void get_headerinfo(HTTPHEADER *header) {
     if(!found[FOUND_LOC])
         snprintf(header->loc, HTTP_LOCATION, "None");
     if(!found[FOUND_CTYPE])
-        snprintf(header->ctype, HTTP_CTYPE, "Was Text or HTML");
-    free(data);
+        snprintf(header->ctype, HTTP_CTYPE, "Not Found");
 }
 
 /* timer() - function for a simple timer.
