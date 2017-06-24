@@ -47,8 +47,7 @@ typedef struct _HTTPHEADERstruct HTTPHEADER;
 /* My http function prototypes */
 int handle_redirect(HTTPHEADER *header);
 char *get_httpdata(int sockfd, size_t *total);
-int http_download(HTTPHEADER *header, int sockfd, const char *domain,
-        const char *uri);
+int http_download(HTTPHEADER *header, int sockfd, const char *domain, const char *uri);
 
 /* My info header function prototypes */
 HTTPHEADER setup_headerinfo(void);
@@ -57,6 +56,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size);
 void get_headerinfo(HTTPHEADER *header);
 
 /* My misc function prototypes */
+int get_filename(const char *path, char *fname, char *ext);
 void timer(int sec);
 
 
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
             header.version, header.result, header.loc);
 #endif
 
-    if(header.result == 301 || header.result == 302) {
+    while(header.result == 301 || header.result == 302) {
         if((sockfd = handle_redirect(&header)) < 0) {
             free(data);
             destroy_headerinfo(&header);
@@ -258,13 +258,39 @@ int handle_redirect(HTTPHEADER *header) {
     return sockfd;
 }
 
+/* get_filename() - gets filename from a full path.
+ */
+int get_filename(const char *path, char *fname, char *ext) {
+    char found = 0;
+    char *tmp, *dot;
+    const char *end;
+
+    end = path;
+    while(*end++ != 0);
+    if((tmp = strrchr(path, '/')) != NULL)
+        found = 1;
+    if((dot = strrchr(path, '.')) != NULL) {
+        if(found)
+            strncpy(fname, &tmp[1], dot-tmp-1);
+        else
+            strncpy(fname, path, dot-path);
+        strncpy(ext, &(*(dot+1)), end-dot);
+    } else {
+        return 1;
+    }
+
+    return 0;
+}
+
 /* http_download() - content-type not text/plain or text/html then
  * download the content.
  */
 int http_download(HTTPHEADER *header, int sockfd, const char *domain,
         const char *uri) {
     FILE *file = NULL;
-    char filename[256];
+    char filename[261];
+    char fname[256];
+    char ext[5];
     char request[512];
     char data[CHUNK_SIZE];
     long int total_bytes;
@@ -272,29 +298,17 @@ int http_download(HTTPHEADER *header, int sockfd, const char *domain,
     int bytes, res;
 
     memset(filename, 0, sizeof(filename));
+    memset(fname, 0, sizeof(fname));
+    memset(ext, 0, sizeof(ext));
     memset(request, 0, sizeof(request));
-    if(strncmp(header->loc, "", HTTP_LOCATION) != 0) {
-        if((res = sscanf(header->loc, "%*[^/]%s", filename)) != 1) {
-            fprintf(stderr, "Error: Couldn't get filename.\n");
-            return 1;
-        }
-        snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
-        bytes = send(sockfd, request, strlen(request), 0);
-        if(bytes < 0) {
-            fprintf(stderr, "Error: Failed to send request to server.\n");
-            return -1;
-        }
-    } else {
-        if((res = sscanf(uri, "%*[^/]%s", filename)) != 1) {
-            fprintf(stderr, "Error: Couldn't get filename.\n");
-            return 1;
-        }
-        snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
-        bytes = send(sockfd, request, strlen(request), 0);
-        if(bytes < 0) {
-            fprintf(stderr, "Error: Failed to send request to server.\n");
-            return -1;
-        }
+    res = get_filename(uri, fname, ext);
+    printf("Filename: %s.%s\n", fname, ext);
+    snprintf(filename, sizeof(filename), "%s.%s", fname, ext);
+    snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
+    bytes = send(sockfd, request, strlen(request), 0);
+    if(bytes < 0) {
+        fprintf(stderr, "Error: Sending request string.\n");
+        return 2;
     }
 
     if((file = fopen(filename, "wb")) == NULL) {
