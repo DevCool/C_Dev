@@ -67,7 +67,7 @@ size_t copy_file(FILE *fin, FILE *fout) {
 
     bytesRead = read(fileno(fin), data, CHUNK_SIZE);
     if(bytesRead > 0)
-        bytesWritten = fwrite(data, bytesRead, 1, fout);
+        bytesWritten = fwrite(data, 1, bytesRead, fout);
     if(bytesWritten == bytesRead)
         return total_bytes;
     else

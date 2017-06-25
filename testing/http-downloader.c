@@ -50,7 +50,7 @@ typedef struct _HTTPHEADERstruct HTTPHEADER;
 /* My http function prototypes */
 int handle_redirect(HTTPHEADER *header);
 char *get_httpdata(int sockfd, size_t *total);
-char *http_download(HTTPHEADER *header, int *sockfd, const char *domain, const char *uri);
+size_t http_download(int sockfd, const char *uri, const char *domain);
 
 /* My info header function prototypes */
 HTTPHEADER setup_headerinfo(void);
@@ -63,6 +63,7 @@ int create_conn(const char *domain);
 int get_filename(const char *path, char *fname, char *ext);
 void timer(int sec);
 void clear_filebuffer(FILE *fp);
+size_t file_download(int sockfd, FILE *fout);
 
 
 /* The request string you have to send to a HTTP server */
@@ -129,7 +130,8 @@ int main(int argc, char **argv) {
             header.version, header.result, header.loc);
 #endif
 
-    while(header.result == 301 || header.result == 302) {
+    while((header.result == 301 || header.result == 302)
+            && header.result != 404) {
         if((sockfd = handle_redirect(&header)) < 0) {
             free(data);
             destroy_headerinfo(&header);
@@ -187,9 +189,7 @@ int main(int argc, char **argv) {
         scanf("%c", &c);
         clear_filebuffer(stdin);
         if(c == 'y' || c == 'Y') {
-            free(data);
-            close(sockfd);
-            data = http_download(&header, &sockfd, argv[1], argv[2]);
+            total_bytes = http_download(sockfd, argv[2], argv[1]);
         }
     }
     puts("Disconnected.");
@@ -323,16 +323,13 @@ int get_filename(const char *path, char *fname, char *ext) {
 /* http_download() - content-type not text/plain or text/html then
  * download the content.
  */
-char *http_download(HTTPHEADER *header, int *sockfd, const char *domain,
-        const char *uri) {
+size_t http_download(int sockfd, const char *uri, const char *domain) {
     FILE *file = NULL;
     char filename[261];
     char fname[256];
     char ext[5];
     char request[512];
-    char *data;
     size_t total_bytes;
-    int bytesWritten;
     int bytes, res;
 
     memset(filename, 0, sizeof(filename));
@@ -340,47 +337,39 @@ char *http_download(HTTPHEADER *header, int *sockfd, const char *domain,
     memset(ext, 0, sizeof(ext));
     memset(request, 0, sizeof(request));
     res = get_filename(uri, fname, ext);
+    if(res != 0) {
+        fprintf(stderr, "Error: Could not get file name.\n");
+        return -1;
+    }
     printf("Filename: %s.%s\n", fname, ext);
     snprintf(filename, sizeof(filename), "%s.%s", fname, ext);
     snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
 
-    if((*sockfd = create_conn(domain)) < 0) {
+    if((sockfd = create_conn(domain)) < 0) {
         fprintf(stderr, "Error: Could not reconnect to host.\n");
-        return NULL;
+        return -1;
     }
-    bytes = send(*sockfd, request, strlen(request), 0);
+    bytes = send(sockfd, request, strlen(request), 0);
     if(bytes < 0) {
         fprintf(stderr, "Error: Sending request string.\n");
-        return NULL;
+        return -1;
     }
 
-    destroy_headerinfo(header);
-    *header = setup_headerinfo();
-    data = get_httpdata(*sockfd, &total_bytes);
-    if(data == NULL) {
-        fprintf(stderr, "Error: Failed to get data from site.\n");
-        return NULL;
-    } else {
-        get_httpheader(header, data, total_bytes);
-        get_headerinfo(header);
-        if((file = fopen(filename, "wb")) == NULL) {
-            fprintf(stderr, "Error: Cannot open file for writing.\n");
-            free(data);
-            return NULL;
-        }
-        bytesWritten = fwrite(data, 1, total_bytes, file);
-        if(bytesWritten == total_bytes) {
-            printf("Total bytes received: %u\nSaved to: %s\n",
-                total_bytes, filename);
-        } else {
-            printf("Failed to write all data to file.\n");
-        }
-        destroy_headerinfo(header);
+    if((file = fopen(filename, "wb")) == NULL) {
+        fprintf(stderr, "Error: Cannot open file for writing.\n");
+        return -1;
+    }
+    total_bytes = file_download(sockfd, file);
+    if(total_bytes < 0) {
+        fprintf(stderr, "Error: Could not download the file.\n");
         fclose(file);
-        return data;
+        return -1;
+    } else {
+        printf("Total bytes downloaded: %lu\nFile download was succesful!\n",
+            total_bytes);
     }
-
-    return NULL;
+    fclose(file);
+    return total_bytes;
 }
 
 /* setup_headerinfo() - initializes the http header info structure.
@@ -429,7 +418,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
  * one exists.
  */
 void get_headerinfo(HTTPHEADER *header) {
-    char info[HTTP_INFOSIZE];
+    char info[header->info_size];
     char *tok = NULL;
     char found[FOUND_COUNT];
 
@@ -478,4 +467,21 @@ void timer(int sec) {
 void clear_filebuffer(FILE *fp) {
     int c;
     while((c = getc(stdin)) != EOF && c != 0x0A);
+}
+
+/* file_download() - function to download a file.
+ */
+size_t file_download(int sockfd, FILE *fout) {
+    char data[CHUNK_SIZE];
+    int bytesRead, bytesWritten;
+    static size_t total_bytes = 0;
+
+    bytesRead = read(sockfd, data, sizeof(data));
+    if(bytesRead > 0)
+        bytesWritten = fwrite(data, 1, bytesRead, fout);
+    if(bytesWritten == bytesRead)
+        return total_bytes;
+    else
+        total_bytes += bytesWritten;
+    file_download(sockfd, fout);
 }
