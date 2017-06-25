@@ -1,3 +1,9 @@
+/**************************************************
+ * copier_r.c - Simple recursive copy functions
+ * by Philip "5n4k3" Simonson
+ **************************************************
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
