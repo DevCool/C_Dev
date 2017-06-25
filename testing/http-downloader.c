@@ -129,35 +129,28 @@ int main(int argc, char **argv) {
     printf("Version: %.1f\nResult: %d\nLocation: %s\n",
             header.version, header.result, header.loc);
 #endif
+    if(header.result == 404) {
+        puts("Uri path not found on server.");
+        free(data);
+        destroy_headerinfo(&header);
+        close(sockfd);
+        return 1;
+    }
 
-    while((header.result == 301 || header.result == 302)
-            && header.result != 404) {
-        if((sockfd = handle_redirect(&header)) < 0) {
+    while(header.result == 301 || header.result == 302) {
+        sockfd = handle_redirect(&header);
+        if(sockfd < 0) {
             free(data);
             destroy_headerinfo(&header);
             return 1;
         } else {
-            char domain[BUFSIZ];
-            char uripath[BUFSIZ];
-            /* clear variables for new location storage */
-            memset(request, 0, sizeof(request));
-            memset(uripath, 0, sizeof(uripath));
-            free(data);
-            sscanf(header.loc, "http://%[^/]%s", domain, uripath);
-            destroy_headerinfo(&header);
-            snprintf(request, sizeof(request), HTTP_REQUEST, uripath, domain);
-            bytes = send(sockfd, request, strlen(request), 0);
-            if(bytes < 0) {
-                fprintf(stderr, "Cannot send HTTP request to site.\n");
-                close(sockfd);
-                return 1;
-            }
             data = get_httpdata(sockfd, &total_bytes);
             if(data == NULL) {
                 fprintf(stderr, "Cannot get website data.\n");
                 close(sockfd);
                 return 1;
             } else {
+                destroy_headerinfo(&header);
                 header = setup_headerinfo();
                 get_httpheader(&header, data, total_bytes);
                 get_headerinfo(&header);
@@ -168,6 +161,10 @@ int main(int argc, char **argv) {
                 printf("Version: %.1f\nResult: %d\nLocation: %s\n",
                         header.version, header.result, header.loc);
 #endif
+                if(header.result == 404) {
+                    puts("Uri path not found on server.");
+                    break;
+                }
             }
         }
     }
@@ -194,8 +191,7 @@ int main(int argc, char **argv) {
     }
     puts("Disconnected.");
     destroy_headerinfo(&header);
-    if(data != NULL)
-        free(data);
+    free(data);
     close(sockfd);
     return 0;
 }
@@ -234,37 +230,29 @@ char *get_httpdata(int sockfd, size_t *total) {
 /* handle_redirect() - handles HTTP redirection.
  */
 int handle_redirect(HTTPHEADER *header) {
-    struct addrinfo hints, *servinfo = NULL;
     char domain[256];
-    char uripath[1024];
+    char uripath[512];
+    char request[1024];
     int sockfd, res;
 
-    memset(&hints, 0, sizeof(hints));
+    memset(request, 0, sizeof(request));
     memset(domain, 0, sizeof(domain));
     memset(uripath, 0, sizeof(uripath));
 
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    
-    if((res = sscanf(header->loc, "http://%[^/]%s", domain, uripath)) != 2) {
+    if(sscanf(header->loc, "http://%[^/]%s", domain, uripath) != 2) {
         fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
         return -1;
     }
-    if(getaddrinfo(domain, "80", &hints, &servinfo) < 0) {
-        fprintf(stderr, "Could not get addr info.\n");
+    sockfd = create_conn(domain);
+    if(sockfd < 0)
+        return -1;
+    snprintf(request, sizeof(request), HTTP_REQUEST, uripath, domain);
+    res = send(sockfd, request, strlen(request), 0);
+    if(res < 0) {
+        puts("Failed to send redirection request.");
+        close(sockfd);
         return -1;
     }
-    if((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-        fprintf(stderr, "Could not open a new socket.\n");
-        return -1;
-    }
-    if(connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen) < 0) {
-        fprintf(stderr, "Could not connect to new server.\n");
-        return -1;
-    }
-    freeaddrinfo(servinfo);
-
-    puts("Connected.");
     return sockfd;
 }
 
@@ -407,7 +395,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
     header->info_size = info-data;
     header->info = malloc(header->info_size+1);
     memcpy(header->info, data, header->info_size);
-    header->info[header->info_size+1] = 0;
+    header->info[header->info_size] = 0;
     header->data = malloc((size-header->info_size)+1);
     memcpy(header->data, &data[header->info_size],
             size-header->info_size);
