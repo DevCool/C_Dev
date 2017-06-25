@@ -262,4 +262,3 @@ void writemake(int argc,char **argv[]) {
     fclose(fout);
     puts("Makefile was written successfully.");
 }
-
