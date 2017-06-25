@@ -26,6 +26,7 @@
 #define HTTP_LOCATION 512
 #define HTTP_CTYPE 256
 #define HTTP_PROTO 6
+#define HTTP_URLSIZE 512
 
 /* My Found enumeration */
 enum _HTTPFOUND {
@@ -39,6 +40,8 @@ struct _HTTPHEADERstruct {
     int info_size;
     float version;
     int result;
+    char domain[HTTP_URLSIZE];
+    char uri[HTTP_URLSIZE];
     char proto[HTTP_PROTO];
     char loc[HTTP_LOCATION];
     char ctype[HTTP_CTYPE];
@@ -50,13 +53,14 @@ typedef struct _HTTPHEADERstruct HTTPHEADER;
 /* My http function prototypes */
 int handle_redirect(HTTPHEADER *header);
 char *get_httpdata(int sockfd, size_t *total);
-size_t http_download(int sockfd, const char *uri, const char *domain);
+size_t http_download(const char *uri, const char *domain);
 
 /* My info header function prototypes */
 HTTPHEADER setup_headerinfo(void);
 void destroy_headerinfo(HTTPHEADER *header);
 void get_httpheader(HTTPHEADER *header, char *data, size_t size);
 void get_headerinfo(HTTPHEADER *header);
+int get_urlinfo(const char *url, char *uripath, char *domain);
 
 /* My misc function prototypes */
 int create_conn(const char *domain);
@@ -150,8 +154,6 @@ int main(int argc, char **argv) {
                 close(sockfd);
                 return 1;
             } else {
-                destroy_headerinfo(&header);
-                header = setup_headerinfo();
                 get_httpheader(&header, data, total_bytes);
                 get_headerinfo(&header);
 
@@ -186,7 +188,12 @@ int main(int argc, char **argv) {
         scanf("%c", &c);
         clear_filebuffer(stdin);
         if(c == 'y' || c == 'Y') {
-            total_bytes = http_download(sockfd, argv[2], argv[1]);
+            if(strncmp(header.loc, "None", 4) == 0) {
+                total_bytes = http_download(argv[2], argv[1]);
+            } else {
+                get_urlinfo(header.loc, header.uri, header.domain);
+                total_bytes = http_download(header.uri, header.domain);
+            }
         }
     }
     puts("Disconnected.");
@@ -230,23 +237,17 @@ char *get_httpdata(int sockfd, size_t *total) {
 /* handle_redirect() - handles HTTP redirection.
  */
 int handle_redirect(HTTPHEADER *header) {
-    char domain[256];
-    char uripath[512];
     char request[1024];
     int sockfd, res;
 
     memset(request, 0, sizeof(request));
-    memset(domain, 0, sizeof(domain));
-    memset(uripath, 0, sizeof(uripath));
 
-    if(sscanf(header->loc, "http://%[^/]%s", domain, uripath) != 2) {
-        fprintf(stderr, "Error: Could not seperate domain and uripath.\n");
+    if(get_urlinfo(header->loc, header->uri, header->domain) < 0)
         return -1;
-    }
-    sockfd = create_conn(domain);
+    sockfd = create_conn(header->domain);
     if(sockfd < 0)
         return -1;
-    snprintf(request, sizeof(request), HTTP_REQUEST, uripath, domain);
+    snprintf(request, sizeof(request), HTTP_REQUEST, header->uri, header->domain);
     res = send(sockfd, request, strlen(request), 0);
     if(res < 0) {
         puts("Failed to send redirection request.");
@@ -311,14 +312,14 @@ int get_filename(const char *path, char *fname, char *ext) {
 /* http_download() - content-type not text/plain or text/html then
  * download the content.
  */
-size_t http_download(int sockfd, const char *uri, const char *domain) {
+size_t http_download(const char *uri, const char *domain) {
     FILE *file = NULL;
     char filename[261];
     char fname[256];
     char ext[5];
     char request[512];
     size_t total_bytes;
-    int bytes, res;
+    int bytes, res, sockfd;
 
     memset(filename, 0, sizeof(filename));
     memset(fname, 0, sizeof(fname));
@@ -357,6 +358,7 @@ size_t http_download(int sockfd, const char *uri, const char *domain) {
             total_bytes);
     }
     fclose(file);
+    close(sockfd);
     return total_bytes;
 }
 
@@ -436,6 +438,16 @@ void get_headerinfo(HTTPHEADER *header) {
         snprintf(header->loc, HTTP_LOCATION, "None");
     if(!found[FOUND_CTYPE])
         snprintf(header->ctype, HTTP_CTYPE, "Not Found");
+}
+
+/* get_urlinfo() - function to get the url from header location.
+ */
+int get_urlinfo(const char *url, char *uripath, char *domain) {
+    if(sscanf(url, "http://%[^/]%s", domain, uripath) != 2) {
+        fprintf(stderr, "Error: Couldn't extract uri and domain from url.\n");
+        return -1;
+    }
+    return 0;
 }
 
 /* timer() - function for a simple timer.
