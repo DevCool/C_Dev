@@ -479,9 +479,11 @@ size_t file_download(int sockfd, FILE *fout) {
     bytesRead = read(sockfd, data, sizeof(data));
     if(bytesRead > 0)
         bytesWritten = fwrite(data, 1, bytesRead, fout);
-    if(bytesWritten == bytesRead)
+    if(bytesRead == 0)
         return total_bytes;
-    else
+    else if(bytesWritten == bytesRead)
         total_bytes += bytesWritten;
+    else
+        return -1;
     file_download(sockfd, fout);
 }
