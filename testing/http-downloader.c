@@ -32,6 +32,7 @@
 enum _HTTPFOUND {
     FOUND_LOC,
     FOUND_CTYPE,
+    FOUND_DSIZE,
     FOUND_COUNT
 };
 
@@ -199,7 +200,6 @@ int main(int argc, char **argv) {
             }
         }
     }
-    puts("Disconnected.");
     destroy_headerinfo(&header);
     close(sockfd);
     return 0;
@@ -432,6 +432,12 @@ void get_headerinfo(HTTPHEADER *header) {
             else
                 found[FOUND_CTYPE] = 1;
         }
+        if(strncmp(tok, "Content-Length:", 15) == 0) {
+            if(sscanf(tok, "Content-Length: %lu\r\n", &header->data_size) != 1)
+                found[FOUND_DSIZE] = 0;
+            else
+                found[FOUND_DSIZE] = 1;
+        }
         tok = strtok(NULL, "\r\n");
     }
 
@@ -439,6 +445,8 @@ void get_headerinfo(HTTPHEADER *header) {
         snprintf(header->loc, HTTP_LOCATION, "None");
     if(!found[FOUND_CTYPE])
         snprintf(header->ctype, HTTP_CTYPE, "Not Found");
+    if(!found[FOUND_DSIZE])
+        header->data_size = 0;
 }
 
 /* get_urlinfo() - function to get the url from header location.
@@ -483,7 +491,7 @@ size_t file_download(int sockfd, HTTPHEADER *header, FILE *fout) {
         if(bytesWritten == bytesRead)
             total_bytes += bytesWritten;
         if(((clock()-start) / CLOCKS_PER_SEC) >= 5) {
-            printf("Total bytes downloaded: %lu/%lu\n", bytesWritten,
+            printf("Total bytes downloaded: %lu/%lu\n", total_bytes,
                     header->data_size);
             start = clock();
         }
