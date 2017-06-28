@@ -21,7 +21,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#define CHUNK_SIZE 256
+#define CHUNK_SIZE 512
 #define HTTP_INFOSIZE 2048
 #define HTTP_LOCATION 512
 #define HTTP_CTYPE 256
@@ -475,15 +475,18 @@ size_t file_download(int sockfd, FILE *fout) {
     char data[CHUNK_SIZE];
     int bytesRead, bytesWritten;
     static size_t total_bytes = 0;
+    clock_t start = clock();
 
-    bytesRead = read(sockfd, data, sizeof(data));
-    if(bytesRead > 0)
+    while((bytesRead = read(sockfd, data, sizeof(data))) > 0) {
         bytesWritten = fwrite(data, 1, bytesRead, fout);
+        if(bytesWritten == bytesRead)
+            total_bytes += bytesWritten;
+        if(((clock()-start) / CLOCKS_PER_SEC) >= 5) {
+            printf("Total bytes downloaded: %lu\n", bytesWritten);
+            start = clock();
+        }
+    }
     if(bytesRead == 0)
         return total_bytes;
-    else if(bytesWritten == bytesRead)
-        total_bytes += bytesWritten;
-    else
-        return -1;
-    file_download(sockfd, fout);
+    return -1;
 }

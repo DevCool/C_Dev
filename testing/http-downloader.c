@@ -22,11 +22,11 @@
 #include <netdb.h>
 
 #define CHUNK_SIZE 512
-#define HTTP_INFOSIZE 2048
 #define HTTP_LOCATION 512
 #define HTTP_CTYPE 256
 #define HTTP_PROTO 6
 #define HTTP_URLSIZE 512
+#define HTTP_INFOSIZE 2048
 
 /* My Found enumeration */
 enum _HTTPFOUND {
@@ -37,37 +37,38 @@ enum _HTTPFOUND {
 
 /* My HTTP header struct */
 struct _HTTPHEADERstruct {
-    int info_size;
+    size_t info_size;
+    size_t data_size;
     float version;
     int result;
+    char info[HTTP_INFOSIZE];
     char domain[HTTP_URLSIZE];
     char uri[HTTP_URLSIZE];
     char proto[HTTP_PROTO];
     char loc[HTTP_LOCATION];
     char ctype[HTTP_CTYPE];
-    char *data;
-    char *info;
 };
 typedef struct _HTTPHEADERstruct HTTPHEADER;
 
 /* My http function prototypes */
 int handle_redirect(HTTPHEADER *header);
-char *get_httpdata(int sockfd, size_t *total);
-size_t http_download(const char *uri, const char *domain);
+size_t get_httpdata(int sockfd, char *data, size_t total_bytes);
+size_t http_download(HTTPHEADER *header, const char *uri, const char *domain);
 
 /* My info header function prototypes */
 HTTPHEADER setup_headerinfo(void);
 void destroy_headerinfo(HTTPHEADER *header);
-void get_httpheader(HTTPHEADER *header, char *data, size_t size);
+void get_httpheader(HTTPHEADER *header, char *data, size_t data_size);
 void get_headerinfo(HTTPHEADER *header);
-int get_urlinfo(const char *url, char *uripath, char *domain);
+int get_urlinfo(HTTPHEADER *header);
 
 /* My misc function prototypes */
 int create_conn(const char *domain);
 int get_filename(const char *path, char *fname, char *ext);
 void timer(int sec);
 void clear_filebuffer(FILE *fp);
-size_t file_download(int sockfd, FILE *fout);
+size_t file_download(int sockfd, HTTPHEADER *header, FILE *fout);
+size_t file_copy(FILE *fin, HTTPHEADER *header, FILE *fout);
 
 
 /* The request string you have to send to a HTTP server */
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
     struct addrinfo hints, *servinfo;
     int sockfd, newsockfd;
     char request[BUFSIZ];
-    char *data;
+    char data[HTTP_INFOSIZE];
     size_t total_bytes;
     int bytes, c;
     int res;
@@ -119,7 +120,7 @@ int main(int argc, char **argv) {
         puts("Request sent.");
 
     header = setup_headerinfo();
-    if((data = get_httpdata(sockfd, &total_bytes)) == NULL) {
+    if((total_bytes = get_httpdata(sockfd, data, HTTP_INFOSIZE)) < 0) {
         fprintf(stderr, "Cannot get website data.\n");
         close(sockfd);
         return 1;
@@ -135,7 +136,6 @@ int main(int argc, char **argv) {
 #endif
     if(header.result == 404) {
         puts("Uri path not found on server.");
-        free(data);
         destroy_headerinfo(&header);
         close(sockfd);
         return 1;
@@ -144,12 +144,10 @@ int main(int argc, char **argv) {
     while(header.result == 301 || header.result == 302) {
         sockfd = handle_redirect(&header);
         if(sockfd < 0) {
-            free(data);
             destroy_headerinfo(&header);
             return 1;
         } else {
-            data = get_httpdata(sockfd, &total_bytes);
-            if(data == NULL) {
+            if((total_bytes = get_httpdata(sockfd, data, HTTP_INFOSIZE)) < 0) {
                 fprintf(stderr, "Cannot get website data.\n");
                 close(sockfd);
                 return 1;
@@ -182,56 +180,53 @@ int main(int argc, char **argv) {
     } else {
         puts("You didn't want to see the requested data?");
     }
-  
+   
     if(header.result != 404) {
         printf("Did you want to download the file (Y/N)? ");
         scanf("%c", &c);
         clear_filebuffer(stdin);
         if(c == 'y' || c == 'Y') {
             if(strncmp(header.loc, "None", 4) == 0) {
-                total_bytes = http_download(argv[2], argv[1]);
+                total_bytes = http_download(&header, argv[2], argv[1]);
             } else {
-                get_urlinfo(header.loc, header.uri, header.domain);
-                total_bytes = http_download(header.uri, header.domain);
+                get_urlinfo(&header);
+#if !defined(NDEBUG)
+                printf("Result: %d\nLocation: %s\n=======\n"
+                        "Url     : http://%s%s\n", header.result,
+                        header.loc, header.domain, header.uri);
+#endif
+                total_bytes = http_download(&header, header.uri, header.domain);
             }
         }
     }
     puts("Disconnected.");
     destroy_headerinfo(&header);
-    free(data);
     close(sockfd);
     return 0;
 }
 
 /* get_httpdata() - function to get website data.
  */
-char *get_httpdata(int sockfd, size_t *total) {
+size_t get_httpdata(int sockfd, char *data, size_t data_size) {
     char buffer[CHUNK_SIZE];
-    char *data = NULL;
     size_t size = 0;
     size_t total_bytes = 0;
     size_t bytes;
 
     while((bytes = recv(sockfd, buffer, CHUNK_SIZE, 0)) > 0) {
-        if(total_bytes >= size) {
-            size += bytes;
-            data = realloc(data, size);
-            if(data == NULL)
-                return NULL;
-        }
         memcpy(&data[total_bytes], buffer, bytes);
         total_bytes += bytes;
+        if(total_bytes >= HTTP_INFOSIZE)
+            break;
     }
 
     if(bytes == 0) {
         printf("Transfer of %u bytes received successfully.\n", total_bytes);
-        *total = total_bytes;
-        return data;
+        return total_bytes;
     } else {
         fprintf(stderr, "Transfer of %u bytes failed.\n", bytes);
-        free(data);
     }
-    return NULL;
+    return -1;
 }
 
 /* handle_redirect() - handles HTTP redirection.
@@ -242,7 +237,7 @@ int handle_redirect(HTTPHEADER *header) {
 
     memset(request, 0, sizeof(request));
 
-    if(get_urlinfo(header->loc, header->uri, header->domain) < 0)
+    if(get_urlinfo(header) < 0)
         return -1;
     sockfd = create_conn(header->domain);
     if(sockfd < 0)
@@ -312,8 +307,8 @@ int get_filename(const char *path, char *fname, char *ext) {
 /* http_download() - content-type not text/plain or text/html then
  * download the content.
  */
-size_t http_download(const char *uri, const char *domain) {
-    FILE *file = NULL;
+size_t http_download(HTTPHEADER *header, const char *uri, const char *domain) {
+    FILE *file = NULL, *tmp = NULL;
     char filename[261];
     char fname[256];
     char ext[5];
@@ -330,7 +325,6 @@ size_t http_download(const char *uri, const char *domain) {
         fprintf(stderr, "Error: Could not get file name.\n");
         return -1;
     }
-    printf("Filename: %s.%s\n", fname, ext);
     snprintf(filename, sizeof(filename), "%s.%s", fname, ext);
     snprintf(request, sizeof(request), HTTP_REQUEST, uri, domain);
 
@@ -344,11 +338,11 @@ size_t http_download(const char *uri, const char *domain) {
         return -1;
     }
 
-    if((file = fopen(filename, "wb")) == NULL) {
+    if((tmp = fopen("tmpfile.dat", "wb")) == NULL) {
         fprintf(stderr, "Error: Cannot open file for writing.\n");
         return -1;
     }
-    total_bytes = file_download(sockfd, file);
+    total_bytes = file_download(sockfd, header, tmp);
     if(total_bytes < 0) {
         fprintf(stderr, "Error: Could not download the file.\n");
         fclose(file);
@@ -357,8 +351,27 @@ size_t http_download(const char *uri, const char *domain) {
         printf("Total bytes downloaded: %lu\nFile download was succesful!\n",
             total_bytes);
     }
-    fclose(file);
     close(sockfd);
+    puts("Disconnected!");
+    if((tmp = freopen("tmpfile.dat", "rb", tmp)) == NULL) {
+        fprintf(stderr, "Error: cannot open tmp file for reading.\n");
+        return -1;
+    }
+    if((file = fopen(filename, "wb")) == NULL) {
+        fprintf(stderr, "Error: Cannot open %s for writing.\n", filename);
+        fclose(tmp);
+        return -1;
+    }
+    total_bytes = file_copy(tmp, header, file);
+    if(total_bytes < 0) {
+        fprintf(stderr, "Error: Could not write the file.\n");
+        fclose(tmp);
+        fclose(file);
+        return -1;
+    }
+    fclose(tmp);
+    fclose(file);
+    remove("tmpfile.dat");
     return total_bytes;
 }
 
@@ -367,8 +380,8 @@ size_t http_download(const char *uri, const char *domain) {
 HTTPHEADER setup_headerinfo(void) {
     HTTPHEADER header;
     memset(&header, 0, sizeof(HTTPHEADER));
-    header.info = NULL;
-    header.data = NULL;
+    header.info_size = 0;
+    header.data_size = 0;
     strncpy(header.proto, "http", 5);
     return header;
 }
@@ -378,30 +391,18 @@ HTTPHEADER setup_headerinfo(void) {
 void destroy_headerinfo(HTTPHEADER *header) {
     if(header == NULL)
         return;
-    if(header->info != NULL)
-        free(header->info);
-    if(header->data != NULL)
-        free(header->data);
     memset(header, 0, sizeof(HTTPHEADER));
 }
 
 /* get_httpheader() - strips the header out of the data.
  */
-void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
-    char *info = NULL;
+void get_httpheader(HTTPHEADER *header, char *data, size_t data_size) {
+    char *tmp = NULL, *info = data;
 
-    if(data == NULL)
-        return;
-    data[size] = 0;
-    info = strstr(data, "\r\n\r\n");
-    header->info_size = info-data;
-    header->info = malloc(header->info_size+1);
-    memcpy(header->info, data, header->info_size);
-    header->info[header->info_size] = 0;
-    header->data = malloc((size-header->info_size)+1);
-    memcpy(header->data, &data[header->info_size],
-            size-header->info_size);
-    header->data[(size-header->info_size)+1] = 0;
+    tmp = strstr(data, "\r\n\r\n");
+    data[tmp-info] = 0;
+    header->info_size = strlen(data);
+    memcpy(header->info, data, tmp-info);
 }
 
 /* get_headerinfo() - strips out the http response and location if
@@ -410,7 +411,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t size) {
 void get_headerinfo(HTTPHEADER *header) {
     char info[header->info_size];
     char *tok = NULL;
-    char found[FOUND_COUNT];
+    char found[FOUND_COUNT] = {0};
 
     strncpy(info, header->info, sizeof(info));
     tok = strtok(info, "\r\n");
@@ -442,8 +443,8 @@ void get_headerinfo(HTTPHEADER *header) {
 
 /* get_urlinfo() - function to get the url from header location.
  */
-int get_urlinfo(const char *url, char *uripath, char *domain) {
-    if(sscanf(url, "http://%[^/]%s", domain, uripath) != 2) {
+int get_urlinfo(HTTPHEADER *header) {
+    if(sscanf(header->loc, "http://%[^/]%s", header->domain, header->uri) != 2) {
         fprintf(stderr, "Error: Couldn't extract uri and domain from url.\n");
         return -1;
     }
@@ -471,7 +472,7 @@ void clear_filebuffer(FILE *fp) {
 
 /* file_download() - function to download a file.
  */
-size_t file_download(int sockfd, FILE *fout) {
+size_t file_download(int sockfd, HTTPHEADER *header, FILE *fout) {
     char data[CHUNK_SIZE];
     int bytesRead, bytesWritten;
     static size_t total_bytes = 0;
@@ -482,9 +483,28 @@ size_t file_download(int sockfd, FILE *fout) {
         if(bytesWritten == bytesRead)
             total_bytes += bytesWritten;
         if(((clock()-start) / CLOCKS_PER_SEC) >= 5) {
-            printf("Total bytes downloaded: %lu\n", bytesWritten);
+            printf("Total bytes downloaded: %lu/%lu\n", bytesWritten,
+                    header->data_size);
             start = clock();
         }
+    }
+    if(bytesRead == 0)
+        return total_bytes;
+    return -1;
+}
+
+/* file_copy() - function to copy a file without HTTP header info.
+ */
+size_t file_copy(FILE *fin, HTTPHEADER *header, FILE *fout) {
+    char data[CHUNK_SIZE];
+    int bytesRead, bytesWritten;
+    size_t total_bytes = 0;
+
+    fseek(fin, header->info_size+4, SEEK_SET);
+    while((bytesRead = fread(data, 1, sizeof(data), fin)) > 0) {
+        bytesWritten = fwrite(data, 1, bytesRead, fout);
+        if(bytesWritten == bytesRead)
+            total_bytes += bytesWritten;
     }
     if(bytesRead == 0)
         return total_bytes;
