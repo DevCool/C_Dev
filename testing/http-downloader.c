@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 #include <unistd.h>
 #include <time.h>
@@ -20,6 +21,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+
+#define ERROR(M, ...) {\
+    fprintf(stderr, "[ERROR] : M\n", ##__VA_ARGS__);\
+    goto error; errno = 0; exit(errno); }
 
 #define CHUNK_SIZE 512
 #define HTTP_LOCATION 512
@@ -42,6 +47,7 @@ struct _HTTPHEADERstruct {
     size_t data_size;
     float version;
     int result;
+    unsigned char set;
     char info[HTTP_INFOSIZE];
     char domain[HTTP_URLSIZE];
     char uri[HTTP_URLSIZE];
@@ -88,7 +94,7 @@ int main(int argc, char **argv) {
     int res;
 
     if(argc != 3) {
-        fprintf(stderr, "Usage: %s <hostname> <urlpath>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <hostname> <uripath>\n", argv[0]);
         return 0;
     }
     memset(&hints, 0, sizeof(hints));
@@ -103,9 +109,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     if(connect(sockfd, servinfo->ai_addr, servinfo->ai_addrlen) < 0) {
-        fprintf(stderr, "Error: Cannot connect to host %s.\n", argv[1]);
-        close(sockfd);
-        return 1;
+        ERROR("Cannot connect to host.");
     }
     freeaddrinfo(servinfo);
     puts("Connected.");
@@ -114,18 +118,14 @@ int main(int argc, char **argv) {
     snprintf(request, sizeof(request), HTTP_REQUEST, argv[2], argv[1]);
     bytes = send(sockfd, request, strlen(request), 0);
     if(bytes < 0) {
-        fprintf(stderr, "Error: Couldn't send request.\n");
-        close(sockfd);
-        return 1;
-    } else
+        ERROR("Cannot send request.");
+    } else {
         puts("Request sent.");
+    }
 
     header = setup_headerinfo();
-    if((total_bytes = get_httpdata(sockfd, data, HTTP_INFOSIZE)) < 0) {
-        fprintf(stderr, "Cannot get website data.\n");
-        close(sockfd);
-        return 1;
-    }
+    if((total_bytes = get_httpdata(sockfd, data, HTTP_INFOSIZE)) < 0)
+        ERROR("Cannot get website data.");
 
     get_httpheader(&header, data, total_bytes);
     get_headerinfo(&header);
@@ -135,23 +135,16 @@ int main(int argc, char **argv) {
     printf("Version: %.1f\nResult: %d\nLocation: %s\n",
             header.version, header.result, header.loc);
 #endif
-    if(header.result == 404) {
-        puts("Uri path not found on server.");
-        destroy_headerinfo(&header);
-        close(sockfd);
-        return 1;
-    }
+    if(header.result == 404)
+        ERROR("Uri path not found on server.");
 
     while(header.result == 301 || header.result == 302) {
         sockfd = handle_redirect(&header);
         if(sockfd < 0) {
-            destroy_headerinfo(&header);
-            return 1;
+            ERROR("Socket was not created.");
         } else {
             if((total_bytes = get_httpdata(sockfd, data, HTTP_INFOSIZE)) < 0) {
-                fprintf(stderr, "Cannot get website data.\n");
-                close(sockfd);
-                return 1;
+                ERROR("Cannot get website data.");
             } else {
                 get_httpheader(&header, data, total_bytes);
                 get_headerinfo(&header);
@@ -181,6 +174,8 @@ int main(int argc, char **argv) {
     } else {
         puts("You didn't want to see the requested data?");
     }
+    close(sockfd);
+    puts("Disconnected.");
    
     if(header.result != 404) {
         printf("Did you want to download the file (Y/N)? ");
@@ -200,9 +195,16 @@ int main(int argc, char **argv) {
             }
         }
     }
-    destroy_headerinfo(&header);
-    close(sockfd);
-    return 0;
+    if(header.set == 1)
+        destroy_headerinfo(&header);
+    return EXIT_SUCCESS;
+
+error:
+    if(header.set == 1)
+        destroy_headerinfo(&header);
+    if(sockfd > 0)
+        close(sockfd);
+    return EXIT_FAILURE;
 }
 
 /* get_httpdata() - function to get website data.
@@ -382,6 +384,7 @@ HTTPHEADER setup_headerinfo(void) {
     memset(&header, 0, sizeof(HTTPHEADER));
     header.info_size = 0;
     header.data_size = 0;
+    header.set = 0;
     strncpy(header.proto, "http", 5);
     return header;
 }
@@ -403,6 +406,7 @@ void get_httpheader(HTTPHEADER *header, char *data, size_t data_size) {
     data[tmp-info] = 0;
     header->info_size = strlen(data);
     memcpy(header->info, data, tmp-info);
+    header->set = 1;
 }
 
 /* get_headerinfo() - strips out the http response and location if
