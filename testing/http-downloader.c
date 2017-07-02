@@ -23,7 +23,7 @@
 #include <netdb.h>
 
 #define ERROR(M, ...) {\
-    fprintf(stderr, "[ERROR] : M\n", ##__VA_ARGS__);\
+    fprintf(stderr, "[ERROR] : %s\n", M, ##__VA_ARGS__);\
     goto error; errno = 0; exit(errno); }
 
 #define CHUNK_SIZE 512
