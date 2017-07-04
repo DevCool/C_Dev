@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 /* DLIST */
 #include "dlist.h"
@@ -10,6 +11,9 @@
 #define MAX_LINE 80
 
 /* function prototypes */
+#if !defined(_WIN32) || (_WIN64)
+int stricmp(const char *s, const char *s2);
+#endif
 int get_line(char *s, int size);
 void DList_save(DList *head);
 DList *DList_load(DList *list);
@@ -30,7 +34,7 @@ int main(void) {
     memset(buf, 0, sizeof(buf));
     printf("CMD >> ");
     buf_len = get_line(buf, MAX_LINE);
-    if(strncmp(buf, "new", 3) == 0) {
+    if(stricmp(buf, "new") == 0) {
       if(!is_created) {
       char data[MAX_LINE];
       list = create_node();
@@ -43,7 +47,7 @@ int main(void) {
       } else {
 	puts("List already exists.");
       }
-    } else if(strncmp(buf, "addbeg", 6) == 0) {
+    } else if(stricmp(buf, "addbeg") == 0) {
       if(is_created) {
 	char data[MAX_LINE];
 	memset(data, 0, sizeof(data));
@@ -55,7 +59,7 @@ int main(void) {
       } else {
 	puts("List does not exist.");
       }
-    } else if(strncmp(buf, "add", 3) == 0) {
+    } else if(stricmp(buf, "add") == 0) {
       if(is_created) {
 	char data[MAX_LINE];
 	memset(data, 0, sizeof(data));
@@ -66,21 +70,21 @@ int main(void) {
       } else {
 	puts("List does not exist.");
       }
-    } else if(strncmp(buf, "del", 3) == 0) {
+    } else if(stricmp(buf, "del") == 0) {
       if(is_created) {
 	DList_freelast(&list);
 	puts("Destroyed last element.");
       } else {
 	puts("List alread freed!");
       }
-    } else if(strncmp(buf, "print", 4) == 0) {
+    } else if(stricmp(buf, "print") == 0) {
       if(is_created) {
 	DList_print(list);
 	puts("  *** End of list ***");
       } else {
 	puts("List does not exist.");
       }
-    } else if(strncmp(buf, "free", 4) == 0) {
+    } else if(stricmp(buf, "free") == 0) {
       if(is_created) {
         DList_free(&list);
         puts("List freed!");
@@ -88,22 +92,23 @@ int main(void) {
       } else {
 	puts("List does not exist!");
       }
-    } else if(strncmp(buf, "save", 4) == 0) {
+    } else if(stricmp(buf, "save") == 0) {
       if(is_created) {
 	DList_save(list);
       } else {
 	puts("List does not exist.");
       }
-    } else if(strncmp(buf, "load", 4) == 0) {
+    } else if(stricmp(buf, "load") == 0) {
       if(!is_created) {
-	if((list = DList_load(list)) == NULL)
+	if((list = DList_load(list)) == NULL) {
 	  puts("Failed to load file.");
-	else
+	} else {
 	  is_created = 1;
+	}
       } else {
 	puts("List already exists.");
       }
-    } else if(strncmp(buf, "help", 4) == 0) {
+    } else if(stricmp(buf, "help") == 0) {
       printf(" *** HELP ***\n"\
 	     " new    - create the initial list\n"\
 	     " help   - prints this message\n"\
@@ -116,7 +121,7 @@ int main(void) {
 	     " free   - frees the entire list\n"\
 	     " exit   - quits this program\n"\
 	     "************************************\nEnd of commands.\n\n");
-    } else if(strncmp(buf, "exit", 4) == 0) {
+    } else if(stricmp(buf, "exit") == 0) {
       break;
     } else {
       puts("Command not found.");
@@ -127,6 +132,20 @@ int main(void) {
     DList_free(&list);
   return 0;
 }
+
+#if !defined(_WIN32) || (_WIN64)
+/* stricmp() - incase sensitive string compare for *nix.
+ */
+int stricmp(const char *s, const char *s2) {
+  while(*s != 0) {
+    if(tolower(*s) != tolower(*s2))
+      return (tolower(*s)-tolower(*s2));
+    s++;
+    s2++;
+  }
+  return 0;
+}
+#endif
 
 /* get_line() - gets a string from the standard input.
  */
@@ -196,7 +215,6 @@ DList *DList_load(DList *list) {
     puts("Cannot create file without a name.");
     return NULL;
   }
-  name[len-1] = 0;
   if((file = fopen(name, "rt")) == NULL) {
     fprintf(stderr,
 	    "Error: Cannot open file.\n%s is an invalid format.\n",
