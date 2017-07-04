@@ -41,6 +41,18 @@ int main(void) {
       } else {
 	puts("List already created.");
       }
+    } else if(strncmp(buf, "addbeg", 6) == 0) {
+      if(is_created) {
+	char data[MAX_LINE];
+	memset(data, 0, sizeof(data));
+	printf("*** Enter text below ***\n");
+	get_line(data, sizeof(data));
+	DList_addbeg(&list, data, cnt++);
+	DList_recalculate(list);
+	puts("Data added.");
+      } else {
+	puts("List not yet created.");
+      }
     } else if(strncmp(buf, "add", 3) == 0) {
       if(is_created) {
 	char data[MAX_LINE];
@@ -76,13 +88,14 @@ int main(void) {
       }
     } else if(strncmp(buf, "help", 4) == 0) {
       printf(" *** HELP ***\n"\
-	     " new   - create the initial list\n"\
-	     " help  - prints this message\n"\
-	     " add   - add new node to list\n"\
-	     " print - prints the entire list\n"\
-	     " del   - removes last entry in list\n"\
-	     " free  - frees the entire list\n"\
-	     " exit  - quits this program\n"\
+	     " new    - create the initial list\n"\
+	     " help   - prints this message\n"\
+	     " add    - add new node to list\n"\
+	     " addbeg - add new node to beginning\n"\
+	     " print  - prints the entire list\n"\
+	     " del    - removes last entry in list\n"\
+	     " free   - frees the entire list\n"\
+	     " exit   - quits this program\n"\
 	     "************************************\nEnd of commands.\n\n");
     } else if(strncmp(buf, "exit", 4) == 0) {
       break;

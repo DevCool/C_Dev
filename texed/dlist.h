@@ -24,6 +24,8 @@ void DList_freelast(DList **head);
 void DList_print(DList *head);
 void DList_setlast(DList *head, const char *string, int item);
 void DList_addnode(DList *head, const char *string, int item);
+void DList_addbeg(DList **head, const char *string, int item);
+void DList_recalculate(DList *head);
 
 
 #endif
