@@ -14,7 +14,7 @@ int get_line(char *s, int size);
 
 /* main() - entry point for this text editor.
  */
-int main(int argc, char *argv[]) {
+int main(void) {
   char buf[MAX_LINE];
   DList *list = NULL;
   unsigned char is_created;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
       }
     } else if(strncmp(buf, "del", 3) == 0) {
       if(is_created) {
-	list = DList_freelast(list);
+	DList_freelast(&list);
 	puts("Destroyed last element.");
       } else {
 	puts("List alread freed!");
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
       }
     } else if(strncmp(buf, "free", 4) == 0) {
       if(is_created) {
-        DList_free(list);
+        DList_free(&list);
         puts("List freed!");
         is_created = 0;
       } else {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   } while(buf_len > 0);
 
   if(is_created)
-    DList_free(list);
+    DList_free(&list);
   return 0;
 }
 

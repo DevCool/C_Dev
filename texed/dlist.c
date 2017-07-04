@@ -38,41 +38,43 @@ void set_node(DList *node, const char *string, int item) {
 
   
 /* ------------------ DLIST functions ----------------- */
-void DList_free(DList *head) {
+void DList_free(DList **head) {
   DList *cur = NULL;
   DList *tmp = NULL;
-  cur = head;
+  cur = *head;
   while(cur != NULL) {
     tmp = cur;
     cur = cur->next;
     destroy_node(tmp);
   }
+  *head = NULL;
 }
 
-void DList_freebeg(DList *head) {
+void DList_freebeg(DList **head) {
   DList *next = NULL;
-  if(head == NULL)
+  if(*head == NULL)
     return;
-  next = head->next;
-  destroy_node(head);
-  head = next;
+  next = (*head)->next;
+  destroy_node(*head);
+  *head = next;
 }
 
-DList *DList_freelast(DList *head) {
-  DList *cur = head;
-  if(head->next == NULL) {
+void DList_freelast(DList **head) {
+  DList *cur = NULL;
+  if(*head == NULL)
+    return;
+  
+  if((*head)->next == NULL) {
     DList_freebeg(head);
-    head = NULL;
+    *head = NULL;
   } else {
-    cur = head;
+    cur = *head;
     while(cur->next->next != NULL) {
       cur = cur->next;
     }
     destroy_node(cur->next);
     cur->next = NULL;
   }
-
-  return head;
 }
 
 void DList_print(DList *head) {
