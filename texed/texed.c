@@ -101,6 +101,7 @@ int main(void) {
 	     " addbeg - add new node to beginning\n"\
 	     " print  - prints the entire list\n"\
 	     " del    - removes last entry in list\n"\
+	     " save   - saves to a file\n"\
 	     " free   - frees the entire list\n"\
 	     " exit   - quits this program\n"\
 	     "************************************\nEnd of commands.\n\n");
