@@ -139,11 +139,13 @@ int get_line(char *s, int size) {
       s[i] = c;
       ++j;
     }
+  /*
   if(c == 0x0A) {
     s[i] = c;
     ++i;
     ++j;
   }
+  */
   s[j] = 0;
   ++j;
   return i;
@@ -166,7 +168,6 @@ void DList_save(DList *head) {
     puts("Cannot create file without a name.");
     return;
   }
-  name[len-1] = 0;
   if((file = fopen(name, "wt")) == NULL) {
     fprintf(stderr,
 	   "Error: Cannot create file.\n%s is an invalid filename.\n",
@@ -175,7 +176,7 @@ void DList_save(DList *head) {
   }
   cur = head;
   while(cur != NULL) {
-    fprintf(file, "%d : %s", cur->number, cur->description);
+    fprintf(file, "%d : %s\n", cur->number, cur->description);
     cur = cur->next;
   }
   fclose(file);
