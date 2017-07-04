@@ -21,6 +21,10 @@ int main(int argc, char *argv[]) {
   int buf_len, cnt = 1;
 
   do {
+    if(list == NULL) {
+      is_created = 0;
+      cnt = 1;
+    }
     memset(buf, 0, sizeof(buf));
     printf("CMD >> ");
     buf_len = get_line(buf, MAX_LINE);
@@ -49,20 +53,12 @@ int main(int argc, char *argv[]) {
 	puts("List not yet created.");
       }
     } else if(strncmp(buf, "del", 3) == 0) {
-      puts("Not yet implemented.");
-      /*
       if(is_created) {
-	if(list != NULL) {
-	  DList_freelast(list);
-	  puts("Destroyed last element.");
-	}
-	if(list == NULL) {
-	  is_created = 0;
-	}
+	list = DList_freelast(list);
+	puts("Destroyed last element.");
       } else {
 	puts("List alread freed!");
       }
-      */
     } else if(strncmp(buf, "print", 4) == 0) {
       if(is_created) {
 	DList_print(list);

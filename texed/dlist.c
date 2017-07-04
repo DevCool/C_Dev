@@ -58,18 +58,21 @@ void DList_freebeg(DList *head) {
   head = next;
 }
 
-void DList_freelast(DList *head) {
+DList *DList_freelast(DList *head) {
   DList *cur = head;
   if(head->next == NULL) {
     DList_freebeg(head);
-    return;
+    head = NULL;
+  } else {
+    cur = head;
+    while(cur->next->next != NULL) {
+      cur = cur->next;
+    }
+    destroy_node(cur->next);
+    cur->next = NULL;
   }
-  cur = head;
-  while(cur->next->next != NULL) {
-    cur = cur->next;
-  }
-  destroy_node(cur->next);
-  cur->next = NULL;
+
+  return head;
 }
 
 void DList_print(DList *head) {
