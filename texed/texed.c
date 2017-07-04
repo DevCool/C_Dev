@@ -11,6 +11,7 @@
 
 /* function prototypes */
 int get_line(char *s, int size);
+void DList_save(DList *head);
 
 /* main() - entry point for this text editor.
  */
@@ -39,7 +40,7 @@ int main(void) {
       is_created = 1;
       puts("List created.");
       } else {
-	puts("List already created.");
+	puts("List already exists.");
       }
     } else if(strncmp(buf, "addbeg", 6) == 0) {
       if(is_created) {
@@ -51,7 +52,7 @@ int main(void) {
 	DList_recalculate(list);
 	puts("Data added.");
       } else {
-	puts("List not yet created.");
+	puts("List does not exist.");
       }
     } else if(strncmp(buf, "add", 3) == 0) {
       if(is_created) {
@@ -62,7 +63,7 @@ int main(void) {
 	DList_addnode(list, data, cnt++);
 	puts("Data added.");
       } else {
-	puts("List not yet created.");
+	puts("List does not exist.");
       }
     } else if(strncmp(buf, "del", 3) == 0) {
       if(is_created) {
@@ -76,7 +77,7 @@ int main(void) {
 	DList_print(list);
 	puts("  *** End of list ***");
       } else {
-	puts("List doesn't exist.");
+	puts("List does not exist.");
       }
     } else if(strncmp(buf, "free", 4) == 0) {
       if(is_created) {
@@ -84,7 +85,13 @@ int main(void) {
         puts("List freed!");
         is_created = 0;
       } else {
-	puts("List not created!");
+	puts("List does not exist!");
+      }
+    } else if(strncmp(buf, "save", 4) == 0) {
+      if(is_created) {
+	DList_save(list);
+      } else {
+	puts("List does not exist.");
       }
     } else if(strncmp(buf, "help", 4) == 0) {
       printf(" *** HELP ***\n"\
@@ -128,4 +135,37 @@ int get_line(char *s, int size) {
   s[j] = 0;
   ++j;
   return i;
+}
+
+/* DList_save() - saves the linked list to a file.
+ */
+void DList_save(DList *head) {
+  char name[BUFSIZ];
+  int len;
+  DList *cur = NULL;
+  FILE *file = NULL;
+
+  if(head == NULL)
+    return;
+
+  memset(name, 0, sizeof(name));
+  printf("Enter a filename: ");
+  if(!((len = get_line(name, sizeof(name))) > 0)) {
+    puts("Cannot create file without a name.");
+    return;
+  }
+  name[len-1] = 0;
+  if((file = fopen(name, "wt")) == NULL) {
+    fprintf(stderr,
+	   "Error: Cannot create file.\n%s is an invalid filename.\n",
+	   name);
+    return;
+  }
+  cur = head;
+  while(cur != NULL) {
+    fprintf(file, "%d : %s", cur->number, cur->description);
+    cur = cur->next;
+  }
+  fclose(file);
+  puts("File written successfully.");
 }
