@@ -22,6 +22,8 @@ void destroy_node(DList *node) {
     return;
   free(node->description);
   node->description = NULL;
+  node->next = NULL;
+  node->number = 0;
   free(node);
   node = NULL;
 }
@@ -47,19 +49,27 @@ void DList_free(DList *head) {
   }
 }
 
+void DList_freebeg(DList *head) {
+  DList *next = NULL;
+  if(head == NULL)
+    return;
+  next = head->next;
+  destroy_node(head);
+  head = next;
+}
+
 void DList_freelast(DList *head) {
-  DList *last = NULL;
+  DList *cur = head;
   if(head->next == NULL) {
-    free(head);
+    DList_freebeg(head);
     return;
   }
-  
-  last = head;
-  while(last->next->next != NULL) {
-      last = last->next;
+  cur = head;
+  while(cur->next->next != NULL) {
+    cur = cur->next;
   }
-  destroy_node(last->next);
-  last->next = NULL;
+  destroy_node(cur->next);
+  cur->next = NULL;
 }
 
 void DList_print(DList *head) {

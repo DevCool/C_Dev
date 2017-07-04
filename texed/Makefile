@@ -18,5 +18,5 @@ $(EXE): $(OBJ)
 
 clean:
 	@echo "Cleaning project..."
-	rm -f *.o $(EXE)
+	rm -f *.o *~ $(EXE)
 	@echo "Done."
