@@ -12,6 +12,7 @@
 /* function prototypes */
 int get_line(char *s, int size);
 void DList_save(DList *head);
+DList *DList_load(DList *list);
 
 /* main() - entry point for this text editor.
  */
@@ -60,7 +61,7 @@ int main(void) {
 	memset(data, 0, sizeof(data));
 	printf("*** Enter text below ***\n");
 	get_line(data, sizeof(data));
-	DList_addnode(list, data, cnt++);
+	DList_addnode(&list, data, cnt++);
 	puts("Data added.");
       } else {
 	puts("List does not exist.");
@@ -93,6 +94,15 @@ int main(void) {
       } else {
 	puts("List does not exist.");
       }
+    } else if(strncmp(buf, "load", 4) == 0) {
+      if(!is_created) {
+	if((list = DList_load(list)) == NULL)
+	  puts("Failed to load file.");
+	else
+	  is_created = 1;
+      } else {
+	puts("List already exists.");
+      }
     } else if(strncmp(buf, "help", 4) == 0) {
       printf(" *** HELP ***\n"\
 	     " new    - create the initial list\n"\
@@ -102,6 +112,7 @@ int main(void) {
 	     " print  - prints the entire list\n"\
 	     " del    - removes last entry in list\n"\
 	     " save   - saves to a file\n"\
+	     " load   - loads a file\n"\
 	     " free   - frees the entire list\n"\
 	     " exit   - quits this program\n"\
 	     "************************************\nEnd of commands.\n\n");
@@ -169,4 +180,42 @@ void DList_save(DList *head) {
   }
   fclose(file);
   puts("File written successfully.");
+}
+
+DList *DList_load(DList *list) {
+  char name[BUFSIZ];
+  char buf[BUFSIZ];
+  char data[BUFSIZ];
+  int cnt = 0, len;
+  FILE *file = NULL;
+
+  memset(name, 0, sizeof(name));
+  printf("Enter a filename: ");
+  if(!((len = get_line(name, sizeof(name))) > 0)) {
+    puts("Cannot create file without a name.");
+    return NULL;
+  }
+  name[len-1] = 0;
+  if((file = fopen(name, "rt")) == NULL) {
+    fprintf(stderr,
+	    "Error: Cannot open file.\n%s is an invalid format.\n",
+	    name);
+    return NULL;
+  }
+  memset(buf, 0, sizeof(buf));
+  memset(data, 0, sizeof(data));
+  while(fgets(buf, sizeof(buf), file) != NULL) {
+    sscanf(buf, "%*d : %[^\n]\n", data);
+    if(list == NULL) {
+      list = create_node();
+      set_node(list, data, ++cnt);
+    } else {
+      DList_addnode(&list, data, ++cnt);
+    }
+    memset(buf, 0, sizeof(buf));
+    memset(data, 0, sizeof(data));
+  }
+  fclose(file);
+  puts("File loaded successfully!");
+  return list;
 }
