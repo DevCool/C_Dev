@@ -42,13 +42,12 @@ int main(void) {
 /* stricmp() - incase sensitive string compare for *nix.
  */
 int stricmp(const char *s, const char *s2) {
-  int i;
-  
-  for(i = 0; s < s+1 && *s != 0; i++) {
-    if(tolower(*s) != tolower(*s2))
-      return (tolower(*s)-tolower(*s2));
-    s++;
-    s2++;
+  int i, len = strlen(s)+1;
+  for(i = 0; i < len; i++) {
+    if(tolower(s[i]) < tolower(s2[i]))
+      return tolower(s2[i])-tolower(s[i]);
+    else if(tolower(s[i]) > tolower(s2[i]))
+      return tolower(s[i])-tolower(s2[i]);
   }
   return 0;
 }
