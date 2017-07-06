@@ -17,7 +17,7 @@ extern int get_line(char *s, size_t size);
 extern void DList_save(DList *head);
 extern DList *DList_load(DList *head);
 
-static char *cmds[] = {
+static char *cmds[CMD_COUNT] = {
   "", "new", "add", "addbeg", "free",
   "del", "print", "help", "save",
   "load", "exit"
@@ -67,7 +67,9 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
     break;
     
   case CMD_NEW:
-    if(!*is_created) {
+    if(*is_created) {
+      puts("List already exists.");
+    } else {
       char data[MAX_LINE];
       memset(data, 0, sizeof(data));
       puts("  *** Enter Text Below ***");
@@ -76,8 +78,6 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
       set_node(list, data, (*cnt)++);
       *is_created = 1;
       puts("List created.");
-    } else {
-      puts("List already exists.");
     }
     break;
 
@@ -121,8 +121,8 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
 
   case CMD_DEL:
     if(*is_created) {
-      DList_free(&list);
-      (*cnt)--;
+      DList_freelast(&list);
+      *cnt -= 1;
       puts("Destroyed last element.");
     } else {
       puts("List does not exist.");
@@ -165,14 +165,14 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
     break;
 
   case CMD_LOAD:
-    if(!*is_created) {
+    if(*is_created) {
+      puts("List already exists.");
+    } else {
       if((list = DList_load(list)) == NULL) {
 	puts("Failed to load list.");
       } else {
 	*is_created = 1;
       }
-    } else {
-      puts("List already exists.");
     }
     break;
 

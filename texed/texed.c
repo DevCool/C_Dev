@@ -65,13 +65,6 @@ int get_line(char *s, int size) {
       s[i] = c;
       ++j;
     }
-  /*
-  if(c == 0x0A) {
-    s[i] = c;
-    ++i;
-    ++j;
-  }
-  */
   s[j] = 0;
   ++j;
   return i;
