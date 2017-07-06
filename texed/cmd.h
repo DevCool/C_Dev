@@ -2,6 +2,7 @@
 #define _cmd_h_
 
 enum COMMANDS {
+  CMD_NONE,
   CMD_NEW,
   CMD_ADD,
   CMD_ADDBEG,
@@ -12,7 +13,6 @@ enum COMMANDS {
   CMD_SAVE,
   CMD_LOAD,
   CMD_EXIT,
-  CMD_NONE,
   CMD_COUNT
 };
 

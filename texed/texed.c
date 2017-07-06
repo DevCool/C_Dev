@@ -20,8 +20,8 @@ DList *DList_load(DList *list);
  */
 int main(void) {
   DList *list = NULL;
-  unsigned char is_created, cmd = CMD_COUNT;
-  int cnt;
+  unsigned char is_created = 0, cmd = CMD_COUNT;
+  int cnt = 1;
 
   printf("TexEd v0.02 by Philip R. Simonson\n******\n\n");
   do {

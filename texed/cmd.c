@@ -18,9 +18,9 @@ extern void DList_save(DList *head);
 extern DList *DList_load(DList *head);
 
 static char *cmds[] = {
-  "new", "add", "addbeg", "free",
+  "", "new", "add", "addbeg", "free",
   "del", "print", "help", "save",
-  "load", "exit", ""
+  "load", "exit"
 };
 
 /* get_cmd() - gets a command then sends to process_cmds().
@@ -67,7 +67,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
     break;
     
   case CMD_NEW:
-    if(!(*is_created)) {
+    if(!*is_created) {
       char data[MAX_LINE];
       memset(data, 0, sizeof(data));
       puts("  *** Enter Text Below ***");
@@ -82,7 +82,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
     break;
 
   case CMD_ADD:
-    if(is_created) {
+    if(*is_created) {
       char data[MAX_LINE];
       memset(data, 0, sizeof(data));
       puts("  *** Enter Text Below ***");
@@ -163,7 +163,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
     break;
 
   case CMD_LOAD:
-    if(!(*is_created)) {
+    if(!*is_created) {
       if((list = DList_load(list)) == NULL) {
 	puts("Failed to load list.");
       } else {
