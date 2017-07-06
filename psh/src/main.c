@@ -1,0 +1,6 @@
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+	puts("It works!");
+	return 0;
+}

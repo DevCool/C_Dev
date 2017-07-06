@@ -1,0 +1,40 @@
+CC=gcc
+CFLAGS=-std=c89 -Wall -Wextra -pedantic -g
+INCLUDES=-I.\src
+LDFLAGS=-g
+
+BINDIR=bin
+SRCDIR=src
+OBJDIR=obj
+INSTALLDIR?=\Windows\System32
+TARGET=psh.exe
+
+SOURCES := $(wildcard $(SRCDIR)/*.c)
+INCLUDE := $(wildcard $(SRCDIR)/*.h)
+OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
+
+all: makedirs $(BINDIR)/$(TARGET)
+
+makedirs:
+	@mkdir $(BINDIR) $(OBJDIR)
+	@echo Starting to compile!
+
+$(BINDIR)/$(TARGET): $(OBJECTS)
+	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+	@echo Linking complete!
+
+$(OBJECTS): $(OBJDIR)/%.c.o : $(SRCDIR)/%.c
+	@$(CC) $(CFLAGS) -c $< -o $@
+	@echo Compiled $< successfully!
+
+.PHONY: clean
+clean:
+	@del $(OBJDIR)\*.o
+	@rmdir $(OBJDIR)
+	@echo Cleanup complete!
+
+.PHONY: remove
+remove: clean
+	@del $(BINDIR)\$(TARGET)
+	@rmdir $(BINDIR)
+	@echo Executable removed!

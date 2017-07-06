@@ -1,0 +1,40 @@
+CC=gcc
+CFLAGS=-std=c89 -Wall -Wextra -pedantic -g
+INCLUDES=-I./src
+LDFLAGS=-g
+
+BINDIR=bin
+SRCDIR=src
+OBJDIR=obj
+INSTALLDIR?=/usr/local/bin
+TARGET=psh
+
+SOURCES := $(wildcard $(SRCDIR)/*.c)
+INCLUDE := $(wildcard $(SRCDIR)/*.h)
+OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
+
+all: makedirs $(BINDIR)/$(TARGET)
+
+makedirs:
+	@mkdir -p $(BINDIR) $(OBJDIR)
+	@echo "Starting to compile!"
+
+$(BINDIR)/$(TARGET): $(OBJECTS)
+	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+	@echo "Linking complete!"
+
+$(OBJECTS): $(OBJDIR)/%.c.o : $(SRCDIR)/%.c
+	@$(CC) $(CFLAGS) -c $< -o $@
+	@echo "Compiled "$<" successfully!"
+
+.PHONY: clean
+clean:
+	@rm -f $(OBJDIR)/*.o
+	@rmdir $(OBJDIR)
+	@echo "Cleanup complete!"
+
+.PHONY: remove
+remove: clean
+	@rm -f $(BINDIR)/$(TARGET)
+	@rmdir $(BINDIR)
+	@echo "Executable removed!"
