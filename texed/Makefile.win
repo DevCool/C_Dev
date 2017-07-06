@@ -1,0 +1,22 @@
+CC=gcc
+CFLAGS=-std=c89 -Wall -Wextra -pedantic -g
+LDFLAGS=-I./
+
+SRC=texed.c dlist.c
+OBJ=$(SRC:.c=.c.o)
+EXE=texed.exe
+
+all: $(EXE)
+
+$(EXE): $(OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+%.c.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: clean
+
+clean:
+	@echo Cleaning project...
+	del *.o *~ $(EXE)
+	@echo Done.
