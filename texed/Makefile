@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-std=c89 -Wall -Wextra -pedantic -g
 LDFLAGS=-I./
 
-SRC=texed.c dlist.c
+SRC=texed.c dlist.c cmd.c
 OBJ=$(SRC:.c=.c.o)
 EXE=texed
 

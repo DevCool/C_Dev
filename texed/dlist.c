@@ -96,13 +96,13 @@ void DList_setlast(DList *head, const char *string, int item) {
   set_node(tmp->next, string, item);
 }
 
-void DList_addnode(DList **head, const char *string, int item) {
-  DList *current = *head;
+void DList_addnode(DList *head, const char *string, int item) {
+  DList *current = head;
   while(current->next != NULL) {
     current = current->next;
   }
   current->next = create_node();
-  DList_setlast(*head, string, item);
+  set_node(current->next, string, item);
 }
 
 void DList_addbeg(DList **head, const char *string, int item) {
