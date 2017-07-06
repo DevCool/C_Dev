@@ -73,7 +73,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
       puts("  *** Enter Text Below ***");
       get_line(data, sizeof(data));
       list = create_node();
-      set_node(list, data, *cnt++);
+      set_node(list, data, (*cnt)++);
       *is_created = 1;
       puts("List created.");
     } else {
@@ -87,7 +87,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
       memset(data, 0, sizeof(data));
       puts("  *** Enter Text Below ***");
       get_line(data, sizeof(data));
-      DList_addnode(list, data, *cnt++);
+      DList_addnode(list, data, (*cnt)++);
       puts("Data added.");
     } else {
       puts("List does not exist.");
@@ -100,7 +100,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
       memset(data, 0, sizeof(data));
       puts("  *** Enter Text Below ***");
       get_line(data, sizeof(data));
-      DList_addbeg(&list, data, *cnt++);
+      DList_addbeg(&list, data, (*cnt)++);
       DList_recalculate(list);
       puts("Data added.");
     } else {
@@ -113,6 +113,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
       DList_free(&list);
       puts("List destroyed.");
       *is_created = 0;
+      *cnt = 0;
     } else {
       puts("List does not exist.");
     }
@@ -121,6 +122,7 @@ DList *process_cmds(unsigned char cmds, DList *list, int *cnt, unsigned char *is
   case CMD_DEL:
     if(*is_created) {
       DList_free(&list);
+      (*cnt)--;
       puts("Destroyed last element.");
     } else {
       puts("List does not exist.");
