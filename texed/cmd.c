@@ -27,11 +27,10 @@ static char *cmds[CMD_COUNT] = {
  */
 unsigned char get_cmd(void) {
   char buf[BUFSIZ];
-  int len = -1;
 
   memset(buf, 0, sizeof(buf));
   printf("CMD >> ");
-  len = get_line(buf, sizeof(buf));
+  get_line(buf, sizeof(buf));
   if(stricmp(buf, cmds[CMD_NEW]) == 0) {
     return CMD_NEW;
   } else if(stricmp(buf, cmds[CMD_ADD]) == 0) {
@@ -52,7 +51,7 @@ unsigned char get_cmd(void) {
     return CMD_LOAD;
   } else if(stricmp(buf, cmds[CMD_EXIT]) == 0) {
     return CMD_EXIT;
-  } else if(len == CMD_NONE) {
+  } else if(stricmp(buf, cmds[CMD_NONE]) == 0) {
     return CMD_NONE;
   }
   return CMD_COUNT;
