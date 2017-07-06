@@ -17,6 +17,8 @@ extern int get_line(char *s, size_t size);
 extern void DList_save(DList *head);
 extern DList *DList_load(DList *head);
 
+#define CMDCMP(X) stricmp(buf, X)
+
 static char *cmds[CMD_COUNT] = {
   "", "new", "add", "addbeg", "free",
   "del", "print", "help", "save",
@@ -31,27 +33,27 @@ unsigned char get_cmd(void) {
   memset(buf, 0, sizeof(buf));
   printf("CMD >> ");
   get_line(buf, sizeof(buf));
-  if(stricmp(buf, cmds[CMD_NEW]) == 0) {
+  if(CMDCMP(cmds[CMD_NEW]) == 0) {
     return CMD_NEW;
-  } else if(stricmp(buf, cmds[CMD_ADD]) == 0) {
+  } else if(CMDCMP(cmds[CMD_ADD]) == 0) {
     return CMD_ADD;
-  } else if(stricmp(buf, cmds[CMD_ADDBEG]) == 0) {
+  } else if(CMDCMP(cmds[CMD_ADDBEG]) == 0) {
     return CMD_ADDBEG;
-  } else if(stricmp(buf, cmds[CMD_FREE]) == 0) {
+  } else if(CMDCMP(cmds[CMD_FREE]) == 0) {
     return CMD_FREE;
-  } else if(stricmp(buf, cmds[CMD_DEL]) == 0) {
+  } else if(CMDCMP(cmds[CMD_DEL]) == 0) {
     return CMD_DEL;
-  } else if(stricmp(buf, cmds[CMD_PRINT]) == 0) {
+  } else if(CMDCMP(cmds[CMD_PRINT]) == 0) {
     return CMD_PRINT;
-  } else if(stricmp(buf, cmds[CMD_HELP]) == 0) {
+  } else if(CMDCMP(cmds[CMD_HELP]) == 0) {
     return CMD_HELP;
-  } else if(stricmp(buf, cmds[CMD_SAVE]) == 0) {
+  } else if(CMDCMP(cmds[CMD_SAVE]) == 0) {
     return CMD_SAVE;
-  } else if(stricmp(buf, cmds[CMD_LOAD]) == 0) {
+  } else if(CMDCMP(cmds[CMD_LOAD]) == 0) {
     return CMD_LOAD;
-  } else if(stricmp(buf, cmds[CMD_EXIT]) == 0) {
+  } else if(CMDCMP(cmds[CMD_EXIT]) == 0) {
     return CMD_EXIT;
-  } else if(stricmp(buf, cmds[CMD_NONE]) == 0) {
+  } else if(CMDCMP(cmds[CMD_NONE]) == 0) {
     return CMD_NONE;
   }
   return CMD_COUNT;
