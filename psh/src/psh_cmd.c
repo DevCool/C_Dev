@@ -123,6 +123,47 @@ int (*builtin_func[])(char **args) = {
 	&psh_exit
 };
 
+#if defined(_WIN32) || (_WIN64)
+int psh_process(char **args, int argcnt) {
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	char *cmdline = NULL;
+	int i, max = 0;
+
+	for(i = 0; i < argcnt; i++)
+		max = strlen(args[i]);
+	cmdline = (char *)malloc((argcnt*(max*sizeof(char)))+1);
+	if(cmdline == NULL) {
+		fprintf(stderr, "psh: Out of memory.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	strcpy(cmdline, args[0]);
+	for(i = 1; i < argcnt; i++) {
+		strcat(cmdline, " ");
+		strcat(cmdline, args[i]);
+	}
+
+	ZeroMemory(&si, sizeof(STARTUPINFO));
+	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+	si.cb = sizeof(STARTUPINFO);
+	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+	si.wShowWindow = SW_SHOW;
+
+	if(!CreateProcess(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+		fprintf(stderr, "psh: Could not create process.\n");
+		free(cmdline);
+		return -1;
+	}
+	free(cmdline);
+
+	WaitForSingleObject(pi.hProcess, INFINITE);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+	return 1;
+}
+#endif
+
 int psh_execute(char **args, int argcnt) {
 	int i;
 
@@ -136,7 +177,11 @@ int psh_execute(char **args, int argcnt) {
 		if(strcmp(args[0], builtin_str[i]) == 0) {
 			return (*builtin_func[i])(args);
 		}
+#if defined(_WIN32) || (_WIN64)
+	return psh_process(args, argcnt);
+#else
 	return psh_launch(args, argcnt);
+#endif
 }
 
 /* psh_loop() - just use this if you want my shell.
