@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <windows.h>
 
 #define CMD_BUFSIZE	1024
@@ -80,15 +81,19 @@ int psh_launch(char **args, int argcnt) {
 
 /* --------- Shell builtin commands ---------- */
 
+#define CMD1_COUNT 1
+#define CMD2_COUNT 4
+
 static char *builtin_str[] = {
 	"cd",
+};
+
+static char *builtin_str2[] = {
+	"ls",
+	"pwd",
 	"help",
 	"exit"
 };
-
-int psh_num_builtins(void) {
-	return sizeof(builtin_str) / sizeof(char *);
-}
 
 int psh_cd(char **args) {
 	if(strcmp(args[1], "") == 0) {
@@ -101,24 +106,63 @@ int psh_cd(char **args) {
 	return 1;
 }
 
-int psh_help(char **args) {
+int psh_pwd(void) {
+	char dir[BUFSIZ];
+	memset(dir, 0, sizeof(dir));
+	if(getcwd(dir, sizeof(dir)) == NULL) {
+		fprintf(stderr, "psh: could not get current working directory.\n");
+	} else {
+		printf("Current working directory: %s\n", dir);
+	}
+	return 1;
+}
+
+int psh_ls(void) {
+	DIR *d = NULL;
+	struct dirent *dir = NULL;
+	char dirname[BUFSIZ];
+	d = opendir(".");
+	if(d != NULL) {
+		if(getcwd(dirname, sizeof(dirname)) != NULL) {
+			printf("Directory listing of %s\n", dirname);
+			while((dir = readdir(d)) != NULL)
+				printf("%s\n", dir->d_name);
+		} else {
+			fprintf(stderr, "psh: Cannot get current working directory.\n");
+		}
+		free(dir);
+		free(d);
+	} else {
+		puts("psh: Cannot list directory contents.");
+	}
+	return 1;
+}
+
+int psh_help(void) {
 	int i;
 	printf("Philip's Shell\n");
 	printf("Type program names and arguments, and press enter.\n");
 	printf("Have phun with my $h3l7 :P\n");
 
-	for(i = 0; i < psh_num_builtins(); i++)
+	for(i = 0; i < CMD1_COUNT; i++)
 		printf("   %s\n", builtin_str[i]);
+	for(i = 0; i < CMD2_COUNT; i++)
+		printf("   %s\n", builtin_str2[i]);
 	printf("Use documentation for other programs to see how to use them.\n");
 	return 1;
 }
 
-int psh_exit(char **args) {
+int psh_exit(void) {
 	return 0;
 }
 
 int (*builtin_func[])(char **args) = {
-	&psh_cd,
+	&psh_cd
+};
+
+int (*builtin_func2[])(void) = {
+	&psh_ls,
+	&psh_pwd,
 	&psh_help,
 	&psh_exit
 };
@@ -169,13 +213,16 @@ int psh_execute(char **args, int argcnt) {
 
 	if(strcmp(args[0], "") == 0) {
 		/* Empty command */
-		printf("You did not enter any data.\n");
 		return 1;
 	}
 
-	for(i = 0; i < psh_num_builtins(); i++)
+	for(i = 0; i < CMD1_COUNT; i++)
 		if(strcmp(args[0], builtin_str[i]) == 0) {
 			return (*builtin_func[i])(args);
+		}
+	for(i = 0; i < CMD2_COUNT; i++)
+		if(strcmp(args[0], builtin_str2[i]) == 0) {
+			return (*builtin_func2[i])();
 		}
 #if defined(_WIN32) || (_WIN64)
 	return psh_process(args, argcnt);
