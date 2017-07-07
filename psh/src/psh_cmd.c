@@ -55,7 +55,7 @@ char **psh_split_line(char *line, int *argcnt) {
 	while(token != NULL) {
 		tokens[i] = token;
 		++i;
-		++(*argcnt);
+		*argcnt = i;
 
 		if(i >= size) {
 			size += CMD_TOK_COUNT;
@@ -67,6 +67,7 @@ char **psh_split_line(char *line, int *argcnt) {
 		}
 		token = strtok(NULL, CMD_TOK_DELIMS);
 	}
+	tokens[i] = NULL;
 	return tokens;
 }
 
