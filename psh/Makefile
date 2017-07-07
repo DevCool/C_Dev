@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c89 -Wall -Wextra -pedantic -g
+CFLAGS=-std=c89 -Wall -pedantic -g
 INCLUDES=-I./src
 LDFLAGS=-g
 
