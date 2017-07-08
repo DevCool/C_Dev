@@ -93,7 +93,7 @@ char **psh_split_line(char *line, int *argcnt) {
 extern int fileno(FILE *fp);
 
 int psh_launch(char **args) {
-  int pid = -1, status;
+  int pid = -1, status, wpid;
 
   pid = fork();
   if(pid < 0) {
@@ -108,7 +108,7 @@ int psh_launch(char **args) {
   } else {
     /* parent process waits for child */
     do {
-      waitpid(pid, &status, WUNTRACED);
+      wpid = waitpid(pid, &status, WUNTRACED);
     } while(!WIFEXITED(status) && !WIFSIGNALED(status));
   }
   return 1;
