@@ -6,7 +6,8 @@ LDFLAGS=-ansi -g
 BINDIR=bin
 SRCDIR=src
 OBJDIR=obj
-INSTALLDIR?=/usr/local/bin
+INSTDIR?=/usr/local/bin/
+INSTDIRWIN?=/Windows/System32/
 TARGET=psh
 
 SOURCES := $(wildcard $(SRCDIR)/*.c)
@@ -16,7 +17,7 @@ OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
 all: makedirs $(BINDIR)/$(TARGET)
 
 makedirs:
-	@mkdir -p $(BINDIR) $(OBJDIR)
+	@mkdir $(BINDIR) $(OBJDIR)
 	@echo "Starting to compile!"
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
@@ -27,14 +28,26 @@ $(OBJECTS): $(OBJDIR)/%.c.o : $(SRCDIR)/%.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
-.PHONY: clean
-clean:
+.PHONY: remove
+remove:
 	@rm -f $(OBJDIR)/*.o
 	@rmdir $(OBJDIR)
 	@echo "Cleanup complete!"
 
-.PHONY: remove
-remove: clean
+.PHONY: remove-windows
+remove-windows:
+	@del $(OBJDIR)\*.o
+	@rmdir $(OBJDIR)
+	@echo "Cleanup Complete!"
+
+.PHONY: clean
+clean: remove
 	@rm -f $(BINDIR)/$(TARGET)
+	@rmdir $(BINDIR)
+	@echo "Executable removed!"
+
+.PHONY: clean-windows
+clean-windows: remove-windows
+	@del $(BINDIR)\$(TARGET).exe
 	@rmdir $(BINDIR)
 	@echo "Executable removed!"
