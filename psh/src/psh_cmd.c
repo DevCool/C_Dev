@@ -55,7 +55,7 @@ char *psh_read_line(void) {
 	return NULL;
 }
 
-char **psh_split_line(char *line) {
+char **psh_split_line(char *line, int *argcnt) {
 	char **tokens = NULL;
 	char *token = NULL;
 	int i = 0, size = CMD_TOK_COUNT;
@@ -66,11 +66,11 @@ char **psh_split_line(char *line) {
 		exit(EXIT_FAILURE);
 	}
 
+	*argcnt = 0;
 	token = strtok(line, CMD_TOK_DELIMS);
 	while(token != NULL) {
 		tokens[i] = token;
 		i++;
-
 		if(i >= size) {
 			size += CMD_TOK_COUNT;
 			tokens = (char **)realloc(tokens, size * sizeof(char *));
@@ -82,6 +82,7 @@ char **psh_split_line(char *line) {
 		token = strtok(NULL, CMD_TOK_DELIMS);
 	}
 	tokens[i] = NULL;
+	*argcnt = i;
 	return tokens;
 }
 
@@ -93,9 +94,6 @@ int psh_launch(char **args) {
 }
 
 /* --------- Shell builtin commands ---------- */
-
-#define CMD1_COUNT 3
-#define CMD2_COUNT 4
 
 static char *builtin_str[] = {
 	"cd",
@@ -112,9 +110,12 @@ static char *builtin_str2[] = {
 
 #define CNT_ARGS(A) (((signed int)(sizeof(A)/sizeof(char *))))
 
-int psh_cd(char **args) {
-	if(args[1] == NULL) {
-		fprintf(stderr, "psh: expected argument to \"cd\" into\n");
+int psh_cd(char **args, int argcnt) {
+#if !defined(NDEBUG)
+	printf("Argument Count: %d\n", argcnt);
+#endif
+	if(argcnt < 2) {
+		fprintf(stderr, "psh: expected one argument to \"cd\" into\n");
 	} else {
 		if(chdir(args[1]) != 0) {
 			perror("psh");
@@ -123,37 +124,40 @@ int psh_cd(char **args) {
 	return 1;
 }
 
-int psh_touch(char **args) {
-	int i;
+int psh_touch(char **args, int argcnt) {
+	int i, count = 0;
 
-	if(args[1] == NULL) {
+#if !defined(NDEBUG)
+	printf("Argument Count: %d\n", argcnt);
+#endif
+	if(argcnt < 2) {
 		fprintf(stderr, "psh: touch requires file names in order to create files.\n");
 		return 1;
 	}
-	for(i = 1; i <= CNT_ARGS(args); i++) {
+	for(i = 1; i < argcnt; i++) {
 		FILE *file = NULL;
-		int count = 0;
-		for(i = 1; i <= CNT_ARGS(args); i++) {
-			if((file = fopen(args[i], "w")) == NULL) {
-				fprintf(stderr, "psh: could not create file %s.\n", args[i]);
-				return 2;
-			}
-			fclose(file);
-			++count;
+		if((file = fopen(args[i], "w")) == NULL) {
+			fprintf(stderr, "psh: could not create file %s.\n", args[i]);
+			return 2;
 		}
-		printf("%d files created.\n", count);
+		fclose(file);
+		++count;
 	}
+	printf("%d files created.\n", count);
 	return 1;
 }
 
-int psh_rm(char **args) {
+int psh_rm(char **args, int argcnt) {
 	int i;
 
-	if(args[1] == NULL) {
+#if !defined(NDEBUG)
+	printf("Argument Count: %d\n", argcnt);
+#endif
+	if(argcnt < 2) {
 		fprintf(stderr, "psh: rm command takes arguments, to delete files.\n");
 		return 1;
 	}
-	for(i = 1; i <= CNT_ARGS(args); i++) {
+	for(i = 1; i < argcnt; i++) {
 		remove(args[i]);
 		printf("File [%s] removed.\n", args[i]);
 	}
@@ -210,7 +214,7 @@ int psh_exit(void) {
 	return 0;
 }
 
-int (*builtin_func[])(char **args) = {
+int (*builtin_func[])(char **args, int argcnt) = {
 	&psh_cd,
 	&psh_touch,
 	&psh_rm
@@ -266,7 +270,7 @@ int psh_process(char **args) {
 }
 #endif
 
-int psh_execute(char **args) {
+int psh_execute(char **args, int argcnt) {
 	int i;
 
 	if(args[0] == NULL) {
@@ -277,7 +281,7 @@ int psh_execute(char **args) {
 
 	for(i = 0; i < CNT_ARGS(builtin_str); i++) {
 		if(strcmp(args[0], builtin_str[i]) == 0) {
-			return (*builtin_func[i])(args);
+			return (*builtin_func[i])(args, argcnt);
 		}
 	}
 	for(i = 0; i < CNT_ARGS(builtin_str2); i++) {
@@ -297,13 +301,13 @@ int psh_execute(char **args) {
 void psh_loop(void) {
 	char *line = NULL;
 	char **args = { NULL };
-	int status;
+	int status, count = 0;
 
 	do {
 		printf("PSH >> ");
 		line = psh_read_line();
-		args = psh_split_line(line);
-		status = psh_execute(args);
+		args = psh_split_line(line, &count);
+		status = psh_execute(args, count);
 		free(line);
 	} while(status);
 	free(args);
