@@ -89,7 +89,7 @@ char **psh_split_line(char *line, int *argcnt) {
 }
 
 
-#if !defined(_WIN32) || (_WIN64)
+#if defined(__linux__)
 extern int fileno(FILE *fp);
 
 int psh_launch(char **args) {
