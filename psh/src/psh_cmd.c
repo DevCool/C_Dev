@@ -15,6 +15,8 @@
 /* Include windows headers */
 #if defined(_WIN32) || (_WIN64)
 #include <windows.h>
+#else
+#include <sys/wait.h>
 #endif
 
 #define CMD_BUFSIZE	2
@@ -86,12 +88,41 @@ char **psh_split_line(char *line, int *argcnt) {
 	return tokens;
 }
 
+#if defined(__linux__)
 int psh_launch(char **args) {
-	if(execvp(args[0], args) == -1) {
+	pid_t pid;
+	int status = 0;
+	int fin = 0, fout = 0;
+
+	pid = fork();
+	if(pid == -1) {
 		perror("psh");
+		return 1;
+	}
+	if(pid == 0) {
+		/* wait for child process to launch */
+		fflush(stdin);
+		fflush(stdout);
+		fin = dup(fileno(stdin));
+		fout = dup(fileno(stdout));
+		fclose(stdin);
+		fclose(stdout);
+		if(execvp(args[0], args) == -1) {
+			perror("psh");
+		}
+	} else {
+		/* parents code */
+		waitpid(pid, &status, 0);
+		fflush(stdin);
+		fflush(stdout);
+		dup2(fin, fileno(stdin));
+		dup2(fout, fileno(stdout));
+		close(fin);
+		close(fout);
 	}
 	return 1;
 }
+#endif
 
 /* --------- Shell builtin commands ---------- */
 
