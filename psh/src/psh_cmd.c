@@ -115,12 +115,15 @@ int psh_launch(char **args) {
 }
 #endif
 
-/* --------- Shell builtin commands ---------- */
+/* ---------- Shell builtin commands ----------- */
 
 static char *builtin_str[] = {
   "cd",
   "touch",
-  "rm"
+  "rm",
+  "rmdir",
+  "mkdir",
+  "deltree"
 };
 
 static char *builtin_str2[] = {
@@ -129,6 +132,21 @@ static char *builtin_str2[] = {
   "help",
   "exit"
 };
+
+static char *builtin_help[] = {
+  "change directory to a different one.",
+  "create new files without data inside.",
+  "delete a file from the system.",
+  "remove an empty directory.",
+  "make a new directory.",
+  "delete an entire directory tree.",
+  "list directory structure.",
+  "print working directory.",
+  "this command help message.",
+  "quits this command shell."
+};
+
+/* --------- Below are the functions ----------- */
 
 #define CNT_ARGS(A) (((signed int)(sizeof(A)/sizeof(char *))))
 
@@ -186,6 +204,87 @@ int psh_rm(char **args, int argcnt) {
   return 1;
 }
 
+int psh_rmdir(char **args, int argcnt) {
+  int i;
+
+#if !defined(NDEBUG)
+  printf("Argument Count: %d\n", argcnt);
+#endif
+  if(argcnt < 2) {
+    fprintf(stderr, "psh: rmdir command takes arguments, to\ndelete directories.\n");
+    return 1;
+  }
+  for(i = 1; i < argcnt; i++)
+    if(rmdir(args[i]) != 0) {
+      fprintf(stderr, "psh: failed to delete %s directory.\n", args[i]);
+    } else {
+      printf("Directory [%s] deleted.\n", args[i]);
+    }
+  return 1;
+}
+
+int psh_mkdir(char **args, int argcnt) {
+  int i;
+
+#if !defined(NDEBUG)
+  printf("Argument Count: %d\n", argcnt);
+#endif
+  if(argcnt < 2) {
+    fprintf(stderr, "psh: mkdir command takes arguments, to\ncreate directories.\n");
+    return 1;
+  }
+  for(i = 1; i < argcnt; i++)
+    if(mkdir(args[i]) != 0) {
+      fprintf(stderr, "psh: failed to make %s directory.\n", args[i]);
+    } else {
+      printf("Directory [%s] created.\n", args[i]);
+    }
+  return 1;
+}
+
+int psh_deltree(char **args, int argcnt) {
+  DIR *d = NULL;
+  struct dirent *dir;
+  int i;
+
+#if !defined(NDEBUG)
+  printf("Argument Count: %d\n", argcnt);
+#endif
+  if(argcnt < 2) {
+    fprintf(stderr, "psh: deltree command takes arguments, to\nwipe directories.\n");
+    return 1;
+  }
+  for(i = 1; i < argcnt; i++) {
+    d = opendir(args[i]);
+    if(d != NULL) {
+      while((dir = readdir(d)) != NULL) {
+        char *file = NULL;
+	if(strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0)
+          continue;
+        file = calloc(1, strlen(args[i])+strlen(dir->d_name)+1);
+        if(file == NULL) {
+          fprintf(stderr, "psh: cannot alloc memory for filename.\n");
+          return 1;
+        }
+        sprintf(file, "%s/%s", args[i], dir->d_name);
+        if(unlink(file) != 0) {
+          fprintf(stderr, "psh: Cannot unlink file %s\n", file);
+        }
+        free(file);
+      }
+      if(rmdir(args[i]) != 0) {
+        fprintf(stderr, "Cannot delete directory %s\n", args[i]);
+      } else {
+        printf("Directory %s deleted.\n", args[i]);
+      }
+      closedir(d);
+    } else {
+      printf("Directory %s does not exist.\n", args[i]);
+    }
+  }
+  return 1;
+}
+
 int psh_pwd(void) {
   char dir[BUFSIZ];
   memset(dir, 0, sizeof(dir));
@@ -219,15 +318,38 @@ int psh_ls(void) {
 }
 
 int psh_help(void) {
-  int i;
-  printf("Philip's Shell v0.02a\n************************\n");
+  int i, j;
+  printf("Philip's Shell v0.02a by Philip Ruben Simonson\n"\
+    "************************\n");
   printf("Type program names and arguments, and press enter.\n");
   printf("Have phun with my $h3l7 :P\n");
 
-  for(i = 0; i < CNT_ARGS(builtin_str); i++)
-    printf("   %s\n", builtin_str[i]);
-  for(i = 0; i < CNT_ARGS(builtin_str2); i++)
-    printf("   %s\n", builtin_str2[i]);
+  j = 0;
+  for(i = 0; i < CNT_ARGS(builtin_str); i++, j++)
+    if(strlen(builtin_str[i]) == 2)
+      printf("   %s        - %s\n", builtin_str[i], builtin_help[j]);
+    else if(strlen(builtin_str[i]) == 5)
+      printf("   %s     - %s\n", builtin_str[i], builtin_help[j]);
+    else if(strlen(builtin_str[i]) == 7)
+      printf("   %s   - %s\n", builtin_str[i], builtin_help[j]);
+    else if(strlen(builtin_str[i]) == 3)
+      printf("   %s       - %s\n", builtin_str[i], builtin_help[j]);
+    else
+      printf("   %s      - %s\n", builtin_str[i], builtin_help[j]);
+
+  j = CNT_ARGS(builtin_str);
+  for(i = 0; i < CNT_ARGS(builtin_str2); i++, j++)
+    if(strlen(builtin_str2[i]) == 2)
+      printf("   %s        - %s\n", builtin_str2[i], builtin_help[j]);
+    else if(strlen(builtin_str2[i]) == 5)
+      printf("   %s     - %s\n", builtin_str2[i], builtin_help[j]);
+    else if(strlen(builtin_str2[i]) == 7)
+      printf("   %s   - %s\n", builtin_str2[i], builtin_help[j]);
+    else if(strlen(builtin_str2[i]) == 3)
+      printf("   %s       - %s\n", builtin_str2[i], builtin_help[j]);
+    else
+      printf("   %s      - %s\n", builtin_str2[i], builtin_help[j]);
+
   printf("Use documentation for other programs to see how to use them.\n");
   return 1;
 }
@@ -239,7 +361,10 @@ int psh_exit(void) {
 int (*builtin_func[])(char **args, int argcnt) = {
   &psh_cd,
   &psh_touch,
-  &psh_rm
+  &psh_rm,
+  &psh_rmdir,
+  &psh_mkdir,
+  &psh_deltree
 };
 
 int (*builtin_func2[])(void) = {
