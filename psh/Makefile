@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-std=c89 -Wall -pedantic -g
+CFLAGS=-std=c89 -ansi -Wall -Wextra -pedantic -g
 INCLUDES=-I./src
-LDFLAGS=-g
+LDFLAGS=-ansi -g
 
 BINDIR=bin
 SRCDIR=src

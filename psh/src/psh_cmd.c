@@ -5,44 +5,60 @@
  *****************************************************************************
  */
 
+/* Include standard headers */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <windows.h>
 
-#define CMD_BUFSIZE	1024
+/* Include windows headers */
+#if defined(_WIN32) || (_WIN64)
+#include <windows.h>
+#endif
+
+#define CMD_BUFSIZE	2
 #define CMD_TOK_COUNT	64
 #define CMD_TOK_DELIMS	" \t\r\n\a"
 
 /* ------------------------ Start of command shell ------------------------ */
 
-int psh_read_line(char *s, int size) {
-	int c, i;
+char *psh_read_line(void) {
+	char *buf = NULL;
+	int c, i = 0;
+	int size = CMD_BUFSIZE;
 
-	for(i = 0; (c = getchar()) != EOF && c != 0x0A; )
-		if(i < size-1) {
-			if(s[i] == 0x08) {
-				s[i] = 0x00;
-				--i;
-				continue;
-			}
-			s[i] = c;
-			++i;
-		}
-	if(c == 0x0A) {
-		s[i] = c;
-		++i;
+	if((buf = malloc(size*sizeof(char))) == NULL) {
+		fprintf(stderr, "psh: Out of memory.\n");
+		return NULL;
 	}
-	s[i] = 0x00;
-	return i;
+
+	while(1) {
+		c = getchar();
+		if(c == EOF || c == 0x0A) {
+			buf[i] = 0x00;
+			return buf;
+		} else {
+			buf[i] = c;
+		}
+		++i;
+
+		if(i >= size) {
+			size += CMD_BUFSIZE;
+			buf = realloc(buf, size);
+			if(buf == NULL) {
+				fprintf(stderr, "psh: Out of memory.\n");
+				break;
+			}
+		}
+	}
+	return NULL;
 }
 
-char **psh_split_line(char *line, int *argcnt) {
+char **psh_split_line(char *line) {
 	char **tokens = NULL;
 	char *token = NULL;
-	int i, size = CMD_TOK_COUNT;
+	int i = 0, size = CMD_TOK_COUNT;
 
 	tokens = (char **)malloc(size * sizeof(char *));
 	if(tokens == NULL) {
@@ -51,16 +67,13 @@ char **psh_split_line(char *line, int *argcnt) {
 	}
 
 	token = strtok(line, CMD_TOK_DELIMS);
-	i = 0;
-	*argcnt = 0;
 	while(token != NULL) {
 		tokens[i] = token;
-		++i;
-		*argcnt = i;
+		i++;
 
 		if(i >= size) {
 			size += CMD_TOK_COUNT;
-			tokens = realloc(tokens, size * sizeof(char *));
+			tokens = (char **)realloc(tokens, size * sizeof(char *));
 			if(tokens == NULL) {
 				fprintf(stderr, "Out of memory.\n");
 				exit(EXIT_FAILURE);
@@ -72,7 +85,7 @@ char **psh_split_line(char *line, int *argcnt) {
 	return tokens;
 }
 
-int psh_launch(char **args, int argcnt) {
+int psh_launch(char **args) {
 	if(execvp(args[0], args) == -1) {
 		perror("psh");
 	}
@@ -81,11 +94,13 @@ int psh_launch(char **args, int argcnt) {
 
 /* --------- Shell builtin commands ---------- */
 
-#define CMD1_COUNT 1
+#define CMD1_COUNT 3
 #define CMD2_COUNT 4
 
 static char *builtin_str[] = {
 	"cd",
+	"touch",
+	"rm"
 };
 
 static char *builtin_str2[] = {
@@ -95,13 +110,52 @@ static char *builtin_str2[] = {
 	"exit"
 };
 
+#define CNT_ARGS(A) (((signed int)(sizeof(A)/sizeof(char *))))
+
 int psh_cd(char **args) {
-	if(strcmp(args[1], "") == 0) {
+	if(args[1] == NULL) {
 		fprintf(stderr, "psh: expected argument to \"cd\" into\n");
 	} else {
 		if(chdir(args[1]) != 0) {
 			perror("psh");
 		}
+	}
+	return 1;
+}
+
+int psh_touch(char **args) {
+	int i;
+
+	if(args[1] == NULL) {
+		fprintf(stderr, "psh: touch requires file names in order to create files.\n");
+		return 1;
+	}
+	for(i = 1; i <= CNT_ARGS(args); i++) {
+		FILE *file = NULL;
+		int count = 0;
+		for(i = 1; i <= CNT_ARGS(args); i++) {
+			if((file = fopen(args[i], "w")) == NULL) {
+				fprintf(stderr, "psh: could not create file %s.\n", args[i]);
+				return 2;
+			}
+			fclose(file);
+			++count;
+		}
+		printf("%d files created.\n", count);
+	}
+	return 1;
+}
+
+int psh_rm(char **args) {
+	int i;
+
+	if(args[1] == NULL) {
+		fprintf(stderr, "psh: rm command takes arguments, to delete files.\n");
+		return 1;
+	}
+	for(i = 1; i <= CNT_ARGS(args); i++) {
+		remove(args[i]);
+		printf("File [%s] removed.\n", args[i]);
 	}
 	return 1;
 }
@@ -140,13 +194,13 @@ int psh_ls(void) {
 
 int psh_help(void) {
 	int i;
-	printf("Philip's Shell\n");
+	printf("Philip's Shell v0.02a\n************************\n");
 	printf("Type program names and arguments, and press enter.\n");
 	printf("Have phun with my $h3l7 :P\n");
 
-	for(i = 0; i < CMD1_COUNT; i++)
+	for(i = 0; i < CNT_ARGS(builtin_str); i++)
 		printf("   %s\n", builtin_str[i]);
-	for(i = 0; i < CMD2_COUNT; i++)
+	for(i = 0; i < CNT_ARGS(builtin_str2); i++)
 		printf("   %s\n", builtin_str2[i]);
 	printf("Use documentation for other programs to see how to use them.\n");
 	return 1;
@@ -157,7 +211,9 @@ int psh_exit(void) {
 }
 
 int (*builtin_func[])(char **args) = {
-	&psh_cd
+	&psh_cd,
+	&psh_touch,
+	&psh_rm
 };
 
 int (*builtin_func2[])(void) = {
@@ -168,22 +224,24 @@ int (*builtin_func2[])(void) = {
 };
 
 #if defined(_WIN32) || (_WIN64)
-int psh_process(char **args, int argcnt) {
+int psh_process(char **args) {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	char *cmdline = NULL;
 	int i, max = 0;
 
-	for(i = 0; i < argcnt; i++)
+	for(i = 0; i < CNT_ARGS(args); i++)
 		max = strlen(args[i]);
-	cmdline = (char *)malloc((argcnt*(max*sizeof(char)))+1);
+	cmdline = (char *)malloc((max*sizeof(char))+1);
 	if(cmdline == NULL) {
 		fprintf(stderr, "psh: Out of memory.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	strcpy(cmdline, args[0]);
-	for(i = 1; i < argcnt; i++) {
+	for(i = 1; i <= CNT_ARGS(args); i++) {
+		if(args[i] == NULL)
+			break;
 		strcat(cmdline, " ");
 		strcat(cmdline, args[i]);
 	}
@@ -208,41 +266,45 @@ int psh_process(char **args, int argcnt) {
 }
 #endif
 
-int psh_execute(char **args, int argcnt) {
+int psh_execute(char **args) {
 	int i;
 
-	if(strcmp(args[0], "") == 0) {
+	if(args[0] == NULL) {
 		/* Empty command */
+		printf("You need to enter a command.\n");
 		return 1;
 	}
 
-	for(i = 0; i < CMD1_COUNT; i++)
+	for(i = 0; i < CNT_ARGS(builtin_str); i++) {
 		if(strcmp(args[0], builtin_str[i]) == 0) {
 			return (*builtin_func[i])(args);
 		}
-	for(i = 0; i < CMD2_COUNT; i++)
+	}
+	for(i = 0; i < CNT_ARGS(builtin_str2); i++) {
 		if(strcmp(args[0], builtin_str2[i]) == 0) {
 			return (*builtin_func2[i])();
 		}
+	}
 #if defined(_WIN32) || (_WIN64)
-	return psh_process(args, argcnt);
+	return psh_process(args);
 #else
-	return psh_launch(args, argcnt);
+	return psh_launch(args);
 #endif
 }
 
 /* psh_loop() - just use this if you want my shell.
  */
 void psh_loop(void) {
-	char line[CMD_BUFSIZE];
+	char *line = NULL;
 	char **args = { NULL };
-	int status, argcnt;
+	int status;
 
 	do {
 		printf("PSH >> ");
-		psh_read_line(line, CMD_BUFSIZE);
-		args = psh_split_line(line, &argcnt);
-		status = psh_execute(args, argcnt);
+		line = psh_read_line();
+		args = psh_split_line(line);
+		status = psh_execute(args);
+		free(line);
 	} while(status);
 	free(args);
 }
