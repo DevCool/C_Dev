@@ -460,6 +460,8 @@ int psh_help(void) {
       printf("   %s     - %s\n", builtin_str[i], builtin_help[j]);
     else if(strlen(builtin_str[i]) == 7)
       printf("   %s   - %s\n", builtin_str[i], builtin_help[j]);
+    else if(strlen(builtin_str[i]) == 8)
+      printf("   %s  - %s\n", builtin_str[i], builtin_help[j]);
     else if(strlen(builtin_str[i]) == 3)
       printf("   %s       - %s\n", builtin_str[i], builtin_help[j]);
     else
