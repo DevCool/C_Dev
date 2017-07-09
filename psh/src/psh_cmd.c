@@ -10,6 +10,7 @@
 #include <windows.h>
 #else
 #include <sys/wait.h>
+#include <sys/types.h>
 #endif
 
 /* Include standard headers */
@@ -129,6 +130,11 @@ static char *builtin_str[] = {
 static char *builtin_str2[] = {
   "ls",
   "pwd",
+#if defined(_WIN32) || (_WIN64)
+  "abort",
+#endif
+  "reboot",
+  "shutdown",
   "help",
   "exit"
 };
@@ -142,6 +148,11 @@ static char *builtin_help[] = {
   "delete an entire directory tree.",
   "list directory structure.",
   "print working directory.",
+#if defined(_WIN32) || (_WIN64)
+  "aborts shutdown of the computer",
+#endif
+  "restarts the computer",
+  "turns off the computer",
   "this command help message.",
   "quits this command shell."
 };
@@ -317,6 +328,58 @@ int psh_ls(void) {
   return 1;
 }
 
+#if defined(_WIN32) || (_WIN64)
+int psh_abort(void) {
+  if(!AbortSystemShutdown(NULL)) {
+    printf("psh: Cannot abort system shutdown error code [%lu]\n",
+        GetLastError());
+    return 1;
+  }
+  printf("Shutdown successfully aborted.\n");
+  return 1;
+}
+#endif
+
+int psh_reboot(void) {
+#if defined(_WIN32) || (_WIN64)
+  if(InitiateSystemShutdown(NULL, "Standard PC shutdown sequence.",
+      10, FALSE, TRUE) == 0) {
+    printf("psh: Cannot reboot the system error code [%lu]\n",
+      GetLastError());
+    return 1;
+  }
+  printf("Rebooting system...\n");
+#else
+  uid_t uid;
+  uid = getuid();
+  if(uid != 0)
+    execl("/usr/bin/sudo", "/sbin/shutdown", "-r", "now", NULL);
+  else
+    execl("/usr/bin/shutdown", "/sbin/shutdown", "-r", "now", NULL);
+#endif
+  return 1;
+}
+
+int psh_shutdown(void) {
+#if defined(_WIN32) || (_WIN64)
+  if(InitiateSystemShutdown(NULL, "Standard PC shutdown sequence.",
+      10, FALSE, FALSE) == 0) {
+    printf("psh: Cannot shutdown the system down error code [%lu]\n",
+      GetLastError());
+    return 1;
+  }
+  printf("Turning off system...\n");
+#else
+  uid_t uid;
+  uid = getuid();
+  if(uid != 0)
+    execl("/usr/bin/sudo", "/sbin/shutdown", "-h", "-P", "now", NULL);
+  else
+    execl("/usr/bin/shutdown", "/sbin/shutdown", "-h", "-P", "now", NULL);
+#endif
+  return 1;
+}
+
 int psh_help(void) {
   int i, j;
   printf("Philip's Shell v0.02a by Philip Ruben Simonson\n"\
@@ -345,6 +408,10 @@ int psh_help(void) {
       printf("   %s     - %s\n", builtin_str2[i], builtin_help[j]);
     else if(strlen(builtin_str2[i]) == 7)
       printf("   %s   - %s\n", builtin_str2[i], builtin_help[j]);
+    else if(strlen(builtin_str2[i]) == 6)
+      printf("   %s    - %s\n", builtin_str2[i], builtin_help[j]);
+    else if(strlen(builtin_str2[i]) == 8)
+      printf("   %s  - %s\n", builtin_str2[i], builtin_help[j]);
     else if(strlen(builtin_str2[i]) == 3)
       printf("   %s       - %s\n", builtin_str2[i], builtin_help[j]);
     else
@@ -370,6 +437,11 @@ int (*builtin_func[])(char **args, int argcnt) = {
 int (*builtin_func2[])(void) = {
   &psh_ls,
   &psh_pwd,
+#if defined(_WIN32) || (_WIN64)
+  &psh_abort,
+#endif
+  &psh_reboot,
+  &psh_shutdown,
   &psh_help,
   &psh_exit
 };
