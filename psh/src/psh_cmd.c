@@ -95,7 +95,7 @@ char **psh_split_line(char *line, int *argcnt) {
   return tokens;
 }
 
-
+#if defined(__linux__)
 int psh_launch(char **args) {
   int pid = -1, status;
 
@@ -117,6 +117,7 @@ int psh_launch(char **args) {
   }
   return 1;
 }
+#endif
 
 /* ---------- Shell builtin commands ----------- */
 
