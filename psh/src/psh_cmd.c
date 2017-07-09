@@ -5,12 +5,14 @@
  *****************************************************************************
  */
 
-/* Include windows headers */
-#if defined(_WIN32) || (_WIN64)
+#if defined(_WIN32)
+/* Include Windows headers */
 #include <windows.h>
-#else
+#elif defined(linux)
+/* Include Linux headers */
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <termcap.h>
 #endif
 
 /* Include standard headers */
@@ -25,7 +27,7 @@
 #define CMD_TOK_DELIMS	" \t\r\n\a"
 #define NDEBUG
 
-#if defined(__linux__)
+#if defined(linux)
 extern int mkdir(const char *path);
 extern int fileno(FILE *fp);
 #endif
@@ -95,7 +97,7 @@ char **psh_split_line(char *line, int *argcnt) {
   return tokens;
 }
 
-#if defined(__linux__)
+#if defined(linux)
 int psh_launch(char **args) {
   int pid = -1, status;
 
@@ -131,9 +133,10 @@ static char *builtin_str[] = {
 };
 
 static char *builtin_str2[] = {
+  "clear",
   "ls",
   "pwd",
-#if defined(_WIN32) || (_WIN64)
+#if defined(_WIN32)
   "abort",
 #endif
   "reboot",
@@ -149,9 +152,10 @@ static char *builtin_help[] = {
   "remove an empty directory.",
   "make a new directory.",
   "delete an entire directory tree.",
+  "clears the terminal screen",
   "list directory structure.",
   "print working directory.",
-#if defined(_WIN32) || (_WIN64)
+#if defined(__WIN32) || (_WIN64)
   "aborts shutdown of the computer",
 #endif
   "restarts the computer",
@@ -310,6 +314,44 @@ int psh_pwd(void) {
   return 1;
 }
 
+void cls(HANDLE hConsole) {
+  COORD coordScreen = { 0, 0 };
+  DWORD cCharsWritten;
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  DWORD dwConSize;
+
+  /* Get the number of char cells */
+  if(!GetConsoleScreenBufferInfo(hConsole, &csbi))
+    return;
+
+  dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
+
+  /* Fill the entire screen */
+  if(!FillConsoleOutputCharacter(hConsole,
+                                 ' ',
+                                 dwConSize,
+                                 coordScreen,
+                                 &cCharsWritten))
+    return;
+
+  /* put the cursor at its home coord */
+  SetConsoleCursorPosition(hConsole, coordScreen);
+}
+
+int psh_clear(void) {
+#if defined(_WIN32)
+  cls(GetStdHandle(STD_OUTPUT_HANDLE));
+#else
+  char buf[1024];
+  char *str = NULL;
+
+  tgetent(buf, getenv("TERM"));
+  str = tgetstr("cl", NULL);
+  fputs(str, stdout);
+#endif
+  return 1;
+}
+
 int psh_ls(void) {
   DIR *d = NULL;
   struct dirent *dir = NULL;
@@ -331,7 +373,7 @@ int psh_ls(void) {
   return 1;
 }
 
-#if defined(_WIN32) || (_WIN64)
+#if defined(__WIN32) || (_WIN64)
 int psh_abort(void) {
   if(!AbortSystemShutdown(NULL)) {
     printf("psh: Cannot abort system shutdown error code [%lu]\n",
@@ -344,7 +386,7 @@ int psh_abort(void) {
 #endif
 
 int psh_reboot(void) {
-#if defined(_WIN32) || (_WIN64)
+#if defined(_WIN32)
   if(InitiateSystemShutdown(NULL, "Standard PC shutdown sequence.",
       10, FALSE, TRUE) == 0) {
     printf("psh: Cannot reboot the system error code [%lu]\n",
@@ -364,7 +406,7 @@ int psh_reboot(void) {
 }
 
 int psh_shutdown(void) {
-#if defined(_WIN32) || (_WIN64)
+#if defined(_WIN32)
   if(InitiateSystemShutdown(NULL, "Standard PC shutdown sequence.",
       10, FALSE, FALSE) == 0) {
     printf("psh: Cannot shutdown the system down error code [%lu]\n",
@@ -438,9 +480,10 @@ int (*builtin_func[])(char **args, int argcnt) = {
 };
 
 int (*builtin_func2[])(void) = {
+  &psh_clear,
   &psh_ls,
   &psh_pwd,
-#if defined(_WIN32) || (_WIN64)
+#if defined(__WIN32) || (_WIN64)
   &psh_abort,
 #endif
   &psh_reboot,
@@ -449,7 +492,7 @@ int (*builtin_func2[])(void) = {
   &psh_exit
 };
 
-#if defined(_WIN32) || (_WIN64)
+#if defined(_WIN32)
 int psh_process(char **args) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
@@ -511,7 +554,7 @@ int psh_execute(char **args, int argcnt) {
       return (*builtin_func2[i])();
     }
   }
-#if defined(_WIN32) || (_WIN64)
+#if defined(_WIN32)
   return psh_process(args);
 #else
   return psh_launch(args);
