@@ -124,6 +124,7 @@ int psh_launch(char **args) {
 /* ---------- Shell builtin commands ----------- */
 
 static char *builtin_str[] = {
+  "psh_echo",
   "cd",
   "touch",
   "rm",
@@ -146,6 +147,7 @@ static char *builtin_str2[] = {
 };
 
 static char *builtin_help[] = {
+  "echos text to the screen.",
   "change directory to a different one.",
   "create new files without data inside.",
   "delete a file from the system.",
@@ -167,6 +169,24 @@ static char *builtin_help[] = {
 /* --------- Below are the functions ----------- */
 
 #define CNT_ARGS(A) (((signed int)(sizeof(A)/sizeof(char *))))
+
+int psh_print(char **args, int argcnt) {
+#if !defined(NDEBUG)
+  printf("Argument Count: %d\n", argcnt);
+#endif
+  if(argcnt < 2) {
+   fprintf(stderr, "psh: expected argument(s) to echo to screen.\n");
+  } else {
+    int i = 1;
+    while(i < argcnt) {
+      if(args[i] != NULL)
+        printf("%s ", args[i]);
+      ++i;
+    }
+    putchar('\n');
+  }
+  return 1;
+}
 
 int psh_cd(char **args, int argcnt) {
 #if !defined(NDEBUG)
@@ -471,6 +491,7 @@ int psh_exit(void) {
 }
 
 int (*builtin_func[])(char **args, int argcnt) = {
+  &psh_print,
   &psh_cd,
   &psh_touch,
   &psh_rm,
