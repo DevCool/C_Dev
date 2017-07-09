@@ -23,6 +23,7 @@
 #define CMD_BUFSIZE	2
 #define CMD_TOK_COUNT	64
 #define CMD_TOK_DELIMS	" \t\r\n\a"
+#define NDEBUG
 
 #if defined(__linux__)
 extern int mkdir(const char *path);
@@ -95,9 +96,6 @@ char **psh_split_line(char *line, int *argcnt) {
 }
 
 
-#if defined(__linux__)
-extern int fileno(FILE *fp);
-
 int psh_launch(char **args) {
   int pid = -1, status;
 
@@ -119,7 +117,6 @@ int psh_launch(char **args) {
   }
   return 1;
 }
-#endif
 
 /* ---------- Shell builtin commands ----------- */
 
