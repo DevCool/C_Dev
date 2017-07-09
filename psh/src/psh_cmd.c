@@ -24,6 +24,11 @@
 #define CMD_TOK_COUNT	64
 #define CMD_TOK_DELIMS	" \t\r\n\a"
 
+#if defined(__linux__)
+extern int mkdir(const char *path);
+extern int fileno(FILE *fp);
+#endif
+
 /* ------------------------ Start of command shell ------------------------ */
 
 char *psh_read_line(void) {
@@ -91,8 +96,6 @@ char **psh_split_line(char *line, int *argcnt) {
 
 
 #if defined(__linux__)
-extern int fileno(FILE *fp);
-
 int psh_launch(char **args) {
   int pid = -1, status;
 
