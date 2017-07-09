@@ -2,6 +2,7 @@ CC=gcc
 CFLAGS=-std=c89 -ansi -Wall -Wextra -pedantic -g
 INCLUDES=-I./src
 LDFLAGS=-ansi -g
+LIBS=-lkernel32 -ladvapi32
 
 BINDIR=bin
 SRCDIR=src
@@ -9,19 +10,28 @@ OBJDIR=obj
 INSTDIR?=/usr/local/bin/
 INSTDIRWIN?=/Windows/System32/
 TARGET=psh
+TARGETWIN=psh.exe
 
 SOURCES := $(wildcard $(SRCDIR)/*.c)
 INCLUDE := $(wildcard $(SRCDIR)/*.h)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
 
-all: makedirs $(BINDIR)/$(TARGET)
+all: linux
 
 makedirs:
 	@mkdir $(BINDIR) $(OBJDIR)
 	@echo Starting to compile!
 
+linux: makedirs $(BINDIR)/$(TARGET)
+
+windows: makedirs $(BINDIR)/$(TARGETWIN)
+
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+	@echo Linking complete!
+
+$(BINDIR)/$(TARGETWIN): $(OBJECTS)
+	@$(CC) $(OBJECTS) $(LDFLAGS) $(LIBS) -o $@
 	@echo Linking complete!
 
 $(OBJECTS): $(OBJDIR)/%.c.o : $(SRCDIR)/%.c
@@ -48,6 +58,6 @@ clean: remove
 
 .PHONY: clean-windows
 clean-windows: remove-windows
-	@del $(BINDIR)\$(TARGET).exe
+	@del $(BINDIR)\$(TARGETWIN)
 	@rmdir $(BINDIR)
 	@echo Executable removed!
