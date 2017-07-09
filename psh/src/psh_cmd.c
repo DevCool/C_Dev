@@ -96,6 +96,8 @@ char **psh_split_line(char *line, int *argcnt) {
 
 
 #if defined(__linux__)
+extern int fileno(FILE *fp);
+
 int psh_launch(char **args) {
   int pid = -1, status;
 
