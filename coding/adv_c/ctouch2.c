@@ -32,19 +32,25 @@ int main(int argc,char *argv[]) {
         return 0;
     }
     for(k = 1; k < argc; ++k) {
+        char line[512];
+	memset(line, 0, sizeof(line));
+        mkdir("bin");
+        mkdir("obj");
+        mkdir("src");
         printf("\n\n**************** %s ******************\n\n",argv[k]);
         printf("C Touch - Create a C language template.\n\n");
         printf("To stop entering includes send EOF on\nblank line.\n");
         printf("Enter include files:\n");
+        snprintf(line, sizeof(line), "src/%s", argv[k]);
         while(1) {
             s = getln(&i);
             if(s == NULL)
                 exit(1);
             if(i <= 0)
                 break;
-            writefile(argv[k],s);
+            writefile(line,s);
         }
-        writeln(argv[k]);
+        writeln(line);
 
         printf("\n\nTo stop entering function headers send EOF on\nblank line.\n");
         printf("Enter function headers:\n");
@@ -57,14 +63,14 @@ int main(int argc,char *argv[]) {
                 break;
             if(j < MAXLINES) {
                 s2[j] = s;
-                writefile(argv[k],s2[j]);
+                writefile(line,s2[j]);
                 ++j;
             }
         }
-        writeln(argv[k]);
-        if(strstr(argv[k],"main") != NULL)
-            writemain(argv[k]);
-        writefunc(argv[k],s2,j);
+        writeln(line);
+        if(strstr(line,"main") != NULL)
+            writemain(line);
+        writefunc(line,s2,j);
         for(i = 0; i < j; ++i)
             if(s2[i] != NULL)
                 free(s2[i]);
@@ -219,7 +225,9 @@ void writefunc(const char *filename,char *prototypes[],int ptcnt) {
 void writemake(int argc,char **argv[]) {
     FILE *fout;
     char path[MAXPATH];
+    char *progname;
     int i, res;
+    size_t namelen;
 
     memset(path,0,sizeof(path));
     if(getcwd(path,sizeof(path)) == NULL) {
@@ -231,28 +239,28 @@ void writemake(int argc,char **argv[]) {
         fprintf(stderr, "Cannot open makefile for output.\n");
         return;
     }
-    res = fprintf(fout,"CC=gcc\nCFLAGS?=-std=c89 -Wall -Wextra -pedantic\n"
-            "LDFLAGS?=\nSRC=");
+    printf("Name your project: ");
+    progname = getln(&namelen);
+    res = fprintf(fout,"CC=gcc\nCFLAGS?=-std=c89 -Wall -Wextra -pedantic -g\n"
+            "LDFLAGS?=-g\nLIBS=\n\nSRCDIR=src\nBINDIR=bin\nOBJDIR=obj\n\n"
+	    "SRC=$(wildcard $(SRCDIR)/*.c)\nTARGET=%s\n\n", progname);
+    free(progname);
     if(res == -1) {
         fclose(fout);
         remove(path);
         fprintf(stderr, "Makefile failed to write so it was removed.\n");
         return;
     }
-    for(i = 1; i < argc; ++i) {
-        res = fprintf(fout,"%s ",(*argv)[i]);
-        if(res == -1) {
-            fclose(fout);
-            remove(path);
-            fprintf(stderr, "Makefile failed to write so it was removed.\n");
-            return;
-        }
-    }
-    res = fprintf(fout,"\nOBJ=$(SRC:.c=.c.o)\n\nall: progname\n\n%%.c.o: %%.c\n\t"
-            "$(CC) $(CFLAGS) -c -o $@ $<\n\nprogname: $(OBJ)\n\t"
-            "$(CC) $(LDFLAGS) -o $@ $^\n\n.PHONY: clean\n\nclean:\n\t@echo"
-            " \"Cleaning project...\"\n\trm -f *.o progname\n\t@echo "
-            "\"Done cleaning.\"\n");
+    res = fprintf(fout,"OBJ=$(SRC:$(SRCDIR)/%%.c=$(OBJDIR)/%%.c.o)\n\nall: $(BINDIR)/$(TARGET)\n\n"
+	    "$(OBJ) : $(OBJDIR)/%%.c.o: $(SRCDIR)/%%.c\n\t"
+            "@$(CC) $(CFLAGS) -c -o $@ $<\n\t@echo Compiled $< successfully!\n\n"
+            "$(BINDIR)/$(TARGET): $(OBJ)\n\t"
+            "@echo Linking executable...\n\t"
+            "@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)\n\t@echo Executable built with success!\n\n"
+	    ".PHONY: clean clean-windows\n\nclean:\n\t@echo"
+            "Cleaning project...\n\t@rm -f $(OBJDIR)/*.o $(BINDIR)/$(TARGET)\n\t@echo "
+            "Cleanup complete!\n\nclean-windows:\n\t@echo Cleaning project...\n\t"
+	    "@del $(OBJDIR)\*.o $(BINDIR)\$(TARGET).exe\n\t@echo Cleanup complete...\n");
     if(res == -1) {
         fclose(fout);
         remove(path);
