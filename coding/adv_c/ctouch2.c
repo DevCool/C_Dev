@@ -260,7 +260,7 @@ void writemake(int argc,char **argv[]) {
 	    ".PHONY: clean clean-windows\n\nclean:\n\t@echo"
             "Cleaning project...\n\t@rm -f $(OBJDIR)/*.o $(BINDIR)/$(TARGET)\n\t@echo "
             "Cleanup complete!\n\nclean-windows:\n\t@echo Cleaning project...\n\t"
-	    "@del $(OBJDIR)\*.o $(BINDIR)\$(TARGET).exe\n\t@echo Cleanup complete...\n");
+	    "@del $(OBJDIR)\\*.o $(BINDIR)\\$(TARGET).exe\n\t@echo Cleanup complete...\n");
     if(res == -1) {
         fclose(fout);
         remove(path);
