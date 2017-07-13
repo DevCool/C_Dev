@@ -18,16 +18,10 @@
 #define WARN(T, M, ...) DEBUG("WARNING", M, ##__VA_ARGS__);
 
 /* File handling debugging macros */
-#define FOPEN_ERROR(P, name, mode) if(!(P)) { P = fopen(name, mode); \
-if(P == NULL) { fprintf(stderr, "[ERROR] : %s.\n" \
-"FILE: [%s]\nLINE: [%u]\n", strerror(errno), __FILE__, __LINE__); \
-exit(errno); } else { ERROR(fclose(P) == EOF, "Closing file failed."); \
-errno = 0; exit(errno); } } else { fprintf(stderr, "File must already " \
-"be open."); }
-
-#define FCLOSE_ERROR(P) if(!(P)) { fprintf(stderr, "[ERROR] : %s.\n" \
-"FILE: [%s]\nLINE: [%u]\n", strerror(errno), __FILE__, __LINE__); \
-exit(errno); } else { ERROR(fclose(P) == EOF, "Closing file failed."); \
-errno = 0; exit(errno); }
+#define FOPEN_ERROR(P, name, mode) if(P == NULL) { \
+P = fopen(name, mode); if(P == NULL) { \
+fprintf(stderr, "[ERROR] : File was not opened.\n"); \
+} else { DEBUG("INFO", "File opened successfully!"); } }
+#define FCLOSE_ERROR(P) ERROR(fclose(P) == EOF, "File closing failed.")
 
 #endif
