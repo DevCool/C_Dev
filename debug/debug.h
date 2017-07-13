@@ -12,14 +12,14 @@
 #endif
 
 /* Check debugging macros */
-#define CHECK(T, I, M, ...) if((T)) { fprintf(stderr, "[" I "] : " M "\n"\
-	"FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__);\
-	goto error; errno = 0; exit(errno); }
+#define CHECK(T, I, M, ...) if((T)) { fprintf(stderr, "[" I "] : " M "\n" \
+    "FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__); \
+    goto error; errno = 0; exit(errno); }
 #define CHECK_MEM(P) CHECK(!(P), "ERROR", "Out of memory.");
 
 /* Normal debugging macros */
-#define DEBUG(I, M, ...) fprintf(stderr, "[" I "] : " M "\n"\
-	"FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__);
+#define DEBUG(I, M, ...) fprintf(stderr, "[" I "] : " M "\n" \
+"FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__);
 #define ERROR(T, M, ...) CHECK((T), "ERROR", M, ##__VA_ARGS__);
 #define WARN(T, M, ...) DEBUG("WARNING", M, ##__VA_ARGS__);
 
