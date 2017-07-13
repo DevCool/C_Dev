@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define DEBUGGING
 #include "debug.h"
 
 int file_copy(FILE *fin, FILE *fout);
@@ -35,7 +36,10 @@ int main(int argc, char *argv[]) {
 	printf("Started file copy.\n");
 	FOPEN_ERROR(fin, argv[1], "rt");
 	FOPEN_ERROR(fout, argv[2], "wt");
-	file_copy(fin, fout);
+	if(file_copy(fin, fout) == 0)
+		printf("File copy was successful!\n");
+	else
+		printf("File copy was unsuccessful!\n");
 	FCLOSE_ERROR(fin);
 	FCLOSE_ERROR(fout);
 	printf("File copy ended.");
@@ -52,10 +56,11 @@ error:
 
 int file_copy(FILE *fin, FILE *fout) {
 	char buf[CHUNK_SIZE];
-	size_t size = ftell(fin);
 	size_t bytesRead, bytesWritten;
-	size_t total_bytes = 0;
+	size_t total_bytes = 0, size = 0;
 
+	while((bytesRead = fread(buf, 1, sizeof(buf), fin)) > 0)
+		size += bytesRead;
 	rewind(fin);
 	while((bytesRead = fread(buf, 1, sizeof(buf), fin)) > 0) {
 		bytesWritten = fwrite(buf, 1, bytesRead, fout);
@@ -65,11 +70,10 @@ int file_copy(FILE *fin, FILE *fout) {
 			fprintf(stderr, "Failed to write %lu bytes to file.\n", bytesRead);
 	}
 
-	if(total_bytes == size)
-		printf("File copy was successful.\n");
-	else {
-		printf("File copy was unsuccessful.\n");
-		return -1;
-	}
+	CHECK(total_bytes != size, "INFO", "Real size: %lu\nTotal copied: %lu",\
+		size, total_bytes);
 	return 0;
+
+error:
+	return -1;
 }

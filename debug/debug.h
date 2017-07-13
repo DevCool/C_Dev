@@ -5,6 +5,12 @@
  * stdio.h, stdlib.h, string.h, errno.h
  */
 
+#ifndef DEBUGGING
+#define NDEBUG 1
+#else
+#define NDEBUG 0
+#endif
+
 /* Check debugging macros */
 #define CHECK(T, I, M, ...) if((T)) { fprintf(stderr, "[" I "] : " M "\n"\
 	"FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__);\
@@ -21,7 +27,8 @@
 #define FOPEN_ERROR(P, name, mode) if(P == NULL) { \
 P = fopen(name, mode); if(P == NULL) { \
 fprintf(stderr, "[ERROR] : File was not opened.\n"); \
-} else { DEBUG("INFO", "File opened successfully!"); } }
+} else { if(NDEBUG) { DEBUG("INFO", "File opened successfully!"); } else { \
+printf("File opened successfully!\n"); } } }
 #define FCLOSE_ERROR(P) ERROR(fclose(P) == EOF, "File closing failed.")
 
 #endif
