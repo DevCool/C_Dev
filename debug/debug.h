@@ -16,7 +16,7 @@
     "FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__); \
     goto error; errno = 0; exit(errno); }
 #define CHECK_FIXED(T, I, M) CHECK(T, I, M, NULL)
-#define CHECK_MEM(P) CHECK(!(P), "ERROR", "Out of memory.");
+#define CHECK_MEM(P) CHECK(!(P), "ERROR", "Out of memory.", NULL);
 
 /* Normal debugging macros */
 #define DEBUG(I, M, ...) fprintf(stderr, "[" I "] : " M "\n" \
