@@ -14,6 +14,8 @@
 #define MAXLINES 80
 #define MAXPATH 512
 
+extern int mkdir(const char *dir);
+
 char *getln(size_t *i);
 void writeln(const char *filename);
 void writefile(const char *filename,char *s);
@@ -37,11 +39,15 @@ int main(int argc,char *argv[]) {
         mkdir("bin");
         mkdir("obj");
         mkdir("src");
+#if defined(_WIN32) || (_WIN64)
+	snprintf(line, sizeof(line), "src\\%s", argv[k]);
+#else
+        snprintf(line, sizeof(line), "src/%s", argv[k]);
+#endif
         printf("\n\n**************** %s ******************\n\n",argv[k]);
         printf("C Touch - Create a C language template.\n\n");
         printf("To stop entering includes send EOF on\nblank line.\n");
         printf("Enter include files:\n");
-        snprintf(line, sizeof(line), "src/%s", argv[k]);
         while(1) {
             s = getln(&i);
             if(s == NULL)
