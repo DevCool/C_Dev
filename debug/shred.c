@@ -3,12 +3,14 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(linux)
+#if defined(_linux)
 #include <unistd.h>
 #endif
 
 #define DEBUGGING
 #include "debug.h"
+
+extern int fileno(FILE *fp);
 
 int file_shredder(FILE *fp, unsigned char mode);
 
@@ -22,7 +24,7 @@ int main(int argc, char *argv[]) {
 
   if(argc == 2) {	/* handle shred without args */
     FOPEN_ERROR(fp, argv[1], "r+b");
-    ERROR(file_shredder(fp, 1) == EOF, "File shredder failed.");
+    ERROR_FIXED(file_shredder(fp, 1) == EOF, "File shredder failed.");
     FCLOSE_ERROR(fp);
     remove(argv[1]);
     puts("File shredded!");
@@ -32,17 +34,17 @@ int main(int argc, char *argv[]) {
       case 'u':
 	FOPEN_ERROR(fp, argv[2], "r+b");
 	if(argv[1][2] == 'z')
-	  ERROR(file_shredder(fp, 1) == EOF, "File shredder failed.");
-	ERROR(file_shredder(fp, 0) == EOF, "File shredder failed.");
+	  ERROR_FIXED(file_shredder(fp, 1) == EOF, "File shredder failed.");
+	ERROR_FIXED(file_shredder(fp, 0) == EOF, "File shredder failed.");
 	FCLOSE_ERROR(fp);
 	remove(argv[2]);
 	puts("File shredded!");
 	break;
       case 'z':
 	FOPEN_ERROR(fp, argv[2], "r+b");
-	ERROR(file_shredder(fp, 1) == EOF, "File shredder failed.");
+	ERROR_FIXED(file_shredder(fp, 1) == EOF, "File shredder failed.");
 	if(argv[1][2] == 'u')
-	  ERROR(file_shredder(fp, 0) == EOF, "File shredder failed.");
+	  ERROR_FIXED(file_shredder(fp, 0) == EOF, "File shredder failed.");
 	FCLOSE_ERROR(fp);
 	remove(argv[2]);
 	puts("File shredded!");
@@ -81,13 +83,13 @@ int file_shredder(FILE *fp, unsigned char mode) {
       if(bytesWritten) total_bytes += bytesWritten;
       else break;
     }
-    ERROR(total_bytes == file_size, "Failed to zero file.");
+    ERROR_FIXED(total_bytes == file_size, "Failed to zero file.");
     puts("File was zeroed!");
   } else {
 #if defined(_WIN32) || (_WIN64)
-    ERROR(_chsize(fileno(fp), 64) != 0, "Failed to truncate file.");
+    ERROR_FIXED(_chsize(fileno(fp), 64) != 0, "Failed to truncate file.");
 #else
-    ERROR(ftruncate(fileno(fp), 64) != 0, "Failed to truncate file.");
+    ERROR_FIXED(ftruncate(fileno(fp), 64) != 0, "Failed to truncate file.");
 #endif
     puts("File was truncated!");
   }
