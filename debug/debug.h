@@ -5,7 +5,7 @@
  * stdio.h, stdlib.h, string.h, errno.h
  */
 
-#ifndef DEBUGGING
+#if defined(DEBUGGING)
 #define NDEBUG 1
 #else
 #define NDEBUG 0
