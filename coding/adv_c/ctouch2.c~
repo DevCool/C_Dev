@@ -14,8 +14,6 @@
 #define MAXLINES 80
 #define MAXPATH 512
 
-extern int mkdir(const char *dir);
-
 char *getln(size_t *i);
 void writeln(const char *filename);
 void writefile(const char *filename,char *s);
