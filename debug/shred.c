@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(__linux)
+#if !defined(_WIN32) || (_WIN64)
 #include <unistd.h>
 #include <sys/types.h>
 #endif

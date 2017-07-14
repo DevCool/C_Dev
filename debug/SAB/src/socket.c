@@ -2,57 +2,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
 
 #include "socket.h"
-#include "../../debug.h"
+#include "debug.h"
 
 #define MAX_BUFLEN 1024
 #define BACKLOG 10
 #define PORT 8888
 
-int create_socket(int (*hdl_client)(int *, struct sockaddr_in *)) {
-  struct addrinfo hints, *servinfo = NULL, *p = NULL;
-  struct sockaddr_storage addr;
+int create_socket(const char *hostname, int (*hdl_client)(int *, struct sockaddr_in *)) {
+  struct sockaddr_in serv, addr;
   socklen_t addrlen;
   char buf[MAX_BUFLEN];
   int sockfd, newconn;
   int yes = 1;
-  
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
 
-  ERROR_FIXED(getaddrinfo(NULL, PORT, &hints, &servinfo) == 0, "Cannot get addr info.");
-  for(p = servinfo; p != NULL; p = p->ai_next) {
-    if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-      printf("server: Cannot create socket.");
-      continue;
-    }
-    ERROR_FIXED(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
-			   sizeof(int)) == -1, "Cannot set socket options.");
-    ERROR_FIXED(bind(sockfd, p->ai_addr, p->ai_addrlen) < 0, "Cannot bind to socket.");
-    break;
-  }
-  freeaddrinfo(servinfo);
+  memset(&serv, 0, sizeof(serv));
+  serv.sin_family = AF_INET;
+  serv.sin_port = htons(PORT);
+  serv.sin_addr.s_addr = inet_addr(hostname);
 
+  ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.");
+  ERROR_FIXED(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1,
+	      "Cannot set socket options.");
+  ERROR_FIXED(bind(sockfd, &serv, sizeof(serv)) < 0, "Cannot bind port to socket.");
   ERROR_FIXED(listen(sockfd, BACKLOG) < 0, "Cannot listen on socket.");
   
   while(1) {
-    ERROR_FIXED((newconn = accept(sockfd, &addr, &addrlen)) < 0,
+    ERROR_FIXED((newconn = accept(sockfd, (struct sockaddr *)&addr, &addrlen)) < 0,
 		"Failed to receive connection.");
     if(newconn > 0) {
       memset(buf, 0, sizeof(buf));
-      snprintf(buf, sizeof(buf), "Connection opened to %s\n", inet_ntoa(((struct sockaddr_in *)&addr)->sin_addr));
+      snprintf(buf, sizeof(buf), "Connection opened to %s\n", inet_ntoa(addr.sin_addr));
       puts(buf);
       ERROR_FIXED(send(newconn, buf, strlen(buf), 0) < 0, "Cannot send data.");
       if((*hdl_client) == NULL)
-	handle_client(&newconn, ((struct sockaddr_in *)&addr));
+	handle_client(&newconn, &addr);
       else
-	(*hdl_client)(&newconn, ((struct sockaddr_in *)&addr));
+	(*hdl_client)(&newconn, &addr);
     } else {
       puts("Connection closed by remote host.");
+      break;
     }
   }
 

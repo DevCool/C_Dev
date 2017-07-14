@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS?=-std=c89 -Wall -Wextra -pedantic -g
-LDFLAGS?=-g
+CFLAGS?=-std=c99 -Wall -Wextra -pedantic -g
+LDFLAGS?=-std=c99 -Wall -Wextra -pedantic -g
 LIBS=
 
 SRCDIR=src
