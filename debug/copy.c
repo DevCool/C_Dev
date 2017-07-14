@@ -3,6 +3,11 @@
 #include <string.h>
 #include <errno.h>
 
+#if defined(__linux__)
+#include <unistd.h>
+#include <sys/types.h>
+#endif
+
 #define DEBUGGING
 #include "debug.h"
 
@@ -66,8 +71,6 @@ int file_copy(FILE *fin, FILE *fout) {
     bytesWritten = fwrite(buf, 1, bytesRead, fout);
     if(bytesWritten > 0)
       total_bytes += bytesWritten;
-    else if(bytesWritten < 0)
-      fprintf(stderr, "Failed to write %lu bytes to file.\n", bytesRead);
   }
 
   CHECK(total_bytes != size, "INFO", "Real size: %lu\nTotal copied: %lu",\

@@ -11,21 +11,29 @@
 #define NDEBUG 0
 #endif
 
+/* Message printing macros */
+#define PRINT(M, ...) fprintf(stderr, M, ##__VA_ARGS__)
+#define PRINT_FIXED(M) fprintf(stderr, M)
+
 /* Check debugging macros */
-#define CHECK(T, I, M, ...) if((T)) { fprintf(stderr, "[" I "] : " M "\n" \
-    "FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__); \
+#define CHECK(T, I, M, ...) if((T)) { PRINT("[" I "] : " M "\n"\
+    "FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__);\
     goto error; errno = 0; exit(errno); }
-#define CHECK_FIXED(T, I, M) CHECK(T, I, M, NULL)
-#define CHECK_MEM(P) CHECK(!(P), "ERROR", "Out of memory.", NULL);
+#define CHECK2(T, I, M) if((T)) { PRINT_FIXED(M); goto error;\
+    errno = 0; exit(errno); }
+#define CHECK_FIXED(T, I, M) CHECK2((T), I, M)
+#define CHECK_MEM(P) CHECK2(!(P), "ERROR", "Out of memory.");
 
 /* Normal debugging macros */
-#define DEBUG(I, M, ...) fprintf(stderr, "[" I "] : " M "\n" \
+#define DEBUG(I, M, ...) PRINT("[" I "] : " M "\n" \
 "FILE: [%s]\nLINE: [%u]\n", ##__VA_ARGS__, __FILE__, __LINE__)
-#define DEBUG_FIXED(I, M) DEBUG(I, M, NULL)
+#define DEBUG2(I, M) PRINT_FIXED("[" I "] : " M "\n")
+#define DEBUG_FIXED(I, M) DEBUG2(I, M)
 #define ERROR(T, M, ...) CHECK(T, "ERROR", M, ##__VA_ARGS__)
-#define ERROR_FIXED(T, M) ERROR(T, M, NULL)
-#define WARN(T, M, ...) DEBUG("WARNING", M, ##__VA_ARGS__)
-#define WARN_FIXED(T, M) WARN(T, M, NULL)
+#define ERROR2(T, M) CHECK2(T, "ERROR", M)
+#define ERROR_FIXED(T, M) ERROR2(T, M)
+#define WARN(I, M, ...) DEBUG(I, M, ##__VA_ARGS__)
+#define WARN_FIXED(I, M) DEBUG2("WARNING", M)
 
 /* File handling debugging macros */
 #define FOPEN_ERROR(P, name, mode) if(P == NULL) { \

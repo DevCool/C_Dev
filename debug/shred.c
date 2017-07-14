@@ -3,8 +3,9 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(_linux)
+#if defined(__linux)
 #include <unistd.h>
+#include <sys/types.h>
 #endif
 
 #define DEBUGGING
