@@ -10,8 +10,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-int create_socket(const char *hostname, int (*hdl_client)(int *, struct sockaddr_in *));
+int create_socket(const char *hostname, int (*hdl_server)(int *));
 void close_socket(int *sockfd);
-int handle_client(int *sockfd, struct sockaddr_in *client);
+int handle_server(int *sockfd);
 
 #endif

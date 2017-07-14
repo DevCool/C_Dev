@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include "socket.h"
 
-extern void test(void);
-
 int main(int argc, char *argv[]) {
   int sockfd;
 
@@ -12,9 +10,7 @@ int main(int argc, char *argv[]) {
   }
 
   sockfd = create_socket(argv[1], NULL);
-  test();
   close_socket(&sockfd);
   
   return 0;
 }
-
