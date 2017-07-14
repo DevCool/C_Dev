@@ -10,7 +10,7 @@
 #define BACKLOG 10
 #define PORT 8888
 
-int create_socket(const char *hostname, int (*hdl_server)(int *)) {
+int create_socket(const char *hostname) {
   struct sockaddr_in serv;
   int sockfd;
   int yes = 1;
@@ -27,11 +27,6 @@ int create_socket(const char *hostname, int (*hdl_server)(int *)) {
 	      "Cannot bind port to socket.");
   ERROR_FIXED(listen(sockfd, BACKLOG) < 0, "Cannot listen on socket.");
   
-  if((*hdl_server) == NULL)
-    handle_server(&sockfd);
-  else
-    (*hdl_server)(&sockfd);
-
   return sockfd;	/* returns 0 for success */
 
  error:
@@ -43,22 +38,36 @@ void close_socket(int *sockfd) {
     close(*sockfd);
 }
 
-int handle_server(int *sockfd) {
+int handle_server(int *sockfd, int (*hdl_client)(int *sockfd, struct sockaddr_in *client)) {
   struct sockaddr_in client;
-  char buf[MAX_BUFLEN];
   socklen_t clientlen;
-  int newfd = 0;
+  int newfd = 0, retval;
 
   ERROR_FIXED((newfd = accept(*sockfd, (struct sockaddr *)&client, &clientlen)) < 0,
 	      "Cannot accept connection.");
-  
+
+  if((*hdl_client) == NULL)
+    retval = handle_client(&newfd, &client);
+  else
+    retval = (*hdl_client)(&newfd, &client);
+  return retval; /* return success */
+
+error:
+  return -1;
+}
+
+int handle_client(int *sockfd, struct sockaddr_in *client) {
+  char buf[MAX_BUFLEN];
   memset(buf, 0, sizeof buf);
-  snprintf(buf, sizeof buf, "Client: Connected from %s\n", inet_ntoa(client.sin_addr));
-  ERROR_FIXED(send(newfd, buf, strlen(buf), 0) < 0, "Could not send data to server.");
-  close_socket(&newfd);
-  
+  snprintf(buf, sizeof buf, "Client: Connected from %s\n", inet_ntoa(client->sin_addr));
+  puts(buf);
+  memset(buf, 0, sizeof buf);
+  snprintf(buf, sizeof buf, "Server: Hello client %s\n", inet_ntoa(client->sin_addr));
+  ERROR_FIXED(send(*sockfd, buf, strlen(buf), 0) < 0, "Could not send data to client.");
+  close_socket(sockfd);
   return 0; /* return success */
 
 error:
+  close_socket(sockfd);
   return -1;
 }

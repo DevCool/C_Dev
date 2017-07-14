@@ -9,7 +9,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  sockfd = create_socket(argv[1], NULL);
+  sockfd = create_socket(argv[1]);
+  handle_server(&sockfd, NULL);
   close_socket(&sockfd);
   
   return 0;
