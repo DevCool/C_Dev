@@ -3,11 +3,6 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(__linux__)
-#include <unistd.h>
-#include <sys/types.h>
-#endif
-
 #define DEBUGGING
 #include "debug.h"
 
