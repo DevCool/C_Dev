@@ -4,7 +4,7 @@
 #include <errno.h>
 
 #include "socket.h"
-#include "debug.h"
+#include "../../debug.h"
 
 #define MAX_BUFLEN 1024
 #define BACKLOG 10
@@ -29,8 +29,8 @@ int create_socket(const char *hostname, int *clientfd, struct sockaddr_in *clien
   ERROR_FIXED(listen(sockfd, BACKLOG) < 0, "Cannot listen on socket.");
   ERROR_FIXED((newfd = accept(sockfd, (struct sockaddr *)&client, &clientlen)) < 0,
 	      "Cannot accept connection.");
-  clientaddr = &client;
-  clientfd = &newfd;
+  *clientaddr = client;
+  *clientfd = newfd;
   return sockfd;	/* returns 0 for success */
 
  error:
