@@ -25,7 +25,8 @@ int create_socket(const char *hostname, int (*hdl_client)(int *, struct sockaddr
   ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.");
   ERROR_FIXED(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1,
 	      "Cannot set socket options.");
-  ERROR_FIXED(bind(sockfd, &serv, sizeof(serv)) < 0, "Cannot bind port to socket.");
+  ERROR_FIXED(bind(sockfd, (struct sockaddr *)&serv, sizeof(serv)) < 0,
+	      "Cannot bind port to socket.");
   ERROR_FIXED(listen(sockfd, BACKLOG) < 0, "Cannot listen on socket.");
   
   while(1) {
@@ -60,6 +61,15 @@ void close_socket(int *sockfd) {
 }
 
 int handle_client(int *sockfd, struct sockaddr_in *client) {
+  char buf[MAX_BUFLEN];
+
+  memset(buf, 0, sizeof buf);
+  snprintf(buf, sizeof buf, "Client: Connected from %s\n", inet_ntoa(client->sin_addr));
+  ERROR_FIXED(send(*sockfd, buf, strlen(buf), 0) < 0, "Could not send data to server.");
+  close_socket(sockfd);
   
   return 0; /* return success */
+
+error:
+  return -1;
 }

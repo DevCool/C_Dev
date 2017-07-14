@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "socket.h"
 
+extern void test(void);
+
 int main(int argc, char *argv[]) {
   int sockfd;
 

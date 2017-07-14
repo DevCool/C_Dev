@@ -3,15 +3,13 @@
 #include <string.h>
 #include <errno.h>
 
-#if !defined(_WIN32) || (_WIN64)
-#include <unistd.h>
-#include <sys/types.h>
-#endif
-
 #define DEBUGGING
 #include "debug.h"
 
+#ifdef __linux
 extern int fileno(FILE *fp);
+extern int ftruncate(int fildes, size_t size);
+#endif
 
 int file_shredder(FILE *fp, unsigned char mode);
 
