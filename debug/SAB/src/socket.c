@@ -10,9 +10,10 @@
 #define BACKLOG 10
 #define PORT 8888
 
-int create_socket(const char *hostname) {
-  struct sockaddr_in serv;
-  int sockfd;
+int create_socket(const char *hostname, int *clientfd, struct sockaddr_in *clientaddr) {
+  struct sockaddr_in serv, client;
+  socklen_t clientlen;
+  int sockfd, newfd;
   int yes = 1;
 
   memset(&serv, 0, sizeof(serv));
@@ -26,7 +27,10 @@ int create_socket(const char *hostname) {
   ERROR_FIXED(bind(sockfd, (struct sockaddr *)&serv, sizeof(serv)) < 0,
 	      "Cannot bind port to socket.");
   ERROR_FIXED(listen(sockfd, BACKLOG) < 0, "Cannot listen on socket.");
-  
+  ERROR_FIXED((newfd = accept(sockfd, (struct sockaddr *)&client, &clientlen)) < 0,
+	      "Cannot accept connection.");
+  clientaddr = &client;
+  clientfd = &newfd;
   return sockfd;	/* returns 0 for success */
 
  error:
@@ -38,18 +42,15 @@ void close_socket(int *sockfd) {
     close(*sockfd);
 }
 
-int handle_server(int *sockfd, int (*hdl_client)(int *sockfd, struct sockaddr_in *client)) {
-  struct sockaddr_in client;
-  socklen_t clientlen;
-  int newfd = 0, retval;
+int handle_server(int *sockfd, int *clientfd, struct sockaddr_in *client,
+		  int (*hdl_client)(int *sockfd, struct sockaddr_in *client)) {
+  int retval;
 
-  ERROR_FIXED((newfd = accept(*sockfd, (struct sockaddr *)&client, &clientlen)) < 0,
-	      "Cannot accept connection.");
-
+  ERROR_FIXED(sockfd == NULL || clientfd == NULL || client == NULL, "Server not setup properly!");
   if((*hdl_client) == NULL)
-    retval = handle_client(&newfd, &client);
+    retval = handle_client(clientfd, client);
   else
-    retval = (*hdl_client)(&newfd, &client);
+    retval = (*hdl_client)(clientfd, client);
   return retval; /* return success */
 
 error:
