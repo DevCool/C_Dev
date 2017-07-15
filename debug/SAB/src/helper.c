@@ -165,12 +165,15 @@ int cmd_execute(int sockfd, char **args) {
   return 1;
 }
 
-void cmd_loop(int *sockfd) {
+void cmd_loop(int *sockfd, struct sockaddr_in *client) {
   char line[CMD_LEN];
   char msg[1024];
   char **args = NULL;
   int status;
 
+  if(client == NULL)
+    return;
+  
   do {
     memset(line, 0, sizeof line);
     memset(msg, 0, sizeof msg);
