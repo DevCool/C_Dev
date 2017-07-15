@@ -10,7 +10,10 @@
 
 #ifdef __linux__
 #include <sys/stat.h>
+#include <espeak/speak_lib.h>
 #endif
+
+#include "espeech.h"
 
 char *builtin_str[] = {
   "ls",
@@ -18,6 +21,7 @@ char *builtin_str[] = {
   "mkdir",
   "rmdir",
   "touch",
+  "speak",
   "help",
   "exit"
 };
@@ -28,6 +32,7 @@ char *builtin_help[] = {
   "make a directory in the current one.\r\n",
   "delete an empty directory.\r\n",
   "create a blank file.\r\n",
+  "speaks the text you type.\r\n",
   "print this message.\r\n",
   "exit back to echo hello name.\r\n"
 };
@@ -179,6 +184,35 @@ error:
   return 1;
 }
 
+int cmd_speak(int sockfd, char **args) {
+  char data[2048];
+  char msg[1024];
+  int i = 1;
+
+  memset(msg, 0, sizeof msg);
+  memset(data, 0, sizeof data);
+  if(args == NULL || sockfd < 0)
+    return -1;
+
+  snprintf(data, sizeof data, "Speaking: ");
+  strncpy(msg, args[i], sizeof msg);
+  while(args[++i] != NULL) {
+    strncat(msg, " ", sizeof msg);
+    strncat(msg, args[i], sizeof msg);
+  }
+  strncat(data, msg, sizeof data);
+  strncat(data, "\r\n", sizeof data);
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  /* Speak the message */
+#ifdef __linux__
+  speak(msg, strlen(msg));
+#endif
+  return 1;
+
+error:
+  return 1;
+}
+
 int cmd_help(int sockfd, char **args) {
   char msg[BUFSIZ];
   int i;
@@ -212,6 +246,7 @@ int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_mkdir,
   &cmd_rmdir,
   &cmd_touch,
+  &cmd_speak,
   &cmd_help,
   &cmd_exit
 };
@@ -282,6 +317,10 @@ void cmd_loop(int *sockfd, struct sockaddr_in *client) {
 
   if(client == NULL)
     return;
+
+#ifdef __linux__
+  speakInit();
+#endif
   
   do {
     memset(line, 0, sizeof line);
@@ -295,4 +334,7 @@ void cmd_loop(int *sockfd, struct sockaddr_in *client) {
     status = cmd_execute(*sockfd, args);
     free(args);
   } while(status);
+#ifdef __linux__
+  speakCleanup();
+#endif
 }
