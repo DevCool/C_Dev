@@ -109,7 +109,7 @@ int cmd_rm(int sockfd, char **args) {
       ++i;
     }
   }
-  snprintf(data, sizeof data, "Total files removed %d.\r\n", i);
+  snprintf(data, sizeof data, "Total files removed %d.\r\n", i-1);
   ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send message.");
   return 1;
 
@@ -171,7 +171,7 @@ int cmd_touch(int sockfd, char **args) {
     }
   }
   memset(data, 0, sizeof data);
-  snprintf(data, sizeof data, "Total count of files created: %d\r\n", i);
+  snprintf(data, sizeof data, "Total count of files created: %d\r\n", i-1);
   ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
   return 1;
 
