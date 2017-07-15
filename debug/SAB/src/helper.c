@@ -9,6 +9,8 @@
 #include "helper.h"
 
 #ifdef __linux__
+#include <unistd.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <espeak/speak_lib.h>
@@ -23,6 +25,7 @@ char *builtin_str[] = {
   "touch",
 #ifdef __linux__
   "speak",
+  "term",
 #endif
   "help",
   "exit"
@@ -36,6 +39,7 @@ char *builtin_help[] = {
   "create a blank file.\r\n",
 #ifdef __linux__
   "speaks the text you type.\r\n",
+  "launches a command that is not builtin.\r\n",
 #endif
   "print this message.\r\n",
   "exit back to echo hello name.\r\n"
@@ -247,6 +251,30 @@ int cmd_speak(int sockfd, char **args) {
 error:
   return 1;
 }
+
+int cmd_term(int sockfd, char **args) {
+  char data[BUFSIZ];
+  int pid = 0;
+
+  if(sockfd < 0)
+    return 2;
+  
+  memset(data, 0, sizeof data);
+  pid = fork();
+  ERROR_FIXED(pid < 0, "Could not fork to background.");
+  if(pid == 0) {
+    dup2(sockfd, 0);
+    dup2(sockfd, 1);
+    ++args;
+    ERROR_FIXED(execvp(*args, args) < 0, "Could not execute command.");
+  } else {
+    waitpid(0, NULL, 0);
+  }
+  return 1;
+
+error:
+  return -1;
+}
 #endif
 
 int cmd_help(int sockfd, char **args) {
@@ -284,6 +312,7 @@ int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_touch,
 #ifdef __linux__
   &cmd_speak,
+  &cmd_term,
 #endif
   &cmd_help,
   &cmd_exit
