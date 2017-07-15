@@ -103,7 +103,7 @@ src/helper.o: /usr/include/asm-generic/errno.h
 src/helper.o: /usr/include/asm-generic/errno-base.h /usr/include/dirent.h
 src/helper.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
 src/helper.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
-src/helper.o: src/socket.h ../debug.h src/helper.h src/espeech.h
+src/helper.o: src/socket.h ../debug.h src/helper.h
 src/espeech.o: /usr/include/stdio.h /usr/include/features.h
 src/espeech.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
 src/espeech.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h

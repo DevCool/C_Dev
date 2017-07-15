@@ -12,9 +12,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <espeak/speak_lib.h>
-#endif
-
 #include "espeech.h"
+#endif
 
 char *builtin_str[] = {
   "ls",
@@ -22,7 +21,9 @@ char *builtin_str[] = {
   "mkdir",
   "rmdir",
   "touch",
+#ifdef __linux__
   "speak",
+#endif
   "help",
   "exit"
 };
@@ -33,7 +34,9 @@ char *builtin_help[] = {
   "make a directory in the current one.\r\n",
   "delete an empty directory.\r\n",
   "create a blank file.\r\n",
+#ifdef __linux__
   "speaks the text you type.\r\n",
+#endif
   "print this message.\r\n",
   "exit back to echo hello name.\r\n"
 };
@@ -134,7 +137,11 @@ int cmd_mkdir(int sockfd, char **args) {
   } else {
     while(args[i] != NULL) {
       memset(data, 0, sizeof data);
+#if defined(_WIN32) || (_WIN64)
+      if(mkdir(args[i]) != 0)
+#else
       if(mkdir(args[i], 0755) != 0)
+#endif
 	snprintf(data, sizeof data, "Directory [%s] not created.\r\n", args[i]);
       else
 	snprintf(data, sizeof data, "Created [%s] directory.\r\n", args[i]);
@@ -211,6 +218,7 @@ error:
   return 1;
 }
 
+#ifdef __linux__
 int cmd_speak(int sockfd, char **args) {
   char data[2048];
   char msg[1024];
@@ -239,6 +247,7 @@ int cmd_speak(int sockfd, char **args) {
 error:
   return 1;
 }
+#endif
 
 int cmd_help(int sockfd, char **args) {
   char msg[BUFSIZ];
@@ -273,7 +282,9 @@ int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_mkdir,
   &cmd_rmdir,
   &cmd_touch,
+#ifdef __linux__
   &cmd_speak,
+#endif
   &cmd_help,
   &cmd_exit
 };
