@@ -2,27 +2,92 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "socket.h"
 #include "../../debug.h"
 #include "helper.h"
 
 char *builtin_str[] = {
+  "ls",
   "help",
   "exit"
 };
 
-int cmd_help(int sockfd, char **args) {
-  char msg[BUFSIZ];
+char *builtin_help[] = {
+  "list directory contents.\r\n",
+  "print this message.\r\n",
+  "exit back to echo hello name.\r\n"
+};
 
-  memset(msg, 0, sizeof(msg));
-  if(args[0] == NULL) {
-    snprintf(msg, sizeof msg, "No commands except 'exit' available.\r\n");
+int cmd_len(void);
+
+int cmd_ls(int sockfd, char **args) {
+  DIR *d;
+  struct dirent *dir;
+  char msg[1024];
+  int i;
+  
+  memset(msg, 0, sizeof msg);
+  if(args[0] == NULL)
+    return 1;
+
+  if(args[1] != NULL)
+    d = opendir(args[1]);
+  else
+    d = opendir(".");
+  
+  if(d != NULL) {
+    memset(msg, 0, sizeof msg);
+    if(args[1] != NULL)
+      snprintf(msg, sizeof msg, "Directory listing of %s\r\n", args[1]);
+    else
+      snprintf(msg, sizeof msg, "Directory listing of ./\r\n");
+    if(send(sockfd, msg, strlen(msg), 0) < 0)
+      puts("Error: Could not send data to client.");
+    i = 0;
+    while((dir = readdir(d))) {
+      memset(msg, 0, sizeof msg);
+      snprintf(msg, sizeof msg, "%s ", dir->d_name);
+      send(sockfd, msg, strlen(msg), 0);
+      if(i < 4)
+	++i;
+      else {
+	i = 0;
+	if(send(sockfd, "\r\n", 2, 0) != 2)
+	  puts("Error: Could not send data to client.");
+      }
+    }
+    if(send(sockfd, "\r\n", 2, 0) != 2)
+      puts("Error: Could not send data to client.");
+    memset(msg, 0, sizeof msg);
+    if(closedir(d) != 0) {
+      snprintf(msg, sizeof msg, "End of listing.\r\n");
+      if(send(sockfd, msg, strlen(msg), 0) < 0)
+	puts("Error: Could not send data to client.");
+    }
+  } else {
+    snprintf(msg, sizeof msg, "Could not list directory, maybe it doesn't exist.\r\n");
     if(send(sockfd, msg, strlen(msg), 0) < 0)
       puts("Error: Could not send data to client.");
   }
+  return 1;
+}
 
-  snprintf(msg, sizeof msg, "Sorry, 'exit' is the only command right now.\r\n");
+int cmd_help(int sockfd, char **args) {
+  char msg[BUFSIZ];
+  int i;
+
+  memset(msg, 0, sizeof msg);
+  if(args[0] == NULL || sockfd < 0)
+    return -1;
+
+  snprintf(msg, sizeof msg, "*** Help Below ***\r\n");
+  for(i = 0; i < cmd_len(); i++) {
+    strncat(msg, builtin_str[i], sizeof msg);
+    strncat(msg, " - ", sizeof msg);
+    strncat(msg, builtin_help[i], sizeof msg);
+  }
   if(send(sockfd, msg, strlen(msg), 0) < 0)
     puts("Error: Could not send data to client.");
   
@@ -37,6 +102,7 @@ int cmd_exit(int sockfd, char **args) {
 }
 
 int (*builtin_func[])(int sockfd, char **args) = {
+  &cmd_ls,
   &cmd_help,
   &cmd_exit
 };
@@ -44,36 +110,6 @@ int (*builtin_func[])(int sockfd, char **args) = {
 int cmd_len(void) {
   return sizeof(builtin_str) / sizeof(char *);
 }
-
-/*
-char *cmd_getln(int sockfd) {
-  char *line = NULL;
-  int size, c, i;
-
-  size = CMD_LEN;
-  line = realloc(line, size);
-  CHECK_MEM(line);
-  
-  while(1) {
-    c = getc(sockfd);
-    if(c == EOF || c == '\r' || c == '\n') {
-      line[i] = 0;
-      return line;
-    } else {
-      line[i] = c;
-    }
-    ++i;
-    if(i >= size) {
-      size += CMD_LEN;
-      line = realloc(line, size);
-      CHECK_MEM(line);
-    }
-  }
-
-error:
-  return NULL;
-}
-*/
 
 char **cmd_split(char line[]) {
   char **tokens = NULL;
