@@ -8,14 +8,26 @@
 #include "../../debug.h"
 #include "helper.h"
 
+#ifdef __linux__
+#include <sys/stat.h>
+#endif
+
 char *builtin_str[] = {
   "ls",
+  "rm",
+  "mkdir",
+  "rmdir",
+  "touch",
   "help",
   "exit"
 };
 
 char *builtin_help[] = {
   "list directory contents.\r\n",
+  "delete a file from the system.\r\n",
+  "make a directory in the current one.\r\n",
+  "delete an empty directory.\r\n",
+  "create a blank file.\r\n",
   "print this message.\r\n",
   "exit back to echo hello name.\r\n"
 };
@@ -74,6 +86,99 @@ int cmd_ls(int sockfd, char **args) {
   return 1;
 }
 
+int cmd_rm(int sockfd, char **args) {
+  char data[BUFSIZ];
+  int i = 1;
+  
+  if(args == NULL || sockfd < 0)
+    return -1;
+  else if(args[1] == NULL)
+    return -1;
+  else {
+    char msg[BUFSIZ];
+
+    while(args[i] != NULL) {
+      if(remove(args[i]) != 0) {
+	memset(msg, 0, sizeof msg);
+	snprintf(msg, sizeof msg, "Cannot remove file %s\n", args[i]);
+	ERROR_FIXED(send(sockfd, msg, strlen(msg), 0) < 0, "Could not send message.");
+      } else {
+	snprintf(msg, sizeof msg, "File %s removed.\r\n", args[i]);
+	ERROR_FIXED(send(sockfd, msg, strlen(msg), 0) < 0, "Could not send message.");
+      }
+      ++i;
+    }
+  }
+  snprintf(data, sizeof data, "Total files removed %d.\r\n", i);
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send message.");
+  return 1;
+
+error:
+  return 1;
+}
+
+int cmd_mkdir(int sockfd, char **args) {
+  char data[BUFSIZ];
+  
+  if(args == NULL || sockfd < 0)
+    return -1;
+
+  memset(data, 0, sizeof data);
+  snprintf(data, sizeof data, "Command not yet implemented!\r\n");
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  return 1;
+
+error:
+  return 1;
+}
+
+int cmd_rmdir(int sockfd, char **args) {
+  char data[BUFSIZ];
+  
+  if(args == NULL || sockfd < 0)
+    return -1;
+
+  memset(data, 0, sizeof data);
+  snprintf(data, sizeof data, "Command not yet implemented!\r\n");
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  return 1;
+
+error:
+  return 1;
+}
+
+int cmd_touch(int sockfd, char **args) {
+  char data[BUFSIZ];
+  int i = 1;
+  
+  if(args == NULL || sockfd < 0)
+    return -1;
+  else if(args[1] == NULL)
+    return -1;
+  else {
+    while(args[i] != NULL) {
+      FILE *fp = NULL;
+      memset(data, 0, sizeof data);
+      if((fp = fopen(args[i], "wb")) == NULL) {
+	snprintf(data, sizeof data, "File [%s] failed to create.\r\n", args[i]);
+	ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      } else {
+	snprintf(data, sizeof data, "File [%s] created successfully.\r\n", args[i]);
+	ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      }
+      fclose(fp);
+      ++i;
+    }
+  }
+  memset(data, 0, sizeof data);
+  snprintf(data, sizeof data, "Total count of files created: %d\r\n", i);
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  return 1;
+
+error:
+  return 1;
+}
+
 int cmd_help(int sockfd, char **args) {
   char msg[BUFSIZ];
   int i;
@@ -103,6 +208,10 @@ int cmd_exit(int sockfd, char **args) {
 
 int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_ls,
+  &cmd_rm,
+  &cmd_mkdir,
+  &cmd_rmdir,
+  &cmd_touch,
   &cmd_help,
   &cmd_exit
 };
