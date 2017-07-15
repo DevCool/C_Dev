@@ -9,6 +9,7 @@
 #include "helper.h"
 
 #ifdef __linux__
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <espeak/speak_lib.h>
 #endif
@@ -124,13 +125,26 @@ error:
 
 int cmd_mkdir(int sockfd, char **args) {
   char data[BUFSIZ];
+  int i = 1;
   
-  if(args == NULL || sockfd < 0)
+  if(args == NULL || sockfd < 0) {
     return -1;
-
-  memset(data, 0, sizeof data);
-  snprintf(data, sizeof data, "Command not yet implemented!\r\n");
-  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  } else if(args[1] == NULL) {
+    return -1;
+  } else {
+    while(args[i] != NULL) {
+      memset(data, 0, sizeof data);
+      if(mkdir(args[i], 0755) != 0)
+	snprintf(data, sizeof data, "Directory [%s] not created.\r\n", args[i]);
+      else
+	snprintf(data, sizeof data, "Created [%s] directory.\r\n", args[i]);
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ++i;
+    }
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Total directories created: %d\r\n", i-1);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  }
   return 1;
 
 error:
@@ -139,13 +153,26 @@ error:
 
 int cmd_rmdir(int sockfd, char **args) {
   char data[BUFSIZ];
+  int i = 1;
   
-  if(args == NULL || sockfd < 0)
+  if(args == NULL || sockfd < 0) {
     return -1;
-
-  memset(data, 0, sizeof data);
-  snprintf(data, sizeof data, "Command not yet implemented!\r\n");
-  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  } else if(args[1] == NULL) {
+    return -1;
+  } else {
+    while(args[i] != NULL) {
+      memset(data, 0, sizeof data);
+      if(rmdir(args[i]) != 0)
+	snprintf(data, sizeof data, "[%s] : %s.\r\n", args[i], strerror(errno));
+      else
+	snprintf(data, sizeof data, "[%s] : Removed successfully.\r\n", args[i]);
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ++i;
+    }
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Total directories removed: %d\r\n", i-1);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  }
   return 1;
 
 error:
