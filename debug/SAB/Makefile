@@ -1,7 +1,7 @@
 # S.A.B. project main makefile
 
 PROG = sab
-TARGETS = SAB SAB_transfer libprs_socket
+TARGETS = SAB SAB_transfer libprs_socket libprs_tests
 
 $(PROG): $(TARGETS)
 
@@ -22,10 +22,16 @@ libprs_socket:
 	@cd ./src/prs_socket ; make
 	@echo Done.
 
+libprs_tests:
+	@echo Building PRS Socket Library Tests...
+	@cd ./src/prs_socket/tests ; make
+	@echo Done.
+
 .PHONY: clean install uninstall
 clean:
 	@echo Cleaning project...
 	@rm -f *~
+	@cd ./src/prs_socket/tests ; make clean
 	@cd ./src/prs_socket ; make clean
 	@cd ./src/transfer ; make clean
 	@cd ./src ; make clean
