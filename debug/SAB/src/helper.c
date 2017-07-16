@@ -254,15 +254,15 @@ int cmd_transfer(int sockfd, char **args) {
 
   if(args == NULL || sockfd < 0) {
     return -1;
-  } else if(args[1] == NULL) {
+  } else if(args[0] == NULL) {
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
-	     args[1]);
+	     args[0]);
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
-  } else if(args[1] != NULL && args[2] == NULL) {
+  } else if(args[0] != NULL && args[1] == NULL) {
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
-	     args[1]);
+	     args[0]);
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
   } else {
     if(strcmp(args[1], "upload") == 0) {
