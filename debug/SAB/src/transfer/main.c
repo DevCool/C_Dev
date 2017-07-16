@@ -55,15 +55,59 @@ int main(int argc, char *argv[]) {
 }
 
 int handle_download(int *sockfd, struct sockaddr_in *client, const char *filename) {
+  FILE *file = NULL;
+  char data[BUFSIZ];
+  int bytesRead, bytesWritten;
+  size_t total_bytes = 0;
+  
   if(sockfd == NULL || client == NULL || filename == NULL)
     return -1;
-  
+
+  if(filename == NULL)
+    return 1;
+  ERROR_FIXED((file = fopen(filename, "wb")) == NULL, "Could not open file for writing.");
+  while((bytesRead = recv(*sockfd, data, sizeof data, 0)) > 0) {
+    bytesWritten = fwrite(data, 1, bytesRead, file);
+    ERROR_FIXED(bytesWritten < 0, "Could not write data to file.");
+    if(bytesWritten > 0)
+      total_bytes += bytesWritten;
+  }
+  fclose(file);
+  ERROR_FIXED(bytesRead < 0, "Could not read data from server.");
+  if(bytesRead == 0)
+    printf("Transfer completed on %s.\n", filename);
   return 0; /* return success */
+
+ error:
+  close_socket(sockfd);
+  return 1;
 }
 
 int handle_upload(int *sockfd, struct sockaddr_in *client, const char *filename) {
+  FILE *file = NULL;
+  char data[BUFSIZ];
+  int bytesRead, bytesWritten;
+  size_t total_bytes = 0;
+  
   if(sockfd == NULL || client == NULL || filename == NULL)
     return -1;
-  
+
+  if(filename == NULL)
+    return 1;
+  ERROR_FIXED((file = fopen(filename, "rb")) == NULL, "Could not open file for reading.");
+  while((bytesRead = fread(data, 1, sizeof data, file)) > 0) {
+    bytesWritten = send(*sockfd, data, bytesRead, 0);
+    ERROR_FIXED(bytesWritten < 0, "Could not send data to socket.");
+    if(bytesWritten > 0)
+      total_bytes += bytesWritten;
+  }
+  fclose(file);
+  ERROR_FIXED(bytesRead < 0, "Could not read data from file.");
+  if(bytesRead == 0)
+    printf("Transfer completed on %s.\n", filename);
   return 0; /* return success */
+
+error:
+  close_socket(sockfd);
+  return 1;
 }
