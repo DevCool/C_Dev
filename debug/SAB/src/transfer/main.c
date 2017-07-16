@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   if(argc == 3) {
     socket_init(SOCKET_CONN, &sock_func);
-    sockfd = sock_func.socket_conn(argv[2], UPLOAD_PORT, &clientfd, &client);
+    sockfd = sock_func.socket_conn(argv[1], UPLOAD_PORT, &clientfd, &client);
     retval = handle_server(&sockfd, &clientfd, &client, argv[2], &handle_upload);
     close_socket(&sockfd);
   } else {

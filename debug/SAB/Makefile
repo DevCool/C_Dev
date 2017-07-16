@@ -17,7 +17,7 @@ SAB_transfer:
 	@cd ./src/transfer ; make
 	@echo Done.
 
-.PHONY: clean
+.PHONY: clean install uninstall
 clean:
 	@echo Cleaning project...
 	@rm -f *~
@@ -25,3 +25,14 @@ clean:
 	@cd ./src ; make clean
 	@echo Done cleaning!
 
+install:
+	@echo Installing... S.A.B.
+	@cd ./src/transfer ; make install
+	@cd ./src ; make install
+	@echo Done installing!
+
+uninstall:
+	@echo Uninstalling... S.A.B.
+	@cd ./src/transfer ; make uninstall
+	@cd ./src ; make uninstall
+	@echo Done uninstalling!
