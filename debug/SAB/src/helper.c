@@ -31,6 +31,7 @@
 
 /* builtin command strings (compared to what you enter) */
 char *builtin_str[] = {
+  "cd",
   "ls",
   "rm",
   "mkdir",
@@ -47,6 +48,7 @@ char *builtin_str[] = {
 
 /* builtin command help */
 char *builtin_help[] = {
+  "change directory to a new one.\r\n",
   "list directory contents.\r\n",
   "delete a file from the system.\r\n",
   "make a directory in the current one.\r\n",
@@ -60,6 +62,29 @@ char *builtin_help[] = {
   "print this message.\r\n",
   "exit back to echo hello name.\r\n"
 };
+
+/* cmd_cd() - change directory on remote machine.
+ */
+int cmd_cd(int sockfd, char **args) {
+  char data[BUFSIZ];
+  
+  memset(data, 0, sizeof data);
+  if(args == NULL || sockfd < 0)
+    return 1;
+
+  if(args[1] == NULL) {
+    snprintf(data, sizeof data, "Usage: %s <dirname>\r\n", args[0]);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  } else {
+    ERROR_FIXED(chdir(args[1]) != 0, "Could not change to new directory.");
+    snprintf(data, sizeof data, "Changed directory to %s\r\n", args[1]);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  }
+  return 1;
+
+error:
+  return 1;
+}
 
 /* cmd_ls() - list directory on remote machine.
  */
@@ -382,6 +407,7 @@ int cmd_exit(int sockfd, char **args) {
 /* builtin_func[]() - builtin functions array of function pointers.
  */
 int (*builtin_func[])(int sockfd, char **args) = {
+  &cmd_cd,
   &cmd_ls,
   &cmd_rm,
   &cmd_mkdir,
