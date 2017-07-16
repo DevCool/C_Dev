@@ -280,11 +280,8 @@ int cmd_transfer(int sockfd, char **args) {
   if(args == NULL || sockfd < 0) {
     return -1;
   } else if(args[0] == NULL) {
-    memset(data, 0, sizeof data);
-    snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
-	     args[0]);
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
-  } else if(args[1] != NULL && args[2] == NULL) {
+    return -1;
+  } else if(args[0] != NULL && args[1] == NULL) {
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
 	     args[0]);
@@ -305,6 +302,11 @@ int cmd_transfer(int sockfd, char **args) {
       }
       memset(data, 0, sizeof data);
       snprintf(data, sizeof data, "Total files downloaded: %d\r\n", i-2);
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+    } else {
+      memset(data, 0, sizeof data);
+      snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
+	       args[0]);
       ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
     }
   }
