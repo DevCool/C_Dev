@@ -103,7 +103,7 @@ src/helper.o: /usr/include/asm-generic/errno.h
 src/helper.o: /usr/include/asm-generic/errno-base.h /usr/include/dirent.h
 src/helper.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
 src/helper.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
-src/helper.o: src/socket.h ../debug.h src/helper.h
+src/helper.o: src/socket.h ../debug.h src/helper.h src/transfer.h
 src/espeech.o: /usr/include/stdio.h /usr/include/features.h
 src/espeech.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
 src/espeech.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
@@ -133,3 +133,24 @@ src/main.o: /usr/include/libio.h /usr/include/_G_config.h
 src/main.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
 src/main.o: /usr/include/bits/sys_errlist.h /usr/include/string.h
 src/main.o: /usr/include/xlocale.h src/socket.h src/helper.h
+src/transfer.o: /usr/include/stdio.h /usr/include/features.h
+src/transfer.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+src/transfer.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+src/transfer.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+src/transfer.o: /usr/include/libio.h /usr/include/_G_config.h
+src/transfer.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+src/transfer.o: /usr/include/bits/sys_errlist.h /usr/include/stdlib.h
+src/transfer.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+src/transfer.o: /usr/include/endian.h /usr/include/bits/endian.h
+src/transfer.o: /usr/include/bits/byteswap.h /usr/include/bits/byteswap-16.h
+src/transfer.o: /usr/include/sys/types.h /usr/include/time.h
+src/transfer.o: /usr/include/sys/select.h /usr/include/bits/select.h
+src/transfer.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+src/transfer.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+src/transfer.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+src/transfer.o: /usr/include/string.h /usr/include/xlocale.h
+src/transfer.o: /usr/include/errno.h /usr/include/bits/errno.h
+src/transfer.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+src/transfer.o: /usr/include/asm-generic/errno.h
+src/transfer.o: /usr/include/asm-generic/errno-base.h src/socket.h ../debug.h
+src/transfer.o: src/transfer.h

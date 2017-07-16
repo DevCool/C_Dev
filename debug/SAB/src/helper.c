@@ -1,13 +1,25 @@
+/***************************************************************
+ * helper.c - this contains pretty much only stuff to do with  *
+ *            a command line interface, for remote machines.   *
+ ***************************************************************
+ * Created by Philip "5n4k3" Simonson           (2017)         *
+ ***************************************************************
+ */
+
+/* standard c language header */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>
 
+/* my headers */
 #include "socket.h"
 #include "../../debug.h"
 #include "helper.h"
+#include "transfer.h"
 
+/* all linux headers */
 #ifdef __linux__
 #include <unistd.h>
 #include <sys/wait.h>
@@ -17,12 +29,14 @@
 #include "espeech.h"
 #endif
 
+/* builtin command strings (compared to what you enter) */
 char *builtin_str[] = {
   "ls",
   "rm",
   "mkdir",
   "rmdir",
   "touch",
+  "transfer",
 #ifdef __linux__
   "speak",
   "term",
@@ -31,12 +45,14 @@ char *builtin_str[] = {
   "exit"
 };
 
+/* builtin command help */
 char *builtin_help[] = {
   "list directory contents.\r\n",
   "delete a file from the system.\r\n",
   "make a directory in the current one.\r\n",
   "delete an empty directory.\r\n",
   "create a blank file.\r\n",
+  "transfers data from one computer to another.\r\n",
 #ifdef __linux__
   "speaks the text you type.\r\n",
   "launches a command that is not builtin.\r\n",
@@ -45,8 +61,8 @@ char *builtin_help[] = {
   "exit back to echo hello name.\r\n"
 };
 
-int cmd_len(void);
-
+/* cmd_ls() - list directory on remote machine.
+ */
 int cmd_ls(int sockfd, char **args) {
   DIR *d;
   struct dirent *dir;
@@ -99,6 +115,8 @@ int cmd_ls(int sockfd, char **args) {
   return 1;
 }
 
+/* cmd_rm() - remove a file or many files from remote machine.
+ */
 int cmd_rm(int sockfd, char **args) {
   char data[BUFSIZ];
   int i = 1;
@@ -130,6 +148,8 @@ error:
   return 1;
 }
 
+/* cmd_mkdir() - makes a directory on the remote machine.
+ */
 int cmd_mkdir(int sockfd, char **args) {
   char data[BUFSIZ];
   int i = 1;
@@ -162,6 +182,8 @@ error:
   return 1;
 }
 
+/* cmd_rmdir() - removes a directory on the remote machine.
+ */
 int cmd_rmdir(int sockfd, char **args) {
   char data[BUFSIZ];
   int i = 1;
@@ -190,6 +212,8 @@ error:
   return 1;
 }
 
+/* cmd_touch() - creates new files on remote machine.
+ */
 int cmd_touch(int sockfd, char **args) {
   char data[BUFSIZ];
   int i = 1;
@@ -222,7 +246,34 @@ error:
   return 1;
 }
 
+/* cmd_transfer() - download/upload from/to remote machine.
+ */
+int cmd_transfer(int sockfd, char **args) {
+  char data[BUFSIZ];
+  int i = 2;
+
+  if(args == NULL || sockfd < 0) {
+    return -1;
+  } else if(args[1] == NULL) {
+    return -1;
+  } else {
+    while(args[i] != NULL) {
+      download(args[1], args[i]);
+      ++i;
+    }
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Total files downloaded: %d\r\n", i-2);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  }
+  return 1;
+
+error:
+  return -1;
+}
+
 #ifdef __linux__
+/* cmd_speak() - speaks text you enter on remote machine.
+ */
 int cmd_speak(int sockfd, char **args) {
   char data[2048];
   char msg[1024];
@@ -252,6 +303,8 @@ error:
   return 1;
 }
 
+/* cmd_term() - executes an external command.
+ */
 int cmd_term(int sockfd, char **args) {
   char data[BUFSIZ];
   int pid = 0;
@@ -277,6 +330,8 @@ error:
 }
 #endif
 
+/* cmd_help() - displays help about the list of commands available.
+ */
 int cmd_help(int sockfd, char **args) {
   char msg[BUFSIZ];
   int i;
@@ -297,6 +352,8 @@ int cmd_help(int sockfd, char **args) {
   return 1;
 }
 
+/* cmd_exit() - exits the remote shell.
+ */
 int cmd_exit(int sockfd, char **args) {
   if(args[0] == NULL || sockfd == 0)
     return 1;
@@ -304,12 +361,15 @@ int cmd_exit(int sockfd, char **args) {
   return 0;
 }
 
+/* builtin_func[]() - builtin functions array of function pointers.
+ */
 int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_ls,
   &cmd_rm,
   &cmd_mkdir,
   &cmd_rmdir,
   &cmd_touch,
+  &cmd_transfer,
 #ifdef __linux__
   &cmd_speak,
   &cmd_term,
@@ -318,10 +378,14 @@ int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_exit
 };
 
+/* cmd_len() - returns the count of all available builtin commands.
+ */
 int cmd_len(void) {
   return sizeof(builtin_str) / sizeof(char *);
 }
 
+/* cmd_split() - split an entire command string into tokens.
+ */
 char **cmd_split(char line[]) {
   char **tokens = NULL;
   char *token = NULL;
@@ -349,6 +413,8 @@ error:
   return NULL;
 }
 
+/* cmd_execute() - executes all builtin commands.
+ */
 int cmd_execute(int sockfd, char **args) {
   char data[BUFSIZ];
   int i;
@@ -376,6 +442,8 @@ int cmd_execute(int sockfd, char **args) {
   return 1;
 }
 
+/* cmd_loop() - main command interface loop.
+ */
 void cmd_loop(int *sockfd, struct sockaddr_in *client) {
   char line[CMD_LEN];
   char msg[1024];

@@ -12,6 +12,7 @@ enum _COMMAND {
   CMD_COUNT
 };
 
+int cmd_len(void);
 char *split_line(char *line);
 void cmd_loop(int *sockfd, struct sockaddr_in *client);
 
