@@ -21,10 +21,55 @@
 #define BACKLOG 10
 #define PORT 8888
 
-/* create_socket() - creates a socket, binds to a specified port,
+/* socket_init() - initialize my socket functions.
+ */
+int socket_init(sockcreate_t init, sockcreate_func_t *socket_func) {
+  sockcreate_func_t sock_func;
+  
+  switch(init) {
+  case SOCKET_BIND:
+    sock_func.socket_bind = &create_bind;
+    break;
+  case SOCKET_CONN:
+    sock_func.socket_conn = &create_conn;
+    break;
+  default:
+    return -1;
+  }
+  *socket_func = sock_func;
+  return 0;
+}
+
+/* create_conn() - creates a socket, binds to a specified port,
  * and returns the sock file descriptor.
  */
-int create_socket(const char *hostname, int port, int *clientfd, struct sockaddr_in *clientaddr) {
+int create_conn(const char *hostname, int port, int *serverfd, struct sockaddr_in *serveraddr) {
+  struct sockaddr_in serv;
+  int sockfd;
+
+  memset(&serv, 0, sizeof(serv));
+  serv.sin_family = AF_INET;
+  if(port <= 0)
+    serv.sin_port = htons(PORT);
+  else
+    serv.sin_port = htons(port);
+  serv.sin_addr.s_addr = inet_addr(hostname);
+
+  ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.");
+  ERROR_FIXED(connect(sockfd, (struct sockaddr *)&serv, sizeof serv) < 0,
+	      "Could not connec to server.");
+  *serveraddr = serv;
+  *serverfd = sockfd;
+  return sockfd;	/* returns 0 for success */
+
+ error:
+  return -1;
+}
+
+/* create_bind() - creates a socket, binds to a specified port,
+ * and returns the sock file descriptor.
+ */
+int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_in *clientaddr) {
   struct sockaddr_in serv, client;
   socklen_t clientlen;
   int sockfd, newfd;
