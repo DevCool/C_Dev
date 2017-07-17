@@ -6,7 +6,7 @@ LIBSWIN=-lkernel32 -lws2_32
 
 SRCDIR=../src
 BINDIR=../bin
-OBJDIR=../obj
+OBJDIR=.
 INSTALLDIR?=/usr/local/bin
 
 SRC=$(wildcard $(SRCDIR)/*.c)
@@ -18,38 +18,29 @@ all: linux
 
 linux: $(BINDIR)/$(TARGET)
 
-windows: $(BINDIR)/$(TARGET).exe
-
 $(OBJ) : $(OBJDIR)/%.c.o: $(SRCDIR)/%.c
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(BINDIR)/$(TARGET): $(OBJ)
-	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
-$(BINDIR)/$(TARGET).exe: $(OBJ)
-	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBSWIN)
-
-.PHONY: clean clean-windows install uninstall depend
+.PHONY: clean remove install uninstall depend
 
 clean:
-	@echo Cleaning project...
-	@rm -f *~ $(SRCDIR)/*~ $(OBJDIR)/*.o $(BINDIR)/$(TARGET)
-	@echo Cleanup complete!
+	rm -f *~ $(SRCDIR)/*~ $(OBJDIR)/*.o
 
-clean-windows:
-	@echo Cleaning project...
-	@del $(OBJDIR)\*.o $(BINDIR)\$(TARGET).exe
-	@echo Cleanup complete...
+remove: clean
+	rm -f $(BINDIR)/$(TARGET)
 
 install:
-	@echo Installing...
-	@cp $(BINDIR)/$(TARGET) $(INSTALLDIR)/$(TARGET)
-	@echo Done with install!
+	echo Installing...
+	cp $(BINDIR)/$(TARGET) $(INSTALLDIR)/$(TARGET)
+	echo Done with install!
 
 uninstall:
-	@echo Uninstalling...
-	@rm $(INSTALLDIR)/$(TARGET)
-	@echo Uninstalled!
+	echo Uninstalling...
+	rm $(INSTALLDIR)/$(TARGET)
+	echo Uninstalled!
 
 depend:
 	makedepend -- $(CFLAGS) -- $(SRC)

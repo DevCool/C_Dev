@@ -6,32 +6,34 @@ LIBS=
 
 TARGET=SAB_transfer
 BINDIR=../../bin
-OBJDIR=../../obj
+OBJDIR=.
 SRCDIR=../../src
 INSTALLDIR?=/usr/local/bin
 OBJECTS=$(OBJDIR)/sab_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
 
+.PHONY: all linux
 all: linux
 
 linux: $(BINDIR)/$(TARGET)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
-	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 $(OBJDIR)/sab_transfer.c.o: main.c
-	@$(CC) $(CFLAGS) -c $^ -o $@
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 $(OBJDIR)/transfer.c.o: $(SRCDIR)/transfer.c
-	@$(CC) $(CFLAGS) -c $^ -o $@
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 $(OBJDIR)/socket.c.o: $(SRCDIR)/socket.c
-	@$(CC) $(CFLAGS) -c $^ -o $@
+	$(CC) $(CFLAGS) -c $^ -o $@
 
-.PHONY: clean install uninstall
+.PHONY: clean remove install uninstall
 clean:
-	@echo Cleaning up...
-	@rm -f *~ $(OBJECTS) $(BINDIR)/$(TARGET)
-	@echo Done.
+	rm -f *~ $(OBJECTS) $(BINDIR)/$(TARGET)
+
+remove:
+	rm -f $(BINDIR)/$(TARGET)
 
 install:
 	@echo Installing.
