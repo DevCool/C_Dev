@@ -7,7 +7,7 @@ TARGET=libprs_socket.so.1.0
 BINDIR=../../bin
 OBJDIR=../../src/prs_socket
 SRCDIR=../../src/prs_socket
-INSTALLDIR?=/opt
+INSTALLDIR?=/usr
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 INCLUDES = $(wildcard $(SRCDIR)/*.h)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
@@ -41,7 +41,7 @@ remove: clean
 install:
 	@echo Installing...
 	mkdir -p $(INSTALLDIR)/include/prs_socket
-	cp $(SRCDIR)/prs_socket/socket.h $(INSTALLDIR)/include/socket.h
+	cp $(SRCDIR)/socket.h $(INSTALLDIR)/include/socket.h
 	cp $(BINDIR)/$(TARGET) $(INSTALLDIR)/lib
 	ln -sf $(INSTALLDIR)/lib/$(TARGET) $(INSTALLDIR)/lib/libprs_socket.so.1
 	ln -sf $(INSTALLDIR)/lib/$(TARGET) $(INSTALLDIR)/lib/libprs_socket.so
