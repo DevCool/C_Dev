@@ -1,12 +1,12 @@
-CC=gcc
-CFLAGS=-std=c99 -Wall -Wextra -pedantic
-LDFLAGS=
-LIBS=-lespeak
-LIBSWIN=-lkernel32 -lws2_32
-
 SRCDIR=../src
 BINDIR=../bin
 OBJDIR=.
+
+CC=gcc
+CFLAGS=-std=c99 -Wall -Wextra -pedantic
+LDFLAGS=-L$(BINDIR)
+LIBS=-lespeak -lprs_socket
+LIBSWIN=-lkernel32 -lws2_32
 INSTALLDIR?=/usr/local/bin
 
 SRC=$(wildcard $(SRCDIR)/*.c)

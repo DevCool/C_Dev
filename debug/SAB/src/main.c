@@ -14,7 +14,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "socket.h"
+#include "prs_socket/socket.h"
 #include "helper.h"
 #include "../../debug.h"
 

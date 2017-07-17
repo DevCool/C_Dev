@@ -14,7 +14,7 @@
 #include <dirent.h>
 
 /* my headers */
-#include "socket.h"
+#include "prs_socket/socket.h"
 #include "../../debug.h"
 #include "helper.h"
 #include "transfer.h"

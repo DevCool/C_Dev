@@ -3,19 +3,32 @@
 CC=gcc
 CFLAGS=-std=c99 -Wall -Wextra -pedantic
 LDFLAGS=
+TARGETS = libprs_socket libprs_tests SAB SAB_transfer
 
-MAKEFILE = Makefile
-TARGETS = build
+.PHONY: all linux SAB SAB_transfer libprs_socket libprs_tests clean remove install uninstall
+all: linux
 
-.PHONY: all build clean remove install uninstall
-all: $(TARGETS)
+linux: libprs_socket SAB SAB_transfer libprs_tests
 
-build:
+SAB:
 	@echo Building S.A.B.
 	cd src && make
+	@echo Done with S.A.B.
+
+SAB_transfer:
+	@echo Building S.A.B. transfer...
 	cd src/transfer && make
+	@echo Done with S.A.B. transfer!
+
+libprs_socket:
+	@echo Building PRS Sockets...
 	cd src/prs_socket && make
+	@echo Done with PRS Sockets!
+
+libprs_tests:
+	@echo Building PRS Sockets Tests...
 	cd src/prs_socket/tests && make
+	@echo Building PRS Sockets Tests!
 
 clean:
 	@echo Cleaning project...

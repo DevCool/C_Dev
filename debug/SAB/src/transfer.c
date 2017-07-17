@@ -17,7 +17,7 @@
 #define DOWNLOAD_PORT 30588
 
 /* my includes */
-#include "socket.h"
+#include "prs_socket/socket.h"
 #include "../../debug.h"
 #include "transfer.h"
 

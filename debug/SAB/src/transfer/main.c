@@ -15,7 +15,7 @@
 
 /* my headers */
 #include "../../../debug.h"
-#include "../socket.h"
+#include "../prs_socket/socket.h"
 #include "../transfer.h"
 
 /* port defines */

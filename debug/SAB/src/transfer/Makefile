@@ -1,13 +1,13 @@
-CC=gcc
-CFLAGS=-std=c99 -Wall -Wextra -pedantic
-LDFLAGS=
-LIBS=
-
-
-TARGET=SAB_transfer
 BINDIR=../../bin
 OBJDIR=.
 SRCDIR=../../src
+
+CC=gcc
+CFLAGS=-std=c99 -Wall -Wextra -pedantic
+LDFLAGS=-L$(BINDIR)
+LIBS=-lprs_socket
+
+TARGET=SAB_transfer
 INSTALLDIR?=/usr/local/bin
 OBJECTS=$(OBJDIR)/sab_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
 
@@ -25,7 +25,7 @@ $(OBJDIR)/sab_transfer.c.o: main.c
 $(OBJDIR)/transfer.c.o: $(SRCDIR)/transfer.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-$(OBJDIR)/socket.c.o: $(SRCDIR)/socket.c
+$(OBJDIR)/socket.c.o: $(SRCDIR)/prs_socket/socket.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 .PHONY: clean remove install uninstall
