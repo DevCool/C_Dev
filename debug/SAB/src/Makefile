@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS?=-std=c99 -Wall -Wextra -pedantic -g
-LDFLAGS?=-std=c99 -Wall -Wextra -pedantic -g
+CFLAGS=-std=c99 -Wall -Wextra -pedantic
+LDFLAGS=
 LIBS=-lespeak
 LIBSWIN=-lkernel32 -lws2_32
 
@@ -22,17 +22,12 @@ windows: $(BINDIR)/$(TARGET).exe
 
 $(OBJ) : $(OBJDIR)/%.c.o: $(SRCDIR)/%.c
 	@$(CC) $(CFLAGS) -c -o $@ $<
-	@echo Compiled $< successfully!
 
 $(BINDIR)/$(TARGET): $(OBJ)
-	@echo Linking executable...
-	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
-	@echo Executable built with success!
+	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 $(BINDIR)/$(TARGET).exe: $(OBJ)
-	@echo Linking executable...
-	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBSWIN)
-	@echo Executable built with success!
+	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBSWIN)
 
 .PHONY: clean clean-windows install uninstall depend
 

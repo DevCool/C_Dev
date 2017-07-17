@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS?=-std=c99 -Wall -Wextra -pedantic
-LDFLAGS?=
+CFLAGS=-std=c99 -Wall -Wextra -pedantic
+LDFLAGS=
 LIBS=
 
 
@@ -16,9 +16,7 @@ all: linux
 linux: $(BINDIR)/$(TARGET)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
-	@echo Linking executable...
-	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
-	@echo Executable Linked successfully!
+	@$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 $(OBJDIR)/sab_transfer.c.o: main.c
 	@$(CC) $(CFLAGS) -c $^ -o $@

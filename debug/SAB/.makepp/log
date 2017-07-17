@@ -1,0 +1,44 @@
+3/usr/bin/makepp
+VERSION2.05.22.2x86_64-linux-thread-multi
+LOAD47990096Makefile39159080/home/philip/debug/SAB39159080
+TRY47990096
+USEdefault rule
+DEPEND47990096
+UP_TO_DATE47990096
+LOAD_INCL48018240makepp_builtin_rules.mk47844416/usr/share/makepp47990096
+LOAD_END47990096
+TRY48017064all39159080
+USEdefault rule
+DEPEND4801706448017976build39159080
+TRY48017976
+USE/home/philip/debug/SAB/Makefile:11
+SCAN_INFO48017976
+LEX_RULE48017976info not cached
+PARSEecho Building S.A.B.39159080/home/philip/debug/SAB/Makefile:11
+PARSEmake -n48072224src39159080/home/philip/debug/SAB/Makefile:11
+TRY48142664make47990312/usr/bin
+USEdefault rule
+DEPEND48142664
+UP_TO_DATE48142664
+PARSEecho Building S.A.B. Transfer39159080/home/philip/debug/SAB/Makefile:11
+PARSEmake -n48140312transfer48072224/home/philip/debug/SAB/Makefile:11
+PARSEecho Building PRS Socket Library...39159080/home/philip/debug/SAB/Makefile:11
+PARSEmake -n48200872prs_socket48072224/home/philip/debug/SAB/Makefile:11
+PARSEecho Building PRS Socket Library Tests...39159080/home/philip/debug/SAB/Makefile:11
+PARSEmake -n48141776tests48200872/home/philip/debug/SAB/Makefile:11
+PARSEecho Done.39159080/home/philip/debug/SAB/Makefile:11
+DEPEND4801797648142664
+BUILD_NONE48017976
+SUCCESS/home/philip/debug/SAB/Makefile:1148017976
+*** warning: I attempted to build /home/philip/debug/SAB/build,
+  but after successfully executing the commands, the target does not exist.
+  Perhaps it is a phony target?	 If so, the rule defining it should be modified
+  like this:
+    $(phony build): dependencies
+	actions
+
+  or you could also declare it as phony like this:
+    .PHONY: build
+SUCCESSdefault rule48017064
+*** warning: There is no rule to build inexistent /home/philip/debug/SAB/all
+N_FILES020
