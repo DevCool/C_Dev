@@ -48,6 +48,7 @@ install:
 	chmod 0755 $(INSTALLDIR)/lib/$(TARGET)
 	chmod 0755 $(INSTALLDIR)/lib/libprs_socket.so.1
 	chmod 0755 $(INSTALLDIR)/lib/libprs_socket.so
+	@ldconfig
 	@echo Install finished!
 
 uninstall:
@@ -56,4 +57,5 @@ uninstall:
 	rm -f $(INSTALLDIR)/lib/libprs_socket.so.1
 	rm -f $(INSTALLDIR)/lib/libprs_socket.so
 	rm -f $(INSTALLDIR)/lib/$(TARGET)
+	@ldconfig
 	@echo Uninstall finished.
