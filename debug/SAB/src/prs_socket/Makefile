@@ -4,12 +4,12 @@ LDFLAGS=-shared -Wl,-soname,libprs_socket.so.1 -lc
 
 TARGET=libprs_socket.so.1.0
 BINDIR=../../bin
-OBJDIR=.
+OBJDIR=../../src/prs_socket
 SRCDIR=../../src
 INSTALLDIR?=/opt
-SOURCES = $(wildcard $(SRCDIR)/prs_socket/*.c)
-INCLUDES = $(wildcard $(SRCDIR)/prs_socket/*.h)
-OBJECTS = $(SOURCES:$(SRCDIR)/prs_socket/%.c=$(OBJDIR)/%.c.o)
+SOURCES = $(wildcard $(SRCDIR)/*.c)
+INCLUDES = $(wildcard $(SRCDIR)/*.h)
+OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
 
 .PHONY: all linux
 all: linux
@@ -26,7 +26,7 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 clean:
 	rm -f *~ $(OBJDIR)/*.c.o $(BINDIR)/$(TARGET)
 
-remove:
+remove: clean
 	rm -f $(BINDIR)/$(TARGET)
 
 install:

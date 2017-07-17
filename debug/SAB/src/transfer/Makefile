@@ -32,7 +32,7 @@ $(OBJDIR)/socket.c.o: $(SRCDIR)/socket.c
 clean:
 	rm -f *~ $(OBJECTS) $(BINDIR)/$(TARGET)
 
-remove:
+remove: clean
 	rm -f $(BINDIR)/$(TARGET)
 
 install:

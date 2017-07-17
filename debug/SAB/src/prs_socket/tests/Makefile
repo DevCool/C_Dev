@@ -23,7 +23,7 @@ $(OBJECTS): %.c.o : %.c
 clean:
 	rm -f *~ $(OBJDIR)/*.o
 
-remove:
+remove: clean
 	rm -f $(LIST)
 
 clean-windows:
