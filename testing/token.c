@@ -72,7 +72,7 @@ void parse(char *line) {
       ++tok_found;
       break;
     default:
-      putchar(0);
+      c = TOKEN_NONE;
     }
     putchar(tokens[c]);
     ++s;
