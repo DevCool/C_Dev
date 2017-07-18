@@ -1,9 +1,9 @@
 CC=gcc
 CFLAGS=-std=c89 -Wall -g
 
-SRCS=b1.c b2.c b3.c max2.c max3.c maxdo.c odds.c pow.c texed.c token.c
+SRCS=b1.c b2.c b3.c max2.c max3.c maxdo.c odds.c pow.c texed.c token.c token2.c
 OBJS=$(SRCS:.c=.o)
-PROGRAMS:=b1 b2 b3 max2 max3 maxdo odds pow texed token
+PROGRAMS:=b1 b2 b3 max2 max3 maxdo odds pow texed token token2
 
 all: $(PROGRAMS)
 
@@ -37,6 +37,9 @@ texed: texed.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 token: token.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+token2: token2.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 .PHONY: clean
