@@ -41,6 +41,7 @@ char *builtin_str[] = {
 #ifdef __linux__
   "speak",
   "term",
+  "pivot",
 #endif
   "help",
   "exit"
@@ -58,6 +59,7 @@ char *builtin_help[] = {
 #ifdef __linux__
   "speaks the text you type.\r\n",
   "launches a command that is not builtin.\r\n",
+  "launches a new xterm with telnet.\r\n",
 #endif
   "print this message.\r\n",
   "exit back to echo hello name.\r\n"
@@ -363,10 +365,49 @@ int cmd_term(int sockfd, char **args) {
   if(pid == 0) {
     dup2(sockfd, 0);
     dup2(sockfd, 1);
+    dup2(sockfd, 2);
     ++args;
     ERROR_FIXED(execvp(*args, args) < 0, "Could not execute command.");
   } else {
     waitpid(0, NULL, 0);
+  }
+  return 1;
+
+error:
+  return -1;
+}
+
+/* cmd_pivot() - executes an external command.
+ */
+int cmd_pivot(int sockfd, char **args) {
+  char data[BUFSIZ];
+  int pid = 0;
+
+  if(sockfd < 0)
+    return 2;
+  
+  memset(data, 0, sizeof data);
+  if(args[0] == NULL) {
+    return -1;
+  } else if(args[1] == NULL) {
+    snprintf(data, sizeof data, "Usage: pivot <ipaddress> <port>\r\n");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Cannot send data to client.");
+  } else {
+    if(args[1] != NULL && args[2] != NULL) {
+      pid = fork();
+      ERROR_FIXED(pid < 0, "Could not fork to background.");
+      if(pid == 0) {
+	dup2(sockfd, 0);
+	dup2(sockfd, 1);
+	dup2(sockfd, 2);
+	ERROR_FIXED(execvp("telnet", args) < 0, "Could not execute command.");
+      } else {
+	waitpid(0, NULL, 0);
+      }
+    } else {
+      snprintf(data, sizeof data, "Usage: pivot <ipaddress> <port>\r\n");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Cannot send data to client.");
+    }
   }
   return 1;
 
@@ -419,6 +460,7 @@ int (*builtin_func[])(int sockfd, char **args) = {
 #ifdef __linux__
   &cmd_speak,
   &cmd_term,
+  &cmd_pivot,
 #endif
   &cmd_help,
   &cmd_exit
