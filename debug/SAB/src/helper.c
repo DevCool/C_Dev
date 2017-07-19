@@ -99,16 +99,15 @@ int cmd_cd(int sockfd, char **args) {
   char data[BUFSIZ];
   
   memset(data, 0, sizeof data);
-  if(args == NULL || sockfd < 0)
-    return 1;
-
   if(args[1] == NULL) {
     snprintf(data, sizeof data, "Usage: %s <dirname>\r\n", args[0]);
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
   } else {
     ERROR_FIXED(chdir(args[1]) != 0, "Could not change to new directory.");
     snprintf(data, sizeof data, "Changed directory to %s\r\n", args[1]);
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
   }
   return 1;
 
@@ -125,9 +124,6 @@ int cmd_ls(int sockfd, char **args) {
   int i;
   
   memset(msg, 0, sizeof msg);
-  if(args[0] == NULL)
-    return 1;
-
   if(args[1] != NULL)
     d = opendir(args[1]);
   else
@@ -139,7 +135,7 @@ int cmd_ls(int sockfd, char **args) {
       snprintf(msg, sizeof msg, "Directory listing of %s\r\n", args[1]);
     else
       snprintf(msg, sizeof msg, "Directory listing of ./\r\n");
-    if(send(sockfd, msg, strlen(msg), 0) < 0)
+    if(send(sockfd, msg, strlen(msg), 0) != (int)strlen(msg))
       puts("Error: Could not send data to client.");
     i = 0;
     while((dir = readdir(d))) {
@@ -159,12 +155,12 @@ int cmd_ls(int sockfd, char **args) {
     memset(msg, 0, sizeof msg);
     if(closedir(d) != 0) {
       snprintf(msg, sizeof msg, "End of listing.\r\n");
-      if(send(sockfd, msg, strlen(msg), 0) < 0)
+      if(send(sockfd, msg, strlen(msg), 0) != (int)strlen(msg))
 	puts("Error: Could not send data to client.");
     }
   } else {
     snprintf(msg, sizeof msg, "Could not list directory, maybe it doesn't exist.\r\n");
-    if(send(sockfd, msg, strlen(msg), 0) < 0)
+    if(send(sockfd, msg, strlen(msg), 0) != (int)strlen(msg))
       puts("Error: Could not send data to client.");
   }
   return 1;
@@ -187,16 +183,19 @@ int cmd_rm(int sockfd, char **args) {
       if(remove(args[i]) != 0) {
 	memset(msg, 0, sizeof msg);
 	snprintf(msg, sizeof msg, "Cannot remove file %s\n", args[i]);
-	ERROR_FIXED(send(sockfd, msg, strlen(msg), 0) < 0, "Could not send message.");
+	ERROR_FIXED(send(sockfd, msg, strlen(msg), 0) != (int)strlen(data),
+		    "Could not send message.");
       } else {
 	snprintf(msg, sizeof msg, "File %s removed.\r\n", args[i]);
-	ERROR_FIXED(send(sockfd, msg, strlen(msg), 0) < 0, "Could not send message.");
+	ERROR_FIXED(send(sockfd, msg, strlen(msg), 0) != (int)strlen(data),
+		    "Could not send message.");
       }
       ++i;
     }
   }
   snprintf(data, sizeof data, "Total files removed %d.\r\n", i-1);
-  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send message.");
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+	      "Could not send message.");
   return 1;
 
 error:
@@ -224,12 +223,14 @@ int cmd_mkdir(int sockfd, char **args) {
 	snprintf(data, sizeof data, "Directory [%s] not created.\r\n", args[i]);
       else
 	snprintf(data, sizeof data, "Created [%s] directory.\r\n", args[i]);
-      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.");
       ++i;
     }
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "Total directories created: %d\r\n", i-1);
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
   }
   return 1;
 
@@ -254,12 +255,14 @@ int cmd_rmdir(int sockfd, char **args) {
 	snprintf(data, sizeof data, "[%s] : %s.\r\n", args[i], strerror(errno));
       else
 	snprintf(data, sizeof data, "[%s] : Removed successfully.\r\n", args[i]);
-      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.");
       ++i;
     }
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "Total directories removed: %d\r\n", i-1);
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
   }
   return 1;
 
@@ -283,10 +286,12 @@ int cmd_touch(int sockfd, char **args) {
       memset(data, 0, sizeof data);
       if((fp = fopen(args[i], "wb")) == NULL) {
 	snprintf(data, sizeof data, "File [%s] failed to create.\r\n", args[i]);
-	ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		    "Could not send data to client.");
       } else {
 	snprintf(data, sizeof data, "File [%s] created successfully.\r\n", args[i]);
-	ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		    "Could not send data to client.");
       }
       fclose(fp);
       ++i;
@@ -294,7 +299,8 @@ int cmd_touch(int sockfd, char **args) {
   }
   memset(data, 0, sizeof data);
   snprintf(data, sizeof data, "Total count of files created: %d\r\n", i-1);
-  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+	      "Could not send data to client.");
   return 1;
 
 error:
@@ -365,7 +371,8 @@ int cmd_transfer(int sockfd, char **args) {
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
 	     args[0]);
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
   } else {
     if(strcmp(args[1], "upload") == 0) {
       while(args[i] != NULL) {
@@ -374,7 +381,8 @@ int cmd_transfer(int sockfd, char **args) {
       }
       memset(data, 0, sizeof data);
       snprintf(data, sizeof data, "Total files downloaded: %d\r\n", i-2);
-      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.");
     } else if(strcmp(args[1], "download") == 0) {
       while(args[i] != NULL) {
 	download("0.0.0.0", args[i]);
@@ -382,12 +390,14 @@ int cmd_transfer(int sockfd, char **args) {
       }
       memset(data, 0, sizeof data);
       snprintf(data, sizeof data, "Total files downloaded: %d\r\n", i-2);
-      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.");
     } else {
       memset(data, 0, sizeof data);
       snprintf(data, sizeof data, "Usage: %s <upload|download> file1.ext ... [files]\r\n",
 	       args[0]);
-      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.");
     }
   }
   return 1;
@@ -417,11 +427,10 @@ int cmd_speak(int sockfd, char **args) {
   }
   strncat(data, msg, sizeof data);
   strncat(data, "\r\n", sizeof data);
-  ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Could not send data to client.");
+  ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+	      "Could not send data to client.");
   /* Speak the message */
-#ifdef __linux__
   speak(msg, strlen(msg));
-#endif
   return 1;
 
 error:
@@ -445,7 +454,7 @@ int cmd_term(int sockfd, char **args) {
     dup2(sockfd, 1);
     dup2(sockfd, 2);
     ++args;
-    ERROR_FIXED(execvp(*args, args) < 0, "Could not execute command.");
+    ERROR_FIXED(execvp(*args, args) != (int)strlen(data), "Could not execute command.");
   } else {
     waitpid(0, NULL, 0);
   }
@@ -469,7 +478,8 @@ int cmd_pivot(int sockfd, char **args) {
     return -1;
   } else if(args[1] == NULL) {
     snprintf(data, sizeof data, "Usage: pivot <ipaddress> <port>\r\n");
-    ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Cannot send data to client.");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Cannot send data to client.");
   } else {
     if(args[1] != NULL && args[2] != NULL) {
       pid = fork();
@@ -484,7 +494,8 @@ int cmd_pivot(int sockfd, char **args) {
       }
     } else {
       snprintf(data, sizeof data, "Usage: pivot <ipaddress> <port>\r\n");
-      ERROR_FIXED(send(sockfd, data, strlen(data), 0) < 0, "Cannot send data to client.");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Cannot send data to client.");
     }
   }
   return 1;
@@ -510,7 +521,8 @@ int cmd_help(int sockfd, char **args) {
     strncat(msg, " - ", sizeof msg);
     strncat(msg, builtin_help[i], sizeof msg);
   }
-  if(send(sockfd, msg, strlen(msg), 0) < 0)
+  strncat(msg, "*** End Help ***\r\n", sizeof msg);
+  if(send(sockfd, msg, strlen(msg), 0) != (int)strlen(msg))
     puts("Error: Could not send data to client.");
   
   return 1;

@@ -76,8 +76,12 @@ int hdl_download(int *sockfd, struct sockaddr_in *client, const char *filename) 
   }
   fclose(file);
   ERROR_FIXED(bytesRead < 0, "Failed to read data from file.");
-  if(bytesRead == 0)
-    ERROR_FIXED(send(*sockfd, data, strlen(data), 0) < 0, "Send data to client failed.");
+  if(bytesRead == 0) {
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Transfer Complete!\r\n");
+    ERROR_FIXED(send(*sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Send data to client failed.");
+  }
   close_socket(sockfd);
   return 0;
 
@@ -108,8 +112,12 @@ int hdl_upload(int *sockfd, struct sockaddr_in *client, const char *filename) {
   }
   fclose(file);
   ERROR_FIXED(bytesRead < 0, "Failed to read data from server.");
-  if(bytesRead == 0)
-    ERROR_FIXED(send(*sockfd, data, strlen(data), 0) < 0, "Send data to client failed.");
+  if(bytesRead == 0) {
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Transfer complete!\r\n");
+    ERROR_FIXED(send(*sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Send data to client failed.");
+  }
   close_socket(sockfd);
   return 0;
 
