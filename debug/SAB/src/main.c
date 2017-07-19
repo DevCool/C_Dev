@@ -44,23 +44,6 @@ int main(int argc, char *argv[]) {
   return -1;
 }
 
-/* hdl_client() - generate random password.
- */
-void rnd_pw(int seed, char password[], int size) {
-  int i, j[] = { 485, 758, 190 };
-  int k;
-  srand(seed);
-  i = rand()%2;
-  i *= 0 | !i;
-  i = !!i;
-  i <<= 1;
-  srand(i+j[rand()%3]);
-  printf("%d\n", i);
-  memset(password, 0, size);
-  for(k = 0; k < size-1; k++)
-    password[k] = rand()%132+97;
-}
-
 /* hdl_client() - handles connect client.
  */
 int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
@@ -68,7 +51,8 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   char password[9];
   char entry[9];
   if(filename == NULL) {}
-  rnd_pw(1337, password, sizeof password);
+  memset(password, 0, sizeof(password));
+  snprintf(password, sizeof(password), "AW96B6\r\n");
   do {
     memset(msg, 0, sizeof msg);
     memset(entry, 0, sizeof entry);

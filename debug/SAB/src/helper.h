@@ -14,6 +14,8 @@ enum _COMMAND {
   CMD_MKDIR,
   CMD_RMDIR,
   CMD_TOUCH,
+  CMD_TYPE,
+  CMD_WRITE,
   CMD_HOSTUP,
   CMD_TRANSFER,
 #ifdef __linux__
@@ -33,6 +35,8 @@ int cmd_rm(int sockfd, char **args);
 int cmd_mkdir(int sockfd, char **args);
 int cmd_rmdir(int sockfd, char **args);
 int cmd_touch(int sockfd, char **args);
+int cmd_type(int sockfd, char **args);
+int cmd_write(int sockfd, char **args);
 int cmd_hostup(int sockfd, char **args);
 int cmd_transfer(int sockfd, char **args);
 #ifdef __linux__

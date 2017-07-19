@@ -37,6 +37,8 @@ char *builtin_str[] = {
   "mkdir",
   "rmdir",
   "touch",
+  "type",
+  "write",
   "hostup",
   "transfer",
 #ifdef __linux__
@@ -56,6 +58,8 @@ char *builtin_help[] = {
   "make a directory in the current one.\r\n",
   "delete an empty directory.\r\n",
   "create a blank file.\r\n",
+  "displays a text file 20 lines at a time.\r\n",
+  "allows you to write text to a file.\r\n",
   "checks if a host is available on specified port.\r\n",
   "transfers data from one computer to another.\r\n",
 #ifdef __linux__
@@ -76,6 +80,8 @@ int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_mkdir,
   &cmd_rmdir,
   &cmd_touch,
+  &cmd_type,
+  &cmd_write,
   &cmd_hostup,
   &cmd_transfer,
 #ifdef __linux__
@@ -305,6 +311,69 @@ int cmd_touch(int sockfd, char **args) {
 
 error:
   return 1;
+}
+
+/* cmd_type - displays a text file 20 lines at a time.
+ */
+int cmd_type(int sockfd, char **args) {
+  FILE *fp = NULL;
+  char data[BUFSIZ];
+
+  if(args[1] != NULL) {
+    char line[256];
+    int count = 0;
+    ERROR_FIXED((fp = fopen(args[1], "rt")) == NULL, "Could not open file.");
+    while(fgets(line, sizeof(line), fp) != NULL) {
+      if(strchr(line, '\n') != NULL)
+	++count;
+      if(count >= 20) {
+	char getln[64];
+	memset(data, 0, sizeof(data));
+	snprintf(data, sizeof(data), "Press 'Return' to continue...\r\n");
+	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		    "Could not send data to client.\n");
+	ERROR_FIXED(recv(sockfd, getln, sizeof(getln), 0) < 0,
+		    "Could not recv data from client.\n");
+	count = 0;
+      }
+      ERROR_FIXED(send(sockfd, line, strlen(line), 0) != (int)strlen(line),
+		  "Could not send data to client.\n");
+    }
+    fclose(fp);
+  } else {
+    memset(data, 0, sizeof(data));
+    snprintf(data, sizeof data, "Usage: %s <file.txt>\r\n", args[0]);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.\n");
+  }
+  return 1;
+
+error:
+  if(fp != NULL)
+    fclose(fp);
+  return -1;
+}
+
+/* cmd_write() - allows you to write text to a file.
+ */
+int cmd_write(int sockfd, char **args) {
+  char data[BUFSIZ];
+
+  if(args[1] != NULL) {
+    memset(data, 0, sizeof(data));
+    snprintf(data, sizeof(data), "Command not yet implemented!\r\n");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.\n");
+  } else {
+    memset(data, 0, sizeof(data));
+    snprintf(data, sizeof(data), "Usage: %s <file.txt>\r\n", args[0]);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.\n");
+  }
+  return 1;
+
+error:
+  return -1;
 }
 
 /* cmd_hostup() - checks host status on specific port.
