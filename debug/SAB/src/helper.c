@@ -357,22 +357,50 @@ error:
 /* cmd_write() - allows you to write text to a file.
  */
 int cmd_write(int sockfd, char **args) {
+  FILE *fp = NULL;
   char data[BUFSIZ];
 
   if(args[1] != NULL) {
-    memset(data, 0, sizeof(data));
-    snprintf(data, sizeof(data), "Command not yet implemented!\r\n");
+    char line[256];
+    int bytes = -1;
+    
+    ERROR_FIXED((fp = fopen(args[1], "wt")) == NULL, "Could not open file for writing.\n");
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Type 'EOF' on a blank without quotes, to write...\r\n");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.\n");
+    do {
+      char *s = line, *end = NULL;
+      memset(line, 0, sizeof line);
+      memset(data, 0, sizeof data);
+      snprintf(data, sizeof data, "> ");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.\n");
+      ERROR_FIXED((bytes = recv(sockfd, line, sizeof(line), 0)) < 0,
+		  "Could not recv data from client.\n");
+      if(strncmp(line, "EOF\r\n", sizeof(line)) == 0)
+	break;
+      end = strchr(line, '\n');
+      if(end != NULL)
+	line[end-s] = 0;
+      fprintf(fp, "%s", line);
+    } while(bytes != 0);
+    fclose(fp);
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "File written successfully.\r\n");
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
 		"Could not send data to client.\n");
   } else {
-    memset(data, 0, sizeof(data));
-    snprintf(data, sizeof(data), "Usage: %s <file.txt>\r\n", args[0]);
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Usage: %s <file.txt>\r\n", args[0]);
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
 		"Could not send data to client.\n");
   }
   return 1;
 
 error:
+  if(fp != NULL)
+    fclose(fp);
   return -1;
 }
 
