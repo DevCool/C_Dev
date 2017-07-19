@@ -65,6 +65,31 @@ char *builtin_help[] = {
   "exit back to echo hello name.\r\n"
 };
 
+/* builtin_func[]() - builtin functions array of function pointers.
+ */
+int (*builtin_func[])(int sockfd, char **args) = {
+  &cmd_cd,
+  &cmd_ls,
+  &cmd_rm,
+  &cmd_mkdir,
+  &cmd_rmdir,
+  &cmd_touch,
+  &cmd_transfer,
+#ifdef __linux__
+  &cmd_speak,
+  &cmd_term,
+  &cmd_pivot,
+#endif
+  &cmd_help,
+  &cmd_exit
+};
+
+/* cmd_len() - returns the count of all available builtin commands.
+ */
+int cmd_len(void) {
+  return sizeof(builtin_str) / sizeof(char *);
+}
+
 /* cmd_cd() - change directory on remote machine.
  */
 int cmd_cd(int sockfd, char **args) {
@@ -445,31 +470,6 @@ int cmd_exit(int sockfd, char **args) {
     return 1;
 
   return 0;
-}
-
-/* builtin_func[]() - builtin functions array of function pointers.
- */
-int (*builtin_func[])(int sockfd, char **args) = {
-  &cmd_cd,
-  &cmd_ls,
-  &cmd_rm,
-  &cmd_mkdir,
-  &cmd_rmdir,
-  &cmd_touch,
-  &cmd_transfer,
-#ifdef __linux__
-  &cmd_speak,
-  &cmd_term,
-  &cmd_pivot,
-#endif
-  &cmd_help,
-  &cmd_exit
-};
-
-/* cmd_len() - returns the count of all available builtin commands.
- */
-int cmd_len(void) {
-  return sizeof(builtin_str) / sizeof(char *);
 }
 
 /* cmd_split() - split an entire command string into tokens.
