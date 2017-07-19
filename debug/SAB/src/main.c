@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include "prs_socket/socket.h"
 #include "helper.h"
@@ -37,18 +38,51 @@ int main(int argc, char *argv[]) {
   sockfd = sock_funcs.socket_bind(argv[1], 0, &clientfd, &client);
   retval = handle_server(&sockfd, &clientfd, &client, NULL, &hdl_client);
   close_socket(&sockfd);
-  
   return retval;
 
  error:
   return -1;
 }
 
+/* hdl_client() - generate random password.
+ */
+void rnd_pw(int seed, char password[], int size) {
+  int i, j[] = { 485, 758, 190 };
+  int k;
+  srand(seed);
+  i = rand()%2;
+  i *= 0 | !i;
+  i = !!i;
+  i <<= 1;
+  srand(i+j[rand()%3]);
+  printf("%d\n", i);
+  memset(password, 0, size);
+  for(k = 0; k < size-1; k++)
+    password[k] = rand()%132+97;
+}
+
 /* hdl_client() - handles connect client.
  */
 int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
+  char msg[256];
+  char password[9];
+  char entry[9];
   if(filename == NULL) {}
+  rnd_pw(1337, password, sizeof password);
+  do {
+    memset(msg, 0, sizeof msg);
+    memset(entry, 0, sizeof entry);
+    snprintf(msg, sizeof msg, "Enter password: ");
+    ERROR_FIXED(send(*sockfd, msg, strlen(msg), 0) != (int)strlen(msg),
+		"Could not send data to client.\n");
+    ERROR_FIXED(recv(*sockfd, entry, sizeof(entry), 0) < 0, "Could not recv from client.\n");
+    ERROR_FIXED(strncmp(entry, "exit\r\n", sizeof(entry)) == 0, "You've quit SAB.\n");
+  } while(strncmp(entry, password, sizeof(entry)) != 0);
   cmd_loop(sockfd, client);
   close_socket(sockfd);
   return 0; /* return success */
+
+ error:
+  close_socket(sockfd);
+  return 1;
 }
