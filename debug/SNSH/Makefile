@@ -8,14 +8,14 @@ TARGETS = libprs_socket libprs_tests SAB SAB_transfer
 .PHONY: all linux SAB SAB_transfer libprs_socket libprs_tests clean remove install uninstall
 all: linux
 
-linux: libprs_socket SAB SAB_transfer libprs_tests
+linux: libprs_socket SNSH SNSH_transfer libprs_tests
 
-SAB:
+SNSH:
 	@echo Building S.A.B.
 	cd src && make
 	@echo Done with S.A.B.
 
-SAB_transfer:
+SNSH_transfer:
 	@echo Building S.A.B. transfer...
 	cd src/transfer && make
 	@echo Done with S.A.B. transfer!

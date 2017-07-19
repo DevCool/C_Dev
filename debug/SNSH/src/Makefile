@@ -10,7 +10,7 @@ LIBSWIN=-lkernel32 -lws2_32
 INSTALLDIR?=/usr/local/bin
 
 SRC=$(wildcard $(SRCDIR)/*.c)
-TARGET=SAB
+TARGET=SNSH
 
 OBJ=$(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.c.o)
 
@@ -47,26 +47,6 @@ depend:
 
 # DO NOT DELETE
 
-../src/socket.o: /usr/include/stdio.h /usr/include/features.h
-../src/socket.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
-../src/socket.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
-../src/socket.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
-../src/socket.o: /usr/include/libio.h /usr/include/_G_config.h
-../src/socket.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
-../src/socket.o: /usr/include/bits/sys_errlist.h /usr/include/stdlib.h
-../src/socket.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
-../src/socket.o: /usr/include/endian.h /usr/include/bits/endian.h
-../src/socket.o: /usr/include/bits/byteswap.h /usr/include/bits/byteswap-16.h
-../src/socket.o: /usr/include/sys/types.h /usr/include/time.h
-../src/socket.o: /usr/include/sys/select.h /usr/include/bits/select.h
-../src/socket.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
-../src/socket.o: /usr/include/sys/sysmacros.h
-../src/socket.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
-../src/socket.o: /usr/include/bits/stdlib-float.h /usr/include/string.h
-../src/socket.o: /usr/include/xlocale.h /usr/include/errno.h
-../src/socket.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-../src/socket.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
-../src/socket.o: /usr/include/asm-generic/errno-base.h socket.h ../../debug.h
 ../src/helper.o: /usr/include/stdio.h /usr/include/features.h
 ../src/helper.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
 ../src/helper.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
@@ -89,7 +69,7 @@ depend:
 ../src/helper.o: /usr/include/asm-generic/errno-base.h /usr/include/dirent.h
 ../src/helper.o: /usr/include/bits/dirent.h /usr/include/bits/posix1_lim.h
 ../src/helper.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
-../src/helper.o: socket.h ../../debug.h helper.h transfer.h
+../src/helper.o: prs_socket/socket.h ../../debug.h helper.h transfer.h
 ../src/espeech.o: /usr/include/stdio.h /usr/include/features.h
 ../src/espeech.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
 ../src/espeech.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
@@ -130,8 +110,8 @@ depend:
 ../src/main.o: /usr/include/errno.h /usr/include/bits/errno.h
 ../src/main.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
 ../src/main.o: /usr/include/asm-generic/errno.h
-../src/main.o: /usr/include/asm-generic/errno-base.h socket.h helper.h
-../src/main.o: ../../debug.h
+../src/main.o: /usr/include/asm-generic/errno-base.h prs_socket/socket.h
+../src/main.o: helper.h ../../debug.h
 ../src/transfer.o: /usr/include/stdio.h /usr/include/features.h
 ../src/transfer.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
 ../src/transfer.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
@@ -151,5 +131,5 @@ depend:
 ../src/transfer.o: /usr/include/xlocale.h /usr/include/errno.h
 ../src/transfer.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
 ../src/transfer.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
-../src/transfer.o: /usr/include/asm-generic/errno-base.h socket.h
+../src/transfer.o: /usr/include/asm-generic/errno-base.h prs_socket/socket.h
 ../src/transfer.o: ../../debug.h transfer.h

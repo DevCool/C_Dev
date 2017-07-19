@@ -7,9 +7,9 @@ CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
 LDFLAGS=-L$(BINDIR)
 LIBS=-lprs_socket
 
-TARGET=SAB_transfer
+TARGET=SNSH_transfer
 INSTALLDIR?=/usr/local/bin
-OBJECTS=$(OBJDIR)/sab_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
+OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
 
 .PHONY: all linux
 all: linux
@@ -19,7 +19,7 @@ linux: $(BINDIR)/$(TARGET)
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
-$(OBJDIR)/sab_transfer.c.o: main.c
+$(OBJDIR)/snsh_transfer.c.o: main.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 $(OBJDIR)/transfer.c.o: $(SRCDIR)/transfer.c

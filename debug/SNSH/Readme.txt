@@ -1,5 +1,5 @@
 ==========================================================
-=            S.A.B. - Simple Active Backdoor             =
+=            S.N.S.H. - Simple Network Shell             =
 =                      VERSION 1.0                       =
 ==========================================================
 =           Created by Philip "5n4k3" Simonson           =
