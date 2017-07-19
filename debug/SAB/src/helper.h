@@ -15,9 +15,11 @@ enum _COMMAND {
   CMD_RMDIR,
   CMD_TOUCH,
   CMD_TRANSFER,
+#ifdef __linux__
   CMD_SPEAK,
   CMD_TERM,
   CMD_PIVOT,
+#endif
   CMD_HELP,
   CMD_EXIT,
   CMD_COUNT
@@ -31,9 +33,11 @@ int cmd_mkdir(int sockfd, char **args);
 int cmd_rmdir(int sockfd, char **args);
 int cmd_touch(int sockfd, char **args);
 int cmd_transfer(int sockfd, char **args);
+#ifdef __linux__
 int cmd_speak(int sockfd, char **args);
 int cmd_term(int sockfd, char **args);
 int cmd_pivot(int sockfd, char **args);
+#endif
 int cmd_help(int sockfd, char **args);
 int cmd_exit(int sockfd, char **args);
 
