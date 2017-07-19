@@ -37,6 +37,7 @@ char *builtin_str[] = {
   "mkdir",
   "rmdir",
   "touch",
+  "hostup",
   "transfer",
 #ifdef __linux__
   "speak",
@@ -55,6 +56,7 @@ char *builtin_help[] = {
   "make a directory in the current one.\r\n",
   "delete an empty directory.\r\n",
   "create a blank file.\r\n",
+  "checks if a host is available on specified port.\r\n",
   "transfers data from one computer to another.\r\n",
 #ifdef __linux__
   "speaks the text you type.\r\n",
@@ -74,6 +76,7 @@ int (*builtin_func[])(int sockfd, char **args) = {
   &cmd_mkdir,
   &cmd_rmdir,
   &cmd_touch,
+  &cmd_hostup,
   &cmd_transfer,
 #ifdef __linux__
   &cmd_speak,
@@ -296,6 +299,56 @@ int cmd_touch(int sockfd, char **args) {
 
 error:
   return 1;
+}
+
+/* cmd_hostup() - checks host status on specific port.
+ */
+int cmd_hostup(int sockfd, char **args) {
+  struct addrinfo hints, *server, *p;
+  char data[BUFSIZ];
+  int portstatus, clientfd;
+
+  if(args[1] != NULL && args[2] != NULL) {
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    portstatus = 0;
+
+    if(getaddrinfo(args[1], args[2], &hints, &server) < 0) {
+      snprintf(data, sizeof data, "Error: Could not get host info.\r\n");
+      ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		  "Could not send data to client.");
+    }
+    for(p = server; p != NULL; p = p->ai_next) {
+      if((clientfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+	continue;
+      }
+
+      if(connect(clientfd, p->ai_addr, p->ai_addrlen) < 0) {
+	memset(data, 0, sizeof data);
+	snprintf(data, sizeof data, "Error: Could not connect to %s on port %d.\r\n",
+		 args[1], atoi(args[2]));
+	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		    "Could not send data to client.");
+      }
+      portstatus = errno;
+      break;
+    }
+    freeaddrinfo(server);
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Host: %s\r\nPort: %d\r\nHost is online.\r\n"
+	     "Port status: %s\r\n", args[1], atoi(args[2]), strerror(portstatus));
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
+  } else {
+    snprintf(data, sizeof data, "Usage: %s <hostname|ipaddress> <port>\r\n", args[0]);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.");
+  }
+  return 1;
+
+error:
+  return -1;
 }
 
 /* cmd_transfer() - download/upload from/to remote machine.

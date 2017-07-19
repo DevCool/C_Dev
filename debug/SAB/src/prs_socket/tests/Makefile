@@ -3,7 +3,7 @@ OBJDIR=../../../src/prs_socket/tests
 BINDIR=../../../bin
 
 CC=gcc
-CFLAGS?=-std=c99 -Wall -Wextra -pedantic
+CFLAGS?=-std=gnu99 -Wall -Wextra -pedantic
 LDFLAGS?=-L$(BINDIR) -lprs_socket
 
 SOURCES=$(wildcard $(SRCDIR)/*.c)

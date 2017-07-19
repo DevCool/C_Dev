@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -Wextra -pedantic -fPIC
+CFLAGS=-std=gnu99 -Wall -Wextra -pedantic -fPIC
 LDFLAGS=-shared -Wl,-soname,libprs_socket.so.1 -lc
 
 PROJECTDIR := $(shell pwd)
