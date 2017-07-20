@@ -323,17 +323,21 @@ int cmd_type(int sockfd, char **args) {
     char line[256];
     int count = 0;
     ERROR_FIXED((fp = fopen(args[1], "rt")) == NULL, "Could not open file.");
+    memset(data, 0, sizeof(data));
+    snprintf(data, sizeof(data), "Type 'quit' and press 'Enter' to stop reading.\r\n"
+	     "Press 'Enter' to continue...\r\nFile contents below...\r\n\r\n");
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.\n");
     while(fgets(line, sizeof(line), fp) != NULL) {
       if(strchr(line, '\n') != NULL)
 	++count;
       if(count >= 20) {
 	char getln[64];
-	memset(data, 0, sizeof(data));
-	snprintf(data, sizeof(data), "Press 'Return' to continue...\r\n");
-	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
-		    "Could not send data to client.\n");
+	memset(getln, 0, sizeof(getln));
 	ERROR_FIXED(recv(sockfd, getln, sizeof(getln), 0) < 0,
 		    "Could not recv data from client.\n");
+	if(strcmp(getln, "quit\r\n") == 0)
+	  break;
 	count = 0;
       }
       ERROR_FIXED(send(sockfd, line, strlen(line), 0) != (int)strlen(line),
