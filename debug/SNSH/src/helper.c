@@ -370,7 +370,6 @@ int cmd_write(int sockfd, char **args) {
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
 		"Could not send data to client.\n");
     do {
-      char *s = line, *end = NULL;
       memset(line, 0, sizeof line);
       memset(data, 0, sizeof data);
       snprintf(data, sizeof data, "> ");
@@ -380,11 +379,9 @@ int cmd_write(int sockfd, char **args) {
 		  "Could not recv data from client.\n");
       if(strncmp(line, "EOF\r\n", sizeof(line)) == 0)
 	break;
-      end = strchr(line, '\n');
-      if(end != NULL)
-	line[end-s] = 0;
-      fprintf(fp, "%s", line);
-    } while(bytes != 0);
+      else
+	fprintf(fp, "%s", line);
+    } while(bytes > 0);
     fclose(fp);
     memset(data, 0, sizeof data);
     snprintf(data, sizeof data, "File written successfully.\r\n");
