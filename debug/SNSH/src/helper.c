@@ -409,14 +409,14 @@ error:
  */
 int cmd_hostup(int sockfd, char **args) {
   struct addrinfo hints, *server, *p;
+  socklen_t addrlen;
   char data[BUFSIZ];
-  int portstatus, clientfd;
+  int rv, error, clientfd;
 
   if(args[1] != NULL && args[2] != NULL) {
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    portstatus = 0;
 
     if(getaddrinfo(args[1], args[2], &hints, &server) < 0) {
       snprintf(data, sizeof data, "Error: Could not get host info.\r\n");
@@ -425,7 +425,15 @@ int cmd_hostup(int sockfd, char **args) {
     }
     for(p = server; p != NULL; p = p->ai_next) {
       if((clientfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+	fprintf(stderr, "Error cannot create socket: %s\n", strerror(errno));
+	errno = 0;
 	continue;
+      }
+
+      if((rv = getsockopt(clientfd, SOL_SOCKET, SO_ERROR, &error, &addrlen)) != 0) {
+	fprintf(stderr, "Error connecting to socket: %s\n", strerror(rv));
+	errno = 0;
+	break;
       }
 
       if(connect(clientfd, p->ai_addr, p->ai_addrlen) < 0) {
@@ -433,17 +441,20 @@ int cmd_hostup(int sockfd, char **args) {
 	snprintf(data, sizeof data, "Error: Could not connect to %s on port %d.\r\n",
 		 args[1], atoi(args[2]));
 	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
-		    "Could not send data to client.");
+		    "Could not send data to client.\n");
+	errno = 0;
+	goto error;
       }
-      portstatus = errno;
       break;
     }
     freeaddrinfo(server);
-    memset(data, 0, sizeof data);
-    snprintf(data, sizeof data, "Host: %s\r\nPort: %d\r\nHost is online.\r\n"
-	     "Port status: %s\r\n", args[1], atoi(args[2]), strerror(portstatus));
+    /* connection successful */
+    memset(data, 0, sizeof(data));
+    snprintf(data, sizeof(data), "Host: %s\r\nPort: %d\r\nStatus: %s\r\n",
+	     args[1], atoi(args[2]), (error) ? "[FAILED]" : "[SUCCESS]");
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
-		"Could not send data to client.");
+		"Could not send data to client.\n");
+    close(clientfd);
   } else {
     snprintf(data, sizeof data, "Usage: %s <hostname|ipaddress> <port>\r\n", args[0]);
     ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
@@ -452,6 +463,8 @@ int cmd_hostup(int sockfd, char **args) {
   return 1;
 
 error:
+  if(clientfd > 0)
+    close(clientfd);
   return -1;
 }
 
