@@ -282,31 +282,32 @@ int cmd_touch(int sockfd, char **args) {
   char data[BUFSIZ];
   int i = 1;
   
-  if(args == NULL || sockfd < 0)
-    return -1;
-  else if(args[1] == NULL)
-    return -1;
-  else {
+  if(args[1] == NULL) {
+    memset(data, 0, sizeof data);
+    snprintf(data, sizeof data, "Usage: %s file1 file2 ... [files]\r\n", args[0]);
+    ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
+		"Could not send data to client.\n");
+  } else {
     while(args[i] != NULL) {
       FILE *fp = NULL;
       memset(data, 0, sizeof data);
       if((fp = fopen(args[i], "wb")) == NULL) {
 	snprintf(data, sizeof data, "File [%s] failed to create.\r\n", args[i]);
 	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
-		    "Could not send data to client.");
+		    "Could not send data to client.\n");
       } else {
 	snprintf(data, sizeof data, "File [%s] created successfully.\r\n", args[i]);
 	ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
-		    "Could not send data to client.");
+		    "Could not send data to client.\n");
+	fclose(fp);
+	++i;
       }
-      fclose(fp);
-      ++i;
     }
   }
   memset(data, 0, sizeof data);
   snprintf(data, sizeof data, "Total count of files created: %d\r\n", i-1);
   ERROR_FIXED(send(sockfd, data, strlen(data), 0) != (int)strlen(data),
-	      "Could not send data to client.");
+	      "Could not send data to client.\n");
   return 1;
 
 error:
