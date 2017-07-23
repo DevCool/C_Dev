@@ -1,15 +1,17 @@
 # S.A.B. project main makefile
 
 CC=gcc
-CFLAGS=-std=c99 -Wall -Wextra -pedantic
+CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
 LDFLAGS=
 TARGETS = libprs_socket libprs_tests SAB SAB_transfer
 
-.PHONY: all linux SAB SAB_transfer libprs_socket libprs_tests clean remove install uninstall
+.PHONY: all linux windows SAB SAB_transfer libprs_socket libprs_tests clean remove install uninstall
 all: linux
 
 linux: libprs_socket SNSH SNSH_transfer libprs_tests
+windows: libprs_socketw SNSHw SNSH_transferw libprs_testsw
 
+# Linux Building
 SNSH:
 	@echo Building S.A.B.
 	cd src && make
@@ -61,3 +63,41 @@ uninstall:
 	cd src/transfer && make uninstall
 	cd src && make uninstall
 	@echo Done uninstalling!
+
+# Windows Building
+
+SNSHw:
+	@echo Building S.A.B.
+	cd src && mingw32-make -f Makefile.win
+	@echo Done with S.A.B.
+
+SNSH_transferw:
+	@echo Building S.A.B. transfer...
+	cd src/transfer && mingw32-make -f Makefile.win
+	@echo Done with S.A.B. transfer!
+
+libprs_socketw:
+	@echo Building PRS Sockets...
+	cd src/prs_socket && mingw32-make -f Makefile.win
+	@echo Done with PRS Sockets!
+
+libprs_testsw:
+	@echo Building PRS Sockets Tests...
+	cd src/prs_socket/tests && mingw32-make -f Makefile.win
+	@echo Building PRS Sockets Tests!
+
+clean-windows:
+	@echo Cleaning project...
+	cd src/prs_socket && mingw32-make -f Makefile.win clean
+	cd src/prs_socket/tests && mingw32-make -f Makefile.win clean
+	cd src/transfer && mingw32-make -f Makefile.win clean
+	cd src && mingw32-make -f Makefile.win clean
+	@echo Done cleaning!
+
+remove-windows:
+	@echo Cleaning project...
+	cd src/prs_socket && mingw32-make -f Makefile.win remove
+	cd src/prs_socket/tests && mingw32-make -f Makefile.win remove
+	cd src/transfer && mingw32-make -f Makefile.win remove
+	cd src && mingw32-make -f Makefile.win remove
+	@echo Done cleaning!

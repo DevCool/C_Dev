@@ -7,6 +7,7 @@
  ****************************************************************
  */
 
+#if defined(__linux__)
 /* standard headers */
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,3 +63,4 @@ int speak(char *text, int len) {
 error:
   return -1;
 }
+#endif

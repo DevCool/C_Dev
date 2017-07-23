@@ -143,3 +143,22 @@ error:
   close_socket(sockfd);
   return -1;
 }
+
+#if defined(_WIN32) || (_WIN64)
+/* DLL Main Function for windows */
+int WINAPI DllMain(HANDLE hModule, DWORD fdwReason, LPVOID lpReserved) {
+	/* Handle process attach */
+	switch(fdwReason) {
+	case DLL_PROCESS_ATTACH:
+		break;
+	case DLL_PROCESS_DETACH:
+		break;
+	case DLL_THREAD_ATTACH:
+		break;
+	case DLL_THREAD_DETACH:
+		break;
+	}
+
+	return TRUE;
+}
+#endif
