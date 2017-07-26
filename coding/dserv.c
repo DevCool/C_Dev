@@ -62,39 +62,35 @@ int main(int argc, char **argv) {
   freeaddrinfo(server);
   listen(sockfd, MAX_CLIENTS);
   done = 0;
-  if((pid = fork()) < 0) {
-    fprintf(stderr, "Error: Could not fork to background.\n");
-    close(sockfd);
-    return 3;
-  } else if(pid == 0) {
-    while(!done) {
-      i = 0;
-      while(i < MAX_CLIENTS) {
-	if((clientfd[i] = accept(sockfd, &client[i], &addrlen[i])) < 0) {
-	  fprintf(stderr, "Error: Cannot accept connect from client.\n");
-	  return 2;
-	} else {
-	  MSGIP("Client connected", ((struct sockaddr_in*)&client[i])->sin_addr);
-	  if(send(clientfd[i], SEX_DATA, strlen(SEX_DATA), 0) != strlen(SEX_DATA))
-	    goto error;
+  i = 0;
+  while(i < MAX_CLIENTS) {
+    if((clientfd[i] = accept(sockfd, &client[i], &addrlen[i])) < 0) {
+      fprintf(stderr, "Error: Could not accept client connection.\n");
+      goto error;
+    } else {
+      MSGIP("Client connected", ((struct sockaddr_in*)&client[i])->sin_addr);
+      if(send(clientfd[i], SEX_DATA, strlen(SEX_DATA), 0) != strlen(SEX_DATA))
+	goto error;
 
-	  snprintf(data, sizeof data, "Too deep.\r\n");
-	  if(send(clientfd[i], data, strlen(data), 0) != strlen(data))
-	    goto error;
-	  handle_clients(clientfd[i]);
-	  if(close(clientfd[i]) == 0)
-	    MSGIP("Client disconnected", ((struct sockaddr_in*)&client[i])->sin_addr);
-	  ++i;
-	}
+      snprintf(data, sizeof data, "Too deep.\r\n");
+      if(send(clientfd[i], data, strlen(data), 0) != strlen(data))
+	goto error;
+      
+      handle_clients(clientfd[i]);
+      if(close(clientfd[i]) == 0) {
+	MSGIP("Client disconnected", ((struct sockaddr_in*)&client[i])->sin_addr);
+	--i;
       }
+      ++i;
     }
   }
   close(sockfd);
   return 0;
 
- error:
+error:
   for(i = 0; i < MAX_CLIENTS; i++)
-    close(clientfd[i]);
+    if(clientfd[i] > 0)
+      close(clientfd[i]);
   close(sockfd);
   return 254;
 }
