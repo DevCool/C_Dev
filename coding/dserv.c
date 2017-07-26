@@ -19,6 +19,8 @@
 
 #define MSGIP(M, X) printf("[INFO] : " M " [%s]!\n", inet_ntoa(X))
 
+void handle_clients(int);
+
 int main(int argc, char **argv) {
   struct addrinfo hints, *server, *p;
   struct sockaddr client[MAX_CLIENTS];
@@ -79,6 +81,7 @@ int main(int argc, char **argv) {
 	  snprintf(data, sizeof data, "Too deep.\r\n");
 	  if(send(clientfd[i], data, strlen(data), 0) != strlen(data))
 	    goto error;
+	  handle_clients(clientfd[i]);
 	  if(close(clientfd[i]) == 0)
 	    MSGIP("Client disconnected", ((struct sockaddr_in*)&client[i])->sin_addr);
 	  ++i;
@@ -94,4 +97,19 @@ int main(int argc, char **argv) {
     close(clientfd[i]);
   close(sockfd);
   return 254;
+}
+
+void handle_clients(int sockfd) {
+  char buf[BUFSIZ];
+
+  do {
+    memset(buf, 0, sizeof buf);
+    if(recv(sockfd, buf, sizeof buf, 0) < 0) {
+      fprintf(stderr, "Error: Could not recv data from client.\n");
+      break;
+    } else {
+      if(send(sockfd, "Type 'exit' to quit ...\r\n", 25, 0) != 25)
+	break;
+    }
+  } while(strncmp(buf, "exit\r\n", sizeof buf) != 0);
 }
