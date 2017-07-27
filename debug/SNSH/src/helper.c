@@ -710,6 +710,7 @@ int cmd_execute(int sockfd, char **args) {
 /* cmd_loop() - main command interface loop.
  */
 void cmd_loop(int *sockfd, struct sockaddr_in *client) {
+  FILE *sockin = NULL;
   char line[CMD_LEN];
   char msg[1024];
   char **args = NULL;
@@ -718,7 +719,19 @@ void cmd_loop(int *sockfd, struct sockaddr_in *client) {
   if(client == NULL)
     return;
 
-#ifdef __linux__
+  /* open file descriptors in file pointers */
+  sockin = fdopen(*sockfd, "rb");
+  if(sockin == NULL) {
+    perror("fdopen");
+    return;
+  }
+  if(setvbuf(sockin, NULL, _IOLBF, 0) != 0) {
+    perror("setvbuf (read)");
+    fclose(sockin);
+    return;
+  }
+
+#ifdef __linux
   speakInit();
 #endif
   
@@ -728,13 +741,15 @@ void cmd_loop(int *sockfd, struct sockaddr_in *client) {
     snprintf(msg, sizeof msg, "CMD > ");
     if(send(*sockfd, msg, strlen(msg), 0) < 0)
       puts("Error: Cannot send message to client.");
-    if(recv(*sockfd, line, sizeof line, 0) < 0)
+    if(fgets(line, sizeof line, sockin) == NULL)
       puts("Error: Cannot recv from client.");
     args = cmd_split(line);
     status = cmd_execute(*sockfd, args);
     free(args);
   } while(status);
-#ifdef __linux__
+  fclose(sockin);
+  
+#ifdef __linux
   speakCleanup();
 #endif
 }

@@ -83,7 +83,7 @@ int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_i
     serv.sin_port = htons(port);
   serv.sin_addr.s_addr = inet_addr(hostname);
 
-  ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.");
+  ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.\n");
   ERROR_FIXED(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1,
 	      "Cannot set socket options.");
   ERROR_FIXED(bind(sockfd, (struct sockaddr *)&serv, sizeof(serv)) < 0,
