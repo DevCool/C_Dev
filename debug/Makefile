@@ -6,6 +6,7 @@ LIBS=
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:%.c=%.c.o)
 LIST=$(SOURCES:%.c=%)
+LISTW=$(SOURCES:%.c=%.exe)
 
 all: bmsg $(LIST)
 
@@ -28,5 +29,5 @@ clean:
 
 clean-windows:
 	@echo Cleaning up!
-	@del *.o $(LIST)
+	@del *.o $(LISTW)
 	@echo Cleaning done.
