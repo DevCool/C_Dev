@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   if(argc == 3) {
     socket_init(SOCKET_CONN, &sock_func);
-    sockfd = sock_func.socket_conn(argv[1], UPLOAD_PORT, &clientfd, &client);
+    sockfd = sock_func.socket_conn(argv[1], UPLOAD_PORT, 1, &clientfd, &client);
     retval = handle_server(&sockfd, &clientfd, &client, argv[2], &handle_upload);
     close_socket(&sockfd);
   } else {
@@ -48,13 +48,13 @@ int main(int argc, char *argv[]) {
       switch(argv[1][1]) {
       case 'd':
 	socket_init(SOCKET_CONN, &sock_func);
-	sockfd = sock_func.socket_conn(argv[2], DOWNLOAD_PORT, &clientfd, &client);
+	sockfd = sock_func.socket_conn(argv[2], DOWNLOAD_PORT, 1, &clientfd, &client);
 	retval = handle_server(&sockfd, &clientfd, &client, argv[3], &handle_download);
 	close_socket(&sockfd);
 	break;
       case 'u':
 	socket_init(SOCKET_CONN, &sock_func);
-	sockfd = sock_func.socket_conn(argv[2], UPLOAD_PORT, &clientfd, &client);
+	sockfd = sock_func.socket_conn(argv[2], UPLOAD_PORT, 1, &clientfd, &client);
 	retval = handle_server(&sockfd, &clientfd, &client, argv[3], &handle_upload);
 	close_socket(&sockfd);
 	break;

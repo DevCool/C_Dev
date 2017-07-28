@@ -30,7 +30,7 @@ int download(const char *hostname, const char *filename) {
 
   socket_init(SOCKET_BIND, &sock_func);
   /* create socket */
-  sockfd = sock_func.socket_bind(hostname, DOWNLOAD_PORT, &clientfd, &client);
+  sockfd = sock_func.socket_bind(hostname, DOWNLOAD_PORT, 1, &clientfd, &client);
   /* server loop */
   retval = handle_server(&sockfd, &clientfd, &client, filename, &hdl_download);
   /* close socket */
@@ -48,7 +48,7 @@ int upload(const char *hostname, const char *filename) {
   /* init socket functions */
   socket_init(SOCKET_BIND, &sock_func);
   /* create socket */
-  sockfd = sock_func.socket_bind(hostname, UPLOAD_PORT, &clientfd, &client);
+  sockfd = sock_func.socket_bind(hostname, UPLOAD_PORT, 1, &clientfd, &client);
   /* server loop */
   retval = handle_server(&sockfd, &clientfd, &client, filename, &hdl_upload);
   /* close socket */
