@@ -65,6 +65,9 @@ int create_conn(const char *hostname, int port, int *serverfd, struct sockaddr_i
   serv.sin_addr.s_addr = inet_addr(hostname);
 
   ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.");
+#if defined(_WIN32) || (_WIN64)
+  ERROR_FIXED(ioctlsocket(sockfd, FIONBIO, 0) == NO_ERROR, "Cannot set blocking mode!");
+#endif
   ERROR_FIXED(connect(sockfd, (struct sockaddr *)&serv, sizeof serv) < 0,
 	      "Could not connec to server.");
   *serveraddr = serv;
@@ -73,9 +76,6 @@ int create_conn(const char *hostname, int port, int *serverfd, struct sockaddr_i
 
  error:
   close_socket(&sockfd);
-#if defined(_WIN32) || (_WIN64)
-  WSACleanup();
-#endif
   return -1;
 }
 
@@ -106,6 +106,9 @@ int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_i
   serv.sin_addr.s_addr = inet_addr(hostname);
 
   ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.\n");
+#if defined(_WIN32) || (_WIN64)
+  ERROR_FIXED(ioctlsocket(sockfd, FIONBIO, 0) == NO_ERROR, "Cannot set blocking mode!");
+#endif
   ERROR_FIXED(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1,
 	      "Cannot set socket options.");
   ERROR_FIXED(bind(sockfd, (struct sockaddr *)&serv, sizeof(serv)) < 0,
@@ -119,9 +122,6 @@ int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_i
 
  error:
   close_socket(&sockfd);
-#if defined(_WIN32) || (_WIN64)
-  WSACleanup();
-#endif
   return -1;
 }
 
@@ -130,6 +130,9 @@ int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_i
 void close_socket(int *sockfd) {
   if(sockfd)
     close(*sockfd);
+#if defined(_WIN32) || (_WIN64)
+  WSACleanup();
+#endif
 }
 
 /* handle_server() - handles the main server.

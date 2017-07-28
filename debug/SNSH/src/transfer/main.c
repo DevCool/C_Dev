@@ -63,15 +63,9 @@ int main(int argc, char *argv[]) {
       }
     } else {
       printf("Unknown switch: %s\n", argv[1]);
-#if defined(_WIN32) || (_WIN64)
-      WSACleanup();
-#endif
       return 3;
     }
   }
-#if defined(_WIN32) || (_WIN64)
-  WSACleanup();
-#endif
   return retval;
 }
 
@@ -103,9 +97,6 @@ int handle_download(int *sockfd, struct sockaddr_in *client, const char *filenam
 
  error:
   close_socket(sockfd);
-#if defined(_WIN32) || (_WIN64)
-  WSACleanup();
-#endif
   return 1;
 }
 
@@ -137,8 +128,5 @@ int handle_upload(int *sockfd, struct sockaddr_in *client, const char *filename)
 
 error:
   close_socket(sockfd);
-#if defined(_WIN32) || (_WIN64)
-  WSACleanup();
-#endif
   return 1;
 }

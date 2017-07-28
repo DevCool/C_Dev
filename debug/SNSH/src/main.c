@@ -42,9 +42,6 @@ int main(int argc, char *argv[]) {
 
  error:
   close_socket(&sockfd);
-#if defined(_WIN32) || (_WIN64)
-  WSACleanup();
-#endif
   return -1;
 }
 
