@@ -22,14 +22,14 @@ DLL_EXPORT enum SOCKCREATE {
   SOCKET_BIND,
   SOCKET_CONN
 };
-typedef DLL_EXPORT enum SOCKCREATE sockcreate_t;
+typedef enum SOCKCREATE sockcreate_t;
 
 /* socketcreate_t union */
 DLL_EXPORT union SOCKET_CREATE {
   int (*socket_bind)(const char *, int, int *, struct sockaddr_in *);
   int (*socket_conn)(const char *, int, int *, struct sockaddr_in *);
 };
-typedef DLL_EXPORT union SOCKET_CREATE sockcreate_func_t;
+typedef union SOCKET_CREATE sockcreate_func_t;
 
 /* my function prototypes */
 int DLL_EXPORT socket_init(sockcreate_t init, sockcreate_func_t *socket_func);

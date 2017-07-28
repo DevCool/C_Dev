@@ -3,7 +3,6 @@ CFLAGS=-std=gnu99 -Wall -Wextra -pedantic -fPIC
 LDFLAGS=-shared
 LIBS=-lws2_32
 
-PROJECTDIR := $(pwd)
 TARGET=prs_socket.dll
 BINDIR=..\..\bin
 OBJDIR=..\..\src\prs_socket
@@ -27,4 +26,4 @@ clean:
 	del $(OBJDIR)\*.c.o
 
 remove: clean
-	$(BINDIR)\$(TARGET)
+	del $(BINDIR)\$(TARGET)

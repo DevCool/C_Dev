@@ -46,6 +46,15 @@ int socket_init(sockcreate_t init, sockcreate_func_t *socket_func) {
 int create_conn(const char *hostname, int port, int *serverfd, struct sockaddr_in *serveraddr) {
   struct sockaddr_in serv;
   int sockfd;
+#if defined(_WIN32) || (_WIN64)
+  WSADATA wsaData;
+  if(WSAStartup(0x0202, &wsaData) != 0) {
+    char msg[256];
+    ZeroMemory(msg, sizeof msg);
+    _snprintf(msg, sizeof msg, "WSA Error Code: %X\n", WSAGetLastError());
+    MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONERROR);
+  }
+#endif
 
   memset(&serv, 0, sizeof(serv));
   serv.sin_family = AF_INET;
@@ -63,6 +72,10 @@ int create_conn(const char *hostname, int port, int *serverfd, struct sockaddr_i
   return sockfd;	/* returns 0 for success */
 
  error:
+  close_socket(&sockfd);
+#if defined(_WIN32) || (_WIN64)
+  WSACleanup();
+#endif
   return -1;
 }
 
@@ -74,6 +87,15 @@ int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_i
   socklen_t clientlen;
   int sockfd, newfd;
   int yes = 1;
+#if defined(_WIN32) || (_WIN64)
+  WSADATA wsaData;
+  if(WSAStartup(0x0202, &wsaData) != 0) {
+    char msg[256];
+    ZeroMemory(msg, sizeof msg);
+    _snprintf(msg, sizeof msg, "WSA Error Code: %X\n", WSAGetLastError());
+    MessageBox(NULL, msg, "Error!", MB_OK | MB_ICONERROR);
+  }
+#endif
 
   memset(&serv, 0, sizeof(serv));
   serv.sin_family = AF_INET;
@@ -96,6 +118,10 @@ int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_i
   return sockfd;	/* returns 0 for success */
 
  error:
+  close_socket(&sockfd);
+#if defined(_WIN32) || (_WIN64)
+  WSACleanup();
+#endif
   return -1;
 }
 

@@ -10,6 +10,7 @@ LIBS=-lws2_32 -lprs_socket
 TARGET=SNSH_transfer.exe
 # INSTALLDIR?=/usr/local/bin
 OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
+DOBJS=$(subst /,\,$(OBJECTS))
 
 .PHONY: all
 all: $(BINDIR)\$(TARGET)
@@ -28,7 +29,7 @@ $(OBJDIR)/socket.c.o: $(SRCDIR)/prs_socket/socket.c
 
 .PHONY: clean remove
 clean:
-	del $(OBJECTS)
+	del $(DOBJS)
 
 remove: clean
 	del $(BINDIR)\$(TARGET)

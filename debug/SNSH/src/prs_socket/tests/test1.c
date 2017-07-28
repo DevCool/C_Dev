@@ -18,5 +18,8 @@ int main(void) {
   retval = handle_server(&sockfd, &clientfd, &client, NULL, NULL);
   /* cleanup socket */
   close_socket(&sockfd);
+#if defined(_WIN32) || (_WIN64)
+  WSACleanup();
+#endif
   return retval;
 }
