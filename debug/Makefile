@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS?=-std=c99 -Wall -Wextra -pedantic
-LDFLAGS?=-std=c99 -Wall -Wextra -pedantic
+CFLAGS?=-std=gnu99 -Wall -Wextra -pedantic
+LDFLAGS?=-std=gnu99 -Wall -Wextra -pedantic
 LIBS=
 
 SOURCES=$(wildcard *.c)
