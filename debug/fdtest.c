@@ -21,7 +21,7 @@ int main(void) {
   struct sockaddr client;
   socklen_t addrlen;
   int sockfd, clientfd, rv, i;
-  int fdmax = 0;
+  int fdmax = 0, bytes;
   char entry[9];
 #ifdef __linux
   fd_set master, read_fds;
@@ -95,17 +95,41 @@ int main(void) {
 	      fdmax = clientfd;
           }
 	} else { /* handle data from client */
-          do {
-	    memset(entry, 0, sizeof entry);
-	    send(i, "Enter password: ", 16, 0);
-            recv(i, entry, sizeof entry, 0);
-          } while(strncmp(entry, "AW96B6", sizeof entry) != 0);
+	  if((bytes = send(i, "Enter password: ", 16, 0)) <= 0) {
+            if(bytes == 0) {
+              printf("Client hung up...\n");
+            } else {
+              perror("send");
+            }
 #if defined(_WIN32) || (_WIN64)
-          closesocket((SOCKET)i);
+            closesocket((SOCKET)i);
 #else
-          close(i);
+            close(i);
 #endif
-          break;
+            FD_CLR(i, &master); /* remove socket from master set */
+          } else {
+            if((bytes = recv(i, entry, sizeof entry, 0)) <= 0) {
+              if(bytes == 0) { /* Client disconnected */
+                printf("Client hung up...\n");
+              } else {
+                perror("recv");
+              }
+#if defined(_WIN32) || (_WIN64)
+            closesocket((SOCKET)i);
+#else
+            close(i);
+#endif
+            } else {
+              if(strncmp(entry, "AW96B6", sizeof entry) != 0) {
+#if defined(_WIN32) || (_WIN64)
+                closesocket((SOCKET)i);
+#else
+                close(i);
+#endif
+                break;
+              }
+            }
+          }
 	}
       }
     }
