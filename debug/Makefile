@@ -8,13 +8,25 @@ OBJECTS=$(SOURCES:%.c=%.c.o)
 LIST=$(SOURCES:%.c=%)
 LISTW=$(SOURCES:%.c=%.exe)
 
-all: bmsg $(LIST)
+.PHONY: all bmsg
+all: bmsg linux
 
 bmsg:
 	@echo Started compiling...
 
+linux: $(LIST)
+windows: $(LISTW)
+
 %: %.c.o
 	@$(CC) $(LDFLAGS) $< -o $@
+	@echo Linked $@ successfully!
+
+%.exe: %.c.o
+	@$(CC) $(LDFLAGS) $< -o $@
+	@echo Linked $@ successfully!
+
+fdtest.exe: fdtest.c.o
+	@$(CC) $(LDFLAGS) $^ -o $@ -lws2_32
 	@echo Linked $@ successfully!
 
 $(OBJECTS): %.c.o : %.c
