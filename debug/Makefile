@@ -29,6 +29,10 @@ fdtest.exe: fdtest.c.o
 	@$(CC) $(LDFLAGS) $^ -o $@ -lws2_32
 	@echo Linked $@ successfully!
 
+sendrecv.exe: sendrecv.c.o
+	@$(CC) $(LDFLAGS) $^ -o $@ -lws2_32
+	@echo Linked $@ successfully!
+
 $(OBJECTS): %.c.o : %.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 	@echo Compiled $< successfully!
