@@ -28,8 +28,8 @@ typedef enum SOCKCREATE sockcreate_t;
 
 /* socketcreate_t union */
 DLL_EXPORT union SOCKET_CREATE {
-  int (*socket_bind)(const char *, int, unsigned char, struct sockaddr_in *);
-  int (*socket_conn)(const char *, int, unsigned char, struct sockaddr_in *);
+  int (*socket_bind)(const char *, int, int *, struct sockaddr_in *);
+  int (*socket_conn)(const char *, int, int *, struct sockaddr_in *);
 };
 typedef union SOCKET_CREATE sockcreate_func_t;
 

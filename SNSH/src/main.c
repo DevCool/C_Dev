@@ -18,6 +18,7 @@
 #include "prs_socket/socket.h"
 #include "helper.h"
 #include "debug.h"
+#include "snshimg.h"
 
 /* function pointer to handle clients */
 int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename);
@@ -52,6 +53,8 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   char password[9];
   char entry[9];
   if(filename == NULL) {}
+  ERROR_FIXED(send(*sockfd, SNSH_IMGDATA, strlen(SNSH_IMGDATA), 0)
+		!= strlen(SNSH_IMGDATA), "Could not send all img data.\n");
   memset(password, 0, sizeof(password));
   snprintf(password, sizeof(password), "AW96B6\r\n");
   do {
