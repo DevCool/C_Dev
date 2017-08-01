@@ -7,6 +7,7 @@
 #include <ws2tcpip.h>
 #include <windows.h>
 #elif __linux
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/types.h>
