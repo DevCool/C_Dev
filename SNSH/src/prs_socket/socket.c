@@ -14,7 +14,7 @@
 
 /* my includes */
 #include "socket.h"
-#include "../../../debug.h"
+#include "../debug.h"
 
 /* defines for main server */
 #define MAX_BUFLEN 1024
@@ -43,7 +43,7 @@ int socket_init(sockcreate_t init, sockcreate_func_t *socket_func) {
 /* create_conn() - creates a socket, binds to a specified port,
  * and returns the sock file descriptor.
  */
-int create_conn(const char *hostname, int port, unsigned char blocking, int *serverfd, struct sockaddr_in *serveraddr) {
+int create_conn(const char *hostname, int port, int *serverfd, struct sockaddr_in *serveraddr) {
   struct sockaddr_in serv;
   int sockfd;
 #if defined(_WIN32) || (_WIN64)
@@ -65,13 +65,6 @@ int create_conn(const char *hostname, int port, unsigned char blocking, int *ser
   serv.sin_addr.s_addr = inet_addr(hostname);
 
   ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.");
-  if(!blocking) {
-#if defined(_WIN32) || (_WIN64)
-    ERROR_FIXED(ioctlsocket(sockfd, FIONBIO, 1) == NO_ERROR, "Cannot set blocking mode!");
-#else
-    ERROR_FIXED(fcntl(sockfd, F_SETFL, O_NONBLOCK) < 0, "Cannot set non blocking mode!");
-#endif
-  }
   ERROR_FIXED(connect(sockfd, (struct sockaddr *)&serv, sizeof serv) < 0,
 	      "Could not connec to server.");
   *serveraddr = serv;
@@ -86,7 +79,7 @@ int create_conn(const char *hostname, int port, unsigned char blocking, int *ser
 /* create_bind() - creates a socket, binds to a specified port,
  * and returns the sock file descriptor.
  */
-int create_bind(const char *hostname, int port, unsigned char blocking, int *clientfd, struct sockaddr_in *clientaddr) {
+int create_bind(const char *hostname, int port, int *clientfd, struct sockaddr_in *clientaddr) {
   struct sockaddr_in serv, client;
   socklen_t clientlen;
   int sockfd, newfd;
@@ -110,12 +103,6 @@ int create_bind(const char *hostname, int port, unsigned char blocking, int *cli
   serv.sin_addr.s_addr = inet_addr(hostname);
 
   ERROR_FIXED((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0, "Cannot create socket.\n");
-  if(!blocking)
-#if defined(_WIN32) || (_WIN64)
-    ERROR_FIXED(ioctlsocket(sockfd, FIONBIO, 0) == NO_ERROR, "Cannot set blocking mode!");
-#else
-    ERROR_FIXED(fcntl(sockfd, F_SETFL, O_NONBLOCK) < 0, "Cannot set non blocking mode!");
-#endif
   ERROR_FIXED(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1,
 	      "Cannot set socket options.");
   ERROR_FIXED(bind(sockfd, (struct sockaddr *)&serv, sizeof(serv)) < 0,

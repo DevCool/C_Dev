@@ -19,7 +19,7 @@
 
 /* my headers */
 #include "espeech.h"
-#include "../../debug.h"
+#include "debug.h"
 
 /* SynthCallback() - This has to be here leave alone.
  */

@@ -15,7 +15,7 @@
 
 /* my headers */
 #include "prs_socket/socket.h"
-#include "../../debug.h"
+#include "debug.h"
 #include "helper.h"
 #include "transfer.h"
 

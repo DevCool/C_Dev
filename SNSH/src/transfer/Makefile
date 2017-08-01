@@ -1,5 +1,5 @@
 BINDIR=../../bin
-OBJDIR=.
+OBJDIR=./
 SRCDIR=../../src
 
 CC=gcc
@@ -9,7 +9,7 @@ LIBS=-lprs_socket
 
 TARGET=SNSH_transfer
 INSTALLDIR?=/usr/local/bin
-OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
+OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/debug.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
 
 .PHONY: all linux
 all: linux
@@ -20,6 +20,9 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 $(OBJDIR)/snsh_transfer.c.o: main.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+$(OBJDIR)/debug.c.o: $(SRCDIR)/debug.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 $(OBJDIR)/transfer.c.o: $(SRCDIR)/transfer.c

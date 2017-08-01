@@ -13,7 +13,7 @@ int main(void) {
   /* initialize socket func */
   socket_init(SOCKET_BIND, &sock_func);
   /* bind socket to port */
-  sockfd = sock_func.socket_bind("0.0.0.0", 5555, 1, &clientfd, &client);
+  sockfd = sock_func.socket_bind("0.0.0.0", 5555, &clientfd, &client);
   /* handle server (swap to client handler) */
   retval = handle_server(&sockfd, &clientfd, &client, NULL, NULL);
   /* cleanup socket */
