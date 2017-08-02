@@ -58,12 +58,9 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   
   do {
     memset(buf, 0, sizeof buf);
-    do {
-      ERROR_FIXED(recieved < 0, "Could not recieve data.\n");
-      memset(msg, 0, sizeof msg);
-      recieved = recv(*sockfd, msg, sizeof msg, 0);
-      printf("%s", msg);
-    } while(recieved > 0);
+    memset(msg, 0, sizeof msg);
+    ERROR_FIXED(recv(*sockfd, msg, sizeof msg, 0) < 0, "Could not recv data.\n");
+    printf("%s", msg);
     ERROR_FIXED(fgets(buf, sizeof buf, stdin) == NULL, "Could not get input.\n");
     ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
 		"Could not send data.\n");

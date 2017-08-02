@@ -56,7 +56,7 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   ERROR_FIXED(send(*sockfd, SNSH_IMGDATA, strlen(SNSH_IMGDATA), 0)
 		!= strlen(SNSH_IMGDATA), "Could not send all img data.\n");
   memset(password, 0, sizeof(password));
-  snprintf(password, sizeof(password), "AW96B6\r\n");
+  snprintf(password, sizeof(password), "AW96B6\n");
   do {
     memset(msg, 0, sizeof msg);
     memset(entry, 0, sizeof entry);
