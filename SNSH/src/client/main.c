@@ -48,14 +48,27 @@ int main(int argc, char *argv[]) {
   return 1;
 }
 
+#define DATALEN 1024
+
 int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   char msg[BUFSIZ];
-  int bytes;
+  char buf[DATALEN];
+  unsigned int bytes;
+  int recieved;
   
   do {
-    ERROR_FIXED((bytes = recv(*sockfd, msg, sizeof msg, 0)) < 0, "Could not recv message.\n");
-  } while(bytes > 0);
-  
+    memset(buf, 0, sizeof buf);
+    do {
+      ERROR_FIXED(recieved < 0, "Could not recieve data.\n");
+      memset(msg, 0, sizeof msg);
+      recieved = recv(*sockfd, msg, sizeof msg, 0);
+      printf("%s", msg);
+    } while(recieved > 0);
+    ERROR_FIXED(fgets(buf, sizeof buf, stdin) == NULL, "Could not get input.\n");
+    ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
+		"Could not send data.\n");
+  } while(sockfd > 0);
+  close_socket(sockfd);
   return 0;
 
  error:
