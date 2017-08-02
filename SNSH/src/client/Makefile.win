@@ -1,0 +1,35 @@
+BINDIR=..\..\bin
+OBJDIR=.
+SRCDIR=..\..\src
+
+CC=gcc
+CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
+LDFLAGS=-L$(BINDIR)
+LIBS=-lws2_32 -lprs_socket
+
+TARGET=SNSH_transfer.exe
+# INSTALLDIR?=/usr/local/bin
+OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
+DOBJS=$(subst /,\,$(OBJECTS))
+
+.PHONY: all
+all: $(BINDIR)\$(TARGET)
+
+$(BINDIR)\$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
+
+$(OBJDIR)/snsh_transfer.c.o: main.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+$(OBJDIR)/transfer.c.o: $(SRCDIR)/transfer.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+$(OBJDIR)/socket.c.o: $(SRCDIR)/prs_socket/socket.c
+	$(CC) $(CFLAGS) -c $^ -o $@
+
+.PHONY: clean remove
+clean:
+	del $(DOBJS)
+
+remove: clean
+	del $(BINDIR)\$(TARGET)
