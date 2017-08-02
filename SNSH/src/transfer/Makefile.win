@@ -3,12 +3,11 @@ OBJDIR=.
 SRCDIR=..\..\src
 
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
+CFLAGS=-std=gnu99 -Wall -Wextra
 LDFLAGS=-L$(BINDIR)
 LIBS=-lws2_32 -lprs_socket
 
 TARGET=SNSH_transfer.exe
-# INSTALLDIR?=/usr/local/bin
 OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
 DOBJS=$(subst /,\,$(OBJECTS))
 

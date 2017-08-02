@@ -3,14 +3,12 @@ OBJDIR=.
 SRCDIR=..\..\src
 
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
+CFLAGS=-std=gnu99 -Wall -Wextra
 LDFLAGS=-L$(BINDIR)
 LIBS=-lws2_32 -lprs_socket
 
-TARGET=SNSH_transfer.exe
-# INSTALLDIR?=/usr/local/bin
-OBJECTS=$(OBJDIR)/snsh_transfer.c.o $(OBJDIR)/transfer.c.o $(OBJDIR)/socket.c.o
-DOBJS=$(subst /,\,$(OBJECTS))
+TARGET=SNSH_client.exe
+OBJECTS=$(OBJDIR)/snsh_client.c.o $(OBJDIR)/socket.c.o
 
 .PHONY: all
 all: $(BINDIR)\$(TARGET)
@@ -18,10 +16,7 @@ all: $(BINDIR)\$(TARGET)
 $(BINDIR)\$(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ $(LIBS)
 
-$(OBJDIR)/snsh_transfer.c.o: main.c
-	$(CC) $(CFLAGS) -c $^ -o $@
-
-$(OBJDIR)/transfer.c.o: $(SRCDIR)/transfer.c
+$(OBJDIR)/snsh_client.c.o: main.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 $(OBJDIR)/socket.c.o: $(SRCDIR)/prs_socket/socket.c
@@ -29,7 +24,7 @@ $(OBJDIR)/socket.c.o: $(SRCDIR)/prs_socket/socket.c
 
 .PHONY: clean remove
 clean:
-	del $(DOBJS)
+	del *.o
 
 remove: clean
 	del $(BINDIR)\$(TARGET)
