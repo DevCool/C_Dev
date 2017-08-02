@@ -51,20 +51,44 @@ int main(int argc, char *argv[]) {
 #define DATALEN 1024
 
 int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
+#if defined(_WIN32) || (_WIN64)
+  FD_SET rfds, wfds;
+#else
+  fd_set rfds, wfds;
+#endif
+  struct timeval tv;
   char msg[BUFSIZ];
   char buf[DATALEN];
   unsigned int bytes;
-  int recieved;
+  int ret;
   
   do {
-    memset(buf, 0, sizeof buf);
-    memset(msg, 0, sizeof msg);
-    ERROR_FIXED(recv(*sockfd, msg, sizeof msg, 0) < 0, "Could not recv data.\n");
-    printf("%s", msg);
-    ERROR_FIXED(fgets(buf, sizeof buf, stdin) == NULL, "Could not get input.\n");
-    ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
-		"Could not send data.\n");
-  } while(sockfd > 0);
+    FD_ZERO(&rfds);
+    FD_ZERO(&wfds);
+    tv.tv_sec = 0;
+    tv.tv_usec = 30;
+    FD_SET(*sockfd, &rfds);
+    FD_SET(*sockfd, &wfds);
+    ERROR_FIXED((ret = select(*sockfd + 1, &rfds, &wfds, NULL, &tv)) < 0,
+		"Select error occured.\n");
+    if(ret == 0) {
+      continue;
+    } else if(ret == -1) {
+      break;
+    }
+    
+    if(FD_ISSET(*sockfd, &rfds)) {
+      memset(msg, 0, sizeof msg);
+      ERROR_FIXED(recv(*sockfd, msg, sizeof msg, 0) < 0, "Could not recv data.\n");
+      printf("%s", msg);
+    }
+    if(FD_ISSET(*sockfd, &wfds)) {
+      memset(buf, 0, sizeof buf);
+      ERROR_FIXED(fgets(buf, sizeof buf, stdin) == NULL, "Could not get input.\n");
+      ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
+		  "Could not send data.\n");
+    }
+  } while(sockfd != 0);
   close_socket(sockfd);
   return 0;
 
