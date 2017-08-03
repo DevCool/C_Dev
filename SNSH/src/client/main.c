@@ -29,18 +29,12 @@ int main(int argc, char *argv[]) {
     ERROR_FIXED(socket_init(SOCKET_CONN, &sockfunc) < 0, "socket init failed.\n");
     ERROR_FIXED((sockfd = create_conn(argv[1], 8888, &clientfd, &client)) < 0,
 		"Could not create socket.\n");
-    setvbuf(stdin, NULL, _IONBF, 0);
-    ERROR_FIXED(handle_server(&sockfd, &clientfd, &client, NULL, &hdl_client) < 0,
-		"Could not handle server.\n");
-    retval = hdl_client(&sockfd, &client, NULL);
+    retval = handle_server(&sockfd, &clientfd, &client, NULL, &hdl_client);
   } else {
     ERROR_FIXED(socket_init(SOCKET_CONN, &sockfunc) < 0, "Socket init failed.\n");
     ERROR_FIXED((sockfd = create_conn(argv[1], atoi(argv[2]), &clientfd, &client)) < 0,
 		"Could not create socket.\n");
-    setvbuf(stdin, NULL, _IONBF, 0);
-    ERROR_FIXED(handle_server(&sockfd, &clientfd, &client, NULL, &hdl_client) < 0,
-		"Could not handle server.\n");
-    retval = hdl_client(&sockfd, &client, NULL);
+    retval = handle_server(&sockfd, &clientfd, &client, NULL, &hdl_client);
   }
   close_socket(&sockfd);
   return retval;
