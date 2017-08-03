@@ -50,7 +50,33 @@ int main(int argc, char *argv[]) {
   return 1;
 }
 
-#define DATALEN 1024
+#define DATALEN 16384
+
+int find_network_newline(char *msg, int total) {
+  int i;
+  for(i = 0; i < total; i++)
+    if(msg[i] == '\n')
+      return i;
+  return -1;
+}
+
+static int inbuf;
+
+int getline_network(char *msg) {
+  int bytes_read = read(STDIN_FILENO, msg, 256-inbuf);
+  short flag = -1;
+  int where = 0;
+
+  inbuf += bytes_read;
+  where = find_network_newline(msg, bytes_read);
+  if(where >= 0) {
+    /*    char nch = '\0';
+	  memcpy(msg+where, &nch, 1); */
+    inbuf = 0;
+    flag = 0;
+  }
+  return flag;
+}
 
 int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
 #if defined(_WIN32) || (_WIN64)
@@ -59,8 +85,8 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   fd_set rfds;
 #endif
   struct timeval tv;
-  char msg[BUFSIZ];
-  char buf[DATALEN];
+  char msg[DATALEN];
+  char buf[BUFSIZ];
   unsigned int bytes;
   int ret;
 
@@ -75,24 +101,25 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
     if(ret < 0)
       break;
 
-    if(FD_ISSET(STDIN_FILENO, &rfds)) {
-      memset(buf, 0, sizeof buf);
-      ERROR_FIXED(fgets(buf, sizeof buf, stdin) == NULL, "Could not get input.\n");
-      ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
-		  "Could not send data.\n");
-      if(bytes == 0) {
-	puts("Connection closed.");
-	break;
-      }
-    }
     if(FD_ISSET(*sockfd, &rfds)) {
       memset(msg, 0, sizeof msg);
       ERROR_FIXED((ret = recv(*sockfd, msg, sizeof msg, 0)) < 0, "Could not recv data.\n");
       if(ret == 0) {
 	puts("Connection closed.");
 	break;
+      } else {
+	printf("%s", msg);
       }
-      printf("%s", msg);
+    }
+    if(FD_ISSET(STDIN_FILENO, &rfds)) {
+      memset(buf, 0, sizeof buf);
+      ERROR_FIXED(getline_network(buf) < 0, "Could not get input.\n");
+      ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
+		  "Could not send data.\n");
+      if(bytes == 0) {
+	puts("Connection closed.");
+	break;
+      }
     }
   }
   close_socket(sockfd);
