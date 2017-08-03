@@ -3,7 +3,7 @@ OBJDIR=./
 SRCDIR=../../src
 
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
+CFLAGS=-std=gnu99 -Wall -pedantic
 LDFLAGS=-L$(BINDIR)
 LIBS=-lprs_socket
 

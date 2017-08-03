@@ -1,7 +1,7 @@
 # S.A.B. project main makefile
 
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
+CFLAGS=-std=gnu99 -Wall -pedantic
 LDFLAGS=
 TARGETS = libprs_socket libprs_tests SNSH SNSH_client SNSH_transfer
 

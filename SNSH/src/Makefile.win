@@ -3,7 +3,7 @@ BINDIR=..\bin
 OBJDIR=.
 
 CC=gcc
-CFLAGS=-std=gnu99 -Wall -Wextra -pedantic
+CFLAGS=-std=gnu99 -Wall -pedantic
 LDFLAGS=-L$(BINDIR)
 LIBS=-lws2_32 -lprs_socket
 LIBSWIN=-lkernel32 -lws2_32
