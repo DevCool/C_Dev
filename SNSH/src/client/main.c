@@ -62,19 +62,25 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
   unsigned int bytes;
   int ret;
   
-  do {
+  while(1) {
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
-    tv.tv_sec = 30;
-    tv.tv_usec = 0;
+    tv.tv_sec = 0;
+    tv.tv_usec = 30;
     FD_SET(*sockfd, &rfds);
     FD_SET(*sockfd, &wfds);
-    ERROR_FIXED((ret = select(*sockfd + 1, &rfds, &wfds, NULL, &tv)) < 0,
-		"Select error occured.\n");
-    
+    ret = select(*sockfd + 1, &rfds, &wfds, NULL, &tv);
+
+    if(ret < 0)
+      break;
+
     if(FD_ISSET(*sockfd, &rfds)) {
       memset(msg, 0, sizeof msg);
-      ERROR_FIXED(recv(*sockfd, msg, sizeof msg, 0) < 0, "Could not recv data.\n");
+      ERROR_FIXED((ret = recv(*sockfd, msg, sizeof msg, 0)) < 0, "Could not recv data.\n");
+      if(ret == 0) {
+	puts("Connection closed.");
+	break;
+      }
       printf("%s", msg);
     }
     if(FD_ISSET(*sockfd, &wfds)) {
@@ -82,12 +88,20 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
       ERROR_FIXED(fgets(buf, sizeof buf, stdin) == NULL, "Could not get input.\n");
       ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
 		  "Could not send data.\n");
+      if(bytes == 0) {
+	puts("Connection closed.");
+	break;
+      }
     }
-  } while(sockfd != 0);
+  }
+  FD_ZERO(&rfds);
+  FD_ZERO(&wfds);
   close_socket(sockfd);
   return 0;
 
  error:
+  FD_ZERO(&rfds);
+  FD_ZERO(&wfds);
   close_socket(sockfd);
   return 1;
 }
