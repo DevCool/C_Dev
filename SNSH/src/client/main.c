@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
   return 1;
 }
 
-#define DATALEN 16384
+#define COMPLETE 0
+#define DATALEN 1024
 
 int find_network_newline(char *msg, int total) {
   int i;
@@ -62,10 +63,8 @@ int getline_network(char *msg) {
   int where = 0;
 
   inbuf += bytes_read;
-  where = find_network_newline(msg, bytes_read);
+  where = find_network_newline(msg, inbuf);
   if(where >= 0) {
-    /*    char nch = '\0';
-	  memcpy(msg+where, &nch, 1); */
     inbuf = 0;
     flag = 0;
   }
@@ -78,7 +77,6 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
 #else
   fd_set rfds;
 #endif
-  struct timeval tv;
   char msg[DATALEN];
   char buf[BUFSIZ];
   unsigned int bytes;
@@ -86,15 +84,24 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
 
   while(1) {
     FD_ZERO(&rfds);
-    tv.tv_sec = 0;
-    tv.tv_usec = 30;
     FD_SET(*sockfd, &rfds);
     FD_SET(STDIN_FILENO, &rfds);
-    ret = select(*sockfd + 1, &rfds, NULL, NULL, &tv);
+    ret = select(*sockfd + 1, &rfds, NULL, NULL, NULL);
 
     if(ret < 0)
       break;
 
+    if(FD_ISSET(STDIN_FILENO, &rfds)) {
+      memset(buf, 0, sizeof buf);
+      if(getline_network(buf) == COMPLETE) {
+	ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
+		    "Could not send data.\n");
+	if(bytes == 0) {
+	  puts("Connection closed.");
+	  break;
+	}
+      }
+    }
     if(FD_ISSET(*sockfd, &rfds)) {
       memset(msg, 0, sizeof msg);
       ERROR_FIXED((ret = recv(*sockfd, msg, sizeof msg, 0)) < 0, "Could not recv data.\n");
@@ -103,16 +110,6 @@ int hdl_client(int *sockfd, struct sockaddr_in *client, const char *filename) {
 	break;
       } else {
 	printf("%s", msg);
-      }
-    }
-    if(FD_ISSET(STDIN_FILENO, &rfds)) {
-      memset(buf, 0, sizeof buf);
-      ERROR_FIXED(getline_network(buf) < 0, "Could not get input.\n");
-      ERROR_FIXED((bytes = send(*sockfd, buf, strlen(buf), 0)) != strlen(buf),
-		  "Could not send data.\n");
-      if(bytes == 0) {
-	puts("Connection closed.");
-	break;
       }
     }
   }
