@@ -4,7 +4,6 @@
  *****************************************************
  */
 
-#define SOCK_HELP
 
 #ifdef WINDOWS
 #include <winsock2.h>
@@ -36,8 +35,24 @@
 #define MAX_LINE	16384
 #define MAX_CLIENTS	10
 
+static int set_nonblocking();
+static int create_server();
+static int create_client();
+static int send_msg();
+static void close_conn();
+static int getln_remote();
+static void strip_cmd();
+static void get_cmd();
+static int getln();
+static int pstrcmp();
+static int pstricmp();
+static int transfer();
+
+#ifndef SOCK_HELP
+#define SOCK_HELP
+
 /* set_nonblocking: set a socket to non-blocking IO */
-static int
+int
 set_nonblocking(sock)
 #ifdef WINDOWS
 SOCKET sock;
@@ -54,7 +69,7 @@ int sock;
 }
 
 /* create_server:  creates a server; return socket fd */
-static int
+int
 create_server(nonblocking, port, address)
 int nonblocking;
 int port;
@@ -107,7 +122,7 @@ const char *address;
 }
 
 /* create_client:  creates a client socket to connect to a server */
-static int
+int
 create_client(nonblocking, port, address)
 int nonblocking;
 int port;
@@ -155,7 +170,7 @@ const char *address;
 }
 
 /* send_msg:  send message to remote socket */
-static int
+int
 send_msg(sock, msg)
 #ifdef WINDOWS
 SOCKET sock;
@@ -173,7 +188,7 @@ const char *msg;
 }
 
 /* close_conn:  closes remote connection */
-static void
+void
 close_conn(sock)
 #ifdef WINDOWS
 SOCKET sock;
@@ -190,7 +205,7 @@ int sock;
 }
 
 /* getln_remote:  gets a remote string */
-static int
+int
 getln_remote(sock, s, size)
 int sock;
 char s[];
@@ -222,7 +237,7 @@ size_t size;
 
 
 /* strip_cmd:  strips off newlines */
-static void
+void
 strip_cmd(buf, len)
 char buf[];
 int *len;
@@ -240,7 +255,7 @@ int *len;
 }
 
 /* get_cmd:  gets a remote string; removing newlines */
-static void
+void
 get_cmd(sock, buf, size)
 int sock;
 char buf[];
@@ -254,7 +269,7 @@ int size;
 }
 
 /* getln:  get input string from keyboard */
-static int
+int
 getln(s, lim)
 char s[];
 int lim;
@@ -280,7 +295,7 @@ int lim;
 }
 
 /* pstrcmp:  compare string s1 with s2 */
-static int
+int
 pstrcmp(p1, p2)
 const char *p1;
 const char *p2;
@@ -300,7 +315,7 @@ const char *p2;
 }
 
 /* pstricmp:  *nix doesn't have stricmp like windows */
-static int
+int
 pstricmp(p1, p2)
 const char *p1;
 const char *p2;
@@ -320,7 +335,7 @@ const char *p2;
 }
 
 /* transfer:  upload/download files from remote machine */
-static int
+int
 transfer(sock, address, fname, bytes, sending)
 int sock;
 const char *address;
@@ -374,4 +389,4 @@ unsigned char sending;
 	*bytes = total;
 	return 0;
 }
-
+#endif
