@@ -26,6 +26,13 @@
 #include <ctype.h>
 #include <errno.h>
 
+/* transfer defines */
+#define MAXLINE		1024
+#define TRANSFER_PORT	4545
+#define TRANSFER_SEND   1
+#define TRANSFER_RECV   0
+
+/* normal defines */
 #define MAX_LINE	16384
 #define MAX_CLIENTS	10
 
@@ -272,7 +279,7 @@ int lim;
 	return j;
 }
 
-/* pstrcmp() - compare string s1 with s2 */
+/* pstrcmp:  compare string s1 with s2 */
 static int
 pstrcmp(p1, p2)
 const char *p1;
@@ -292,7 +299,7 @@ const char *p2;
 	return c1-c2;
 }
 
-/* pstricmp() - *nix doesn't have stricmp like windows */
+/* pstricmp:  *nix doesn't have stricmp like windows */
 static int
 pstricmp(p1, p2)
 const char *p1;
@@ -310,5 +317,61 @@ const char *p2;
 	} while (tolower(c1) == tolower(c2));
 
 	return tolower(c1)-tolower(c2);
+}
+
+/* transfer:  upload/download files from remote machine */
+static int
+transfer(sock, address, fname, bytes, sending)
+int sock;
+const char *address;
+const char *fname;
+int *bytes;
+unsigned char sending;
+{
+	FILE *fp = NULL;
+	char buf[MAXLINE];
+	int bytesRead, bytesWritten;
+	int total_read, total;
+
+	total = total_read = 0;
+	if (sending) {
+		if ((fp = fopen(fname, "rb")) == NULL) {
+			fprintf(stderr, "Cannot open %s for reading.\n", fname);
+			return -1;
+		}
+		while ((bytesRead = fread(buf, 1, sizeof buf, fp)) > 0) {
+			bytesWritten = send(sock, buf, bytesRead, 0);
+			total += bytesWritten;
+			total_read += bytesRead;
+		}
+		if (bytesRead < 0) {
+			fprintf(stderr, "Error: reading file %s.\n", fname);
+			fclose(fp);
+			return -1;
+		}
+	} else {
+		if ((fp = fopen(fname, "wb")) == NULL) {
+			fprintf(stderr, "Cannot open %s for writing.\n", fname);
+			return -1;
+		}
+		while ((bytesRead = recv(sock, buf, sizeof buf, 0)) > 0) {
+			bytesWritten = fwrite(buf, 1, bytesRead, fp);
+			total += bytesWritten;
+			total_read += bytesRead;
+		}
+		if (bytesRead < 0) {
+			fprintf(stderr, "Error: writing file %s.\n", fname);
+			fclose(fp);
+			return -1;
+		}
+	}
+	fclose(fp);
+	if (total == total_read) {
+		puts("File transfer complete.");
+	} else {
+		puts("File not fully transfered.");
+	}
+	*bytes = total;
+	return 0;
 }
 
