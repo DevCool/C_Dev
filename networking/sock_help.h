@@ -35,18 +35,18 @@
 #define MAX_LINE	16384
 #define MAX_CLIENTS	10
 
-static int set_nonblocking();
-static int create_server();
-static int create_client();
-static int send_msg();
-static void close_conn();
-static int getln_remote();
-static void strip_cmd();
-static void get_cmd();
-static int getln();
-static int pstrcmp();
-static int pstricmp();
-static int transfer();
+static int set_nonblocking();	/* sets a socket nonblocking */
+static int create_server();	/* create a server socket */
+static int create_client();	/* create a client socket */
+static int send_msg();		/* send a full message */
+static void close_conn();	/* close socket connection */
+static int getln_remote();	/* gets a line from remote socket */
+static void strip_cmd();	/* strips off newline characters */
+static void get_cmd();		/* gets a command from remote socket */
+static int getln();		/* gets a line from standard input */
+static int pstrcmp();		/* compare strings */
+static int pstricmp();		/* compare strings; ignoring case */
+static int transfer();		/* transfer files from/to */
 
 #ifndef SOCK_HELP
 #define SOCK_HELP
