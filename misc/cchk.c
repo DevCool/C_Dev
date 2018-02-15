@@ -113,14 +113,16 @@ int check_source(void)
 				if (c == '\'' || c == '"') {
 					quotes++;
 					state = QUOTES;
-				} else if (c == '/') {
-					d = line[++i];
+					break;
+				}
+				if (c == '/') {
+					d = line[i++];
 					if (d == '*') {
-						comments++;
 						state = COMMENT;
-					} else
-						--i;
-				} else if (c == '(' || c == '[' || c == '{') {
+						break;
+					}
+				}
+				if (c == '(' || c == '[' || c == '{') {
 					push(&stack, c, ln);
 				} else if (c == ')' || c == ']' || c == '}') {
 					if (is_empty(&stack)) {
@@ -142,18 +144,18 @@ int check_source(void)
 			break;
 			case QUOTES:
 				if (c == '\\')
-					++i;
+					i++;
 				else if (c == '\'' || c == '"') {
 					state = CODE;
 				}
 			break;
 			case COMMENT:
 				if (c == '*') {
-					d = line[++i];
+					d = line[i++];
 					if (d == '/') {
+						comments++;
 						state = CODE;
-					} else
-						--i;
+					}
 				}
 			break;
 			}
