@@ -23,19 +23,21 @@ main()
 	int error;
 	state_t state;
 
-	error = 0;
+	i = error = 0;
 	state = CODE;
 	braces = brackets = parens = 0;
 	while ((len = get_line()) > 0) {
+		c = line[i];
 		switch (state) {
 			case CODE:
-			c = line[i];
-			if (c == '\'' || c == '"') {
+			if (c == '\'') {
+				state = QUOTE;
+			} else if (c == '"') {
 				state = QUOTE;
 			} else if (c == '/') {
 				d = line[++i];
 				if (d == '*') {
-				state = COMMENT;
+					state = COMMENT;
 				} else {
 					--i;
 				}
@@ -63,13 +65,18 @@ main()
 			}
 			break;
 			case QUOTE:
-			if (c == '\\')
-				++i;
-			else if (c == '\'' || c == '"')
+			if ((c = line[i]) == '\\') {
+				d = line[++i];
+				if (!(d == '\\' || d == 'a' || d == 'b' || d == 'n' || d == 'r'
+					|| d == 't' || d == 'x' || d == '?' || d == '0'
+					|| d == 'c' || d == 's' || d == 'd' || d == 'f'
+					|| d == '\'' || d == '"'))
+					printf("Invalid escape character '%c'.\n", d);
+			} else if (c == '\'' || c == '"')
 				state = CODE;
 			break;
 		}
-		i++;
+		++i;
 	}
 	if (state == COMMENT) {
 		printf("Code ends inside of comment.\n");
@@ -92,7 +99,7 @@ main()
 	if (state == CODE && error == 0)
 		printf("Code seems okay.\n");
 	if (error == 1)
-		printf("Code has errors.\n");
+		printf("Code had errors.\n");
 }
 
 /* getline:  gets user input from stdin */
