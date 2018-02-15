@@ -20,6 +20,8 @@ typedef enum STATE state_t;
 char line[MAXLINE];			/* global line variable */
 
 /* stack functions */
+int is_empty(stack_t *stack);
+int is_full(stack_t *stack);
 int push(stack_t *stack, int val, int pos);
 int pop(stack_t *stack, int *val, int *pos);
 
@@ -34,10 +36,22 @@ main()
 	return 0;
 }
 
+/* is_empty:  checks if stack is empty */
+int is_empty(stack_t *stack)
+{
+	return (stack->top == 0);
+}
+
+/* is_full:  checks if stack is full */
+int is_full(stack_t *stack)
+{
+	return (stack->top == MAXVAL-1);
+}
+
 /* push:  push values onto stack */
 int push(stack_t *stack, int val, int pos)
 {
-	if (stack->top == MAXVAL) {
+	if (is_full(stack)) {
 		printf("Stack overflow: already at maximum value.\n");
 		return -1;
 	}
@@ -50,19 +64,17 @@ int push(stack_t *stack, int val, int pos)
 /* pop:  pop values from stack */
 int pop(stack_t *stack, int *val, int *pos)
 {
-	if (stack->top == 0)
+	if (is_empty(stack)) {
+		printf("Stack is empty.\n");
 		return -1;
+	}
 	stack->top--;
 	*val = stack->val[stack->top];
 	*pos = stack->pos[stack->top];
 	return 0;
 }
 
-/* is_empty:  checks if stack is empty */
-int is_empty(stack_t *stack)
-{
-	return (stack->top == 0);
-}
+
 
 /* getln:  get line of input from stdin */
 int getln(void)
@@ -81,8 +93,7 @@ int getln(void)
 int check_source(void)
 {
 	extern char line[];
-	stack_t stack_error;
-	stack_t stack;
+	stack_t stack = {0};
 	state_t state;
 	int comments;
 	int quotes;
@@ -90,10 +101,12 @@ int check_source(void)
 	int c, d, i;
 	int ln;
 
+	error = 0;
+	ln = i = 0;
 	comments = quotes = 0;
-	error = ln = i = 0;
 	while (getln() > 0) {
 		++ln;
+
 		switch (state) {
 		case CODE:
 			c = line[i++];
@@ -109,15 +122,15 @@ int check_source(void)
 				push(&stack, c, ln);
 			} else if (c == ')' || c == ']' || c == '}') {
 				if (is_empty(&stack)) {
-					printf("Syntax error line %d: '%c' found without"
-						" counterpart.\n", ln, c);
+					printf("Syntax error line %d: '%c' doesn't have match.\n",
+						ln, c);
 					error = 1;
 				} else {
 					int val, pos;
 					pop(&stack, &val, &pos);
-					if ((val == '{' && c == '}') ||
-						(val == '[' && c == ']') ||
-						(val == ')' && c == ')')) {
+					if ((c == ')' && val != '(') ||
+						(c == ']' && val != '[') ||
+						(c == '}' && val != '{')) {
 						printf("Syntax error line %d: '%c' does not match '%c'.\n",
 							pos, val, c);
 						error = 1;
@@ -127,7 +140,7 @@ int check_source(void)
 		break;
 		case QUOTES:
 			if (c == '\\')
-				++i;
+				continue;
 			else if (c == '\'' || c == '"') {
 				++quotes;
 				state = CODE;
@@ -157,10 +170,15 @@ int check_source(void)
 	} else if (state == QUOTES) {
 		printf("Code ends inside of quotes.\n");
 		error = 1;
-	}
-	if (error == 0) {
+	} else if (is_empty(&stack) && error == 0) {
 		printf("Code seems to be okay.\n");
 	} else {
+		while (!is_empty(&stack)) {
+			int val, pos;
+			pop(&stack, &val, &pos);
+			printf("Syntax error: line %d : '%c' doesn't have match.\n",
+				pos, val);
+		}
 		printf("There were errors in the code.\n");
 	}
 	return 0;
