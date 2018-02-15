@@ -20,7 +20,7 @@ typedef enum STATE state_t;
 char line[MAXLINE];			/* global line variable */
 
 /* stack functions */
-void push(stack_t *stack, int val, int pos);
+int push(stack_t *stack, int val, int pos);
 int pop(stack_t *stack, int *val, int *pos);
 
 /* program functions */
@@ -30,6 +30,7 @@ int check_source(void);
 /* program to check the source code for errors */
 main()
 {
+	check_source();
 	return 0;
 }
 
@@ -65,7 +66,7 @@ int getln(void)
 	for (i = 0; i < MAXLINE-2 && (c = getchar()) != EOF && c != '\n'; i++)
 		line[i] = c;
 	if (c == '\n')
-		line[i++] = '\n'
+		line[i++] = '\n';
 	line[i] = '\0';
 	return i;
 }
@@ -73,8 +74,80 @@ int getln(void)
 /* check_source:  checks source code for syntax errors */
 int check_source(void)
 {
+	extern char line[];
 	stack_t stack_error;
 	stack_t stack;
 	state_t state;
+	int comments;
+	int quotes;
+	int error;
+	int c, d, i;
+	int ln;
+
+	comments = quotes = 0;
+	error = ln = i = 0;
+	while (getln() > 0) {
+		++ln;
+
+		c = line[i];
+		switch (state) {
+		case CODE:
+			if (c == '\'' || c == '"')
+				state = QUOTES;
+			else if (c == '/') {
+				d = line[++i];
+				if (d == '*')
+					state = COMMENT;
+			} else if (c == '(' || c == '[' || c == '{') {
+				push(&stack, c, ln);
+			} else if (c == ')' || c == ']' || c == '}') {
+				int val, pos;
+				pop(&stack, &val, &pos);
+				if ((val == '{' && c == '}') ||
+					(val == '[' && c == ']') ||
+					(val == ')' && c == ')')) {
+					printf("Syntax error line %d: '%c' does not match '%c'.\n",
+						pos, val, c);
+					error = 1;
+				}
+			}
+		break;
+		case QUOTES:
+			if (c == '\\')
+				continue;
+			else if (c == '\'' || c == '"') {
+				++quotes;
+				state = CODE;
+			}
+		break;
+		case COMMENT:
+			if (c == '*') {
+				int d = line[++i];
+				if (d == '/') {
+					++comments;
+					state = CODE;
+				}
+			}
+		break;
+		}
+		i++;
+	}
+
+	if (comments > 0)
+		printf("Number of comments in source is %d.\n", comments);
+	if (quotes > 0)
+		printf("Number of quotes in source is %d.\n", quotes);
+	if (state == COMMENT) {
+		printf("Code ends inside of comment.\n");
+		error = 1;
+	} else if (state == QUOTES) {
+		printf("Code ends inside of quotes.\n");
+		error = 1;
+	}
+	if (error == 0) {
+		printf("Code seems to be okay.\n");
+	} else {
+		printf("There were errors in the code.\n");
+	}
 	return 0;
 }
