@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+<head><title>Rudimentary Syntax Checker</title>
+<style>
+#Item {
+	background-color: #2F2F2F;
+	color: #1B8B1B;
+	text-align: center;
+	left: 0;
+	top: 65px;
+	position: fixed;
+	width: 100%;
+	height: 100%;
+}
+#Header {
+	background-color: #5B5B5B;
+	color: #2F2F2F;
+	width: 100%;
+	height: 65px;
+	left: 0;
+	top: 0;
+	position: fixed;
+	text-align: center;
+}
+#Footer {
+	background-color: #5B5B5B;
+	color: #2F2F2F;
+	width: 100%;
+	height: 65px;
+	left: 0;
+	bottom: 0;
+	position: fixed;
+	text-align: center;
+}
+</style>
+</head>
+<body>
+<div id="Header"><p><h3>Simple Syntax Checker for "C" Language</h3></p></div>
+<div id="Item"><p>This is just a temporary web page for my simple "C" language. Syntax checker program. Using the CGI (Common Gateway Interface) in the "C" language, to check "C" lanaguage source code. Type some code or copy/paste it into the box below to check it for rudimentary syntax errors. This CGI program will generate a new page with the results on that new page.<br /><br /><br /><form action="/cgi-bin/cchk" method="POST"><textarea name="codebox" style="width:750px;height:350px;" title="Enter your \"C\" language code here."></textarea><br /><input type="submit" /></form></p></div>
+<div id="Footer"><p>Created by Philip "5n4k3" Simonson</p></div>
+</body>
+</html>
