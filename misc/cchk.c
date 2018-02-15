@@ -17,7 +17,13 @@ enum STATE {
 };
 typedef enum STATE state_t;
 
+/* global variables */
 char line[MAXLINE];			/* global line variable */
+stack_t stack;				/* stack variable */
+state_t state;				/* state variable */
+int comments;				/* comment count */
+int quotes;					/* quotes count */
+int error;					/* error flag */
 
 /* stack functions */
 int is_empty(stack_t *stack);
@@ -30,7 +36,7 @@ int getln(void);
 int check_source(void);
 
 /* program to check the source code for errors */
-main()
+main(int argc, char **argv, char **envp)
 {
 	check_source();
 	return 0;
@@ -74,8 +80,6 @@ int pop(stack_t *stack, int *val, int *pos)
 	return 0;
 }
 
-
-
 /* getln:  get line of input from stdin */
 int getln(void)
 {
@@ -89,15 +93,45 @@ int getln(void)
 	return i;
 }
 
+/* special_body:  prints output for syntax checker */
+void report(void)
+{
+	extern stack_t stack;
+	extern state_t state;
+	extern int comments;
+	extern int quotes;
+	extern int error;
+
+	if (comments > 0 || quotes > 0)
+		printf("Comments: %d\nQuotes: %d\n", comments, quotes);
+	if (state == COMMENT) {
+		printf("Code ends inside of comment.\n");
+		error = 1;
+	} else if (state == QUOTES) {
+		printf("Code ends inside of quotes.\n");
+		error = 1;
+	} else if (is_empty(&stack) && error == 0) {
+		printf("Code seems to be okay.\n");
+	} else {
+		while (!is_empty(&stack)) {
+			int val, pos;
+			pop(&stack, &val, &pos);
+			printf("Syntax error: line %d : '%c' doesn't have match.\n",
+				pos, val);
+		}
+		printf("There were errors in the code.\n");
+	}
+}
+
 /* check_source:  checks source code for syntax errors */
 int check_source(void)
 {
 	extern char line[];
-	stack_t stack = {0};
-	state_t state;
-	int comments;
-	int quotes;
-	int error;
+	extern stack_t stack;
+	extern state_t state;
+	extern int comments;
+	extern int quotes;
+	extern int error;
 	int c, d, i;
 	int ln, len;
 
@@ -131,11 +165,11 @@ int check_source(void)
 					} else {
 						int val, pos;
 						pop(&stack, &val, &pos);
-						if ((c == ')' && val != '(') ||
-							(c == ']' && val != '[') ||
-							(c == '}' && val != '{')) {
-							printf("Syntax error line %d: '%c' does not match '%c'.\n",
-								pos, val, c);
+						if ((val != '(' && c == ')') ||
+							(val != '[' && c == ']') ||
+							(val != '{' && c == '}')) {
+							printf("Syntax error line %d: '%c' does not match"
+								" '%c'.\n", pos, val, c);
 							error = 1;
 						}
 					}
@@ -162,27 +196,6 @@ int check_source(void)
 		}
 	}
 
-	if (comments > 0 || quotes > 0) {
-		printf("Comments: %d\n"
-			"Quotes: %d\n",
-			comments, quotes);
-	}
-	if (state == COMMENT) {
-		printf("Code ends inside of comment.\n");
-		error = 1;
-	} else if (state == QUOTES) {
-		printf("Code ends inside of quotes.\n");
-		error = 1;
-	} else if (is_empty(&stack) && error == 0) {
-		printf("Code seems to be okay.\n");
-	} else {
-		while (!is_empty(&stack)) {
-			int val, pos;
-			pop(&stack, &val, &pos);
-			printf("Syntax error: line %d : '%c' doesn't have match.\n",
-				pos, val);
-		}
-		printf("There were errors in the code.\n");
-	}
+	report();
 	return 0;
 }
