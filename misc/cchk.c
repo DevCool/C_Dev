@@ -99,63 +99,64 @@ int check_source(void)
 	int quotes;
 	int error;
 	int c, d, i;
-	int ln;
+	int ln, len;
 
 	error = 0;
-	ln = i = 0;
+	ln = 0;
 	comments = quotes = 0;
-	while (getln() > 0) {
+	while ((len = getln()) > 0) {
 		++ln;
-
-		switch (state) {
-		case CODE:
-			c = line[i++];
-			if (c == '\'' || c == '"')
-				state = QUOTES;
-			else if (c == '/') {
-					d = line[i];
-				if (d == '*')
-					state = COMMENT;
-				else
-					++i;
-			} else if (c == '(' || c == '[' || c == '{') {
-				push(&stack, c, ln);
-			} else if (c == ')' || c == ']' || c == '}') {
-				if (is_empty(&stack)) {
-					printf("Syntax error line %d: '%c' doesn't have match.\n",
-						ln, c);
-					error = 1;
-				} else {
-					int val, pos;
-					pop(&stack, &val, &pos);
-					if ((c == ')' && val != '(') ||
-						(c == ']' && val != '[') ||
-						(c == '}' && val != '{')) {
-						printf("Syntax error line %d: '%c' does not match '%c'.\n",
-							pos, val, c);
+		i = 0;
+		while (i < len && (c = line[i++]) != EOF) {
+			switch (state) {
+			case CODE:
+				if (c == '\'' || c == '"') {
+					quotes++;
+					state = QUOTES;
+				} else if (c == '/') {
+					d = line[++i];
+					if (d == '*') {
+						comments++;
+						state = COMMENT;
+					} else
+						--i;
+				} else if (c == '(' || c == '[' || c == '{') {
+					push(&stack, c, ln);
+				} else if (c == ')' || c == ']' || c == '}') {
+					if (is_empty(&stack)) {
+						printf("Syntax error line %d: '%c' doesn't have match.\n",
+							ln, c);
 						error = 1;
+					} else {
+						int val, pos;
+						pop(&stack, &val, &pos);
+						if ((c == ')' && val != '(') ||
+							(c == ']' && val != '[') ||
+							(c == '}' && val != '{')) {
+							printf("Syntax error line %d: '%c' does not match '%c'.\n",
+								pos, val, c);
+							error = 1;
+						}
 					}
 				}
-			}
-		break;
-		case QUOTES:
-			if (c == '\\')
-				continue;
-			else if (c == '\'' || c == '"') {
-				++quotes;
-				state = CODE;
-			}
-		break;
-		case COMMENT:
-			if (c == '*') {
-				d = line[i];
-				if (d == '/') {
-					++comments;
-					state = CODE;
-				} else
+			break;
+			case QUOTES:
+				if (c == '\\')
 					++i;
+				else if (c == '\'' || c == '"') {
+					state = CODE;
+				}
+			break;
+			case COMMENT:
+				if (c == '*') {
+					d = line[++i];
+					if (d == '/') {
+						state = CODE;
+					} else
+						--i;
+				}
+			break;
 			}
-		break;
 		}
 	}
 
