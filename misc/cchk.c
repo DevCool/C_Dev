@@ -111,7 +111,6 @@ int check_source(void)
 			switch (state) {
 			case CODE:
 				if (c == '\'' || c == '"') {
-					quotes++;
 					state = QUOTES;
 					break;
 				}
@@ -144,8 +143,9 @@ int check_source(void)
 			break;
 			case QUOTES:
 				if (c == '\\')
-					i++;
+					continue;
 				else if (c == '\'' || c == '"') {
+					quotes++;
 					state = CODE;
 				}
 			break;
