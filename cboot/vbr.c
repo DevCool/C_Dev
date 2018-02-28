@@ -1,23 +1,26 @@
 __asm__(".code16gcc\n");
 __asm__("jmpl $0, $boot_main\n");
 
-unsigned short str_len(const char *s)
+void putch(char ch)
 {
-	unsigned short i;
-	for (i=0; *(s+i) != '\0'; ++i);
-	return i;
+	__asm__ __volatile__(
+		"mov $0x0E, %%ah;"
+		"mov %0, %%al;"
+		"mov $0x000A, %%bx;"
+		"int $0x10;"
+		:
+		: "r"(ch)
+	);
 }
 
 void print(const char *s)
 {
 	while (*s) {
-		__asm__ __volatile__(
-			"int $0x10" : : "a"(0x0E00 | *s), "b"(0x0007)
-		);
-		s++;
+		putch(*s++);
 	}
 }
 
+/*
 unsigned char getche(void)
 {
 	unsigned char ch;
@@ -38,6 +41,20 @@ unsigned char getche(void)
 	);
 	return ch;
 }
+*/
+
+char getch(void)
+{
+	char ch;
+	__asm__ __volatile__(
+		"mov $0x00, %%ah;"
+		"mov %%al, %0;"
+		"int $0x16;"
+		: "=r"(ch)
+		:
+	);
+	return ch;
+}
 
 void reboot(void)
 {
@@ -46,9 +63,21 @@ void reboot(void)
 	);
 }
 
+void clear_cmos(void)
+{
+	unsigned char i = 0;
+	while (i++ <= 255) {
+		__asm__ __volatile__(
+			"xor %ax, %ax;"
+			"in $70, %ax;"
+			"out %ax, $71;"
+		);
+	}
+}
+
 void init_graphics(void)
 {
-	__asm__(
+	__asm__ __volatile__(
 		"mov $0x0003, %ax;"
 		"int $0x10;"
 		"mov $0x0013, %ax;"
@@ -58,9 +87,13 @@ void init_graphics(void)
 
 void boot_main(void)
 {
-	print("Press 'q' to reboot... any key to continue.\r\n");
-	getche();
+	char ch;
 	init_graphics();
-	while (getche() != 'q');
+	while ((ch = getch()) != 'q') {
+		if (ch == 'e')
+			clear_cmos();
+		else
+			print("Press 'q' to reboot...\r\n");
+	}
 	reboot();
 }
