@@ -1,13 +1,20 @@
 __asm__(".code16gcc\n");
 __asm__("jmpl $0, $boot_main\n");
 
+unsigned short str_len(const char *s)
+{
+	unsigned short i;
+	for (i=0; *(s+i) != '\0'; ++i);
+	return i;
+}
+
 void print(const char *s)
 {
 	while (*s) {
 		__asm__ __volatile__(
 			"int $0x10"
 			:
-			: "a"(0x0E00 | *s), "b"(7)
+			: "a"(0x0E00 | *s), "b"(0x0005)
 		);
 		s++;
 	}
@@ -26,6 +33,20 @@ unsigned char getch(void)
 	return ch;
 }
 
+unsigned char getche(void)
+{
+	unsigned char ch;
+	ch = getch();
+	__asm__(
+		"mov $0x0E, %%ah;"
+		"mov %%al, %0;"
+		"int $0x10;"
+		:
+		: "r"(ch)
+	);
+	return ch;
+}
+
 void reboot(void)
 {
 	__asm__ __volatile__(
@@ -35,8 +56,8 @@ void reboot(void)
 
 void boot_main(void)
 {
-	while(getch() != 'q') {
-		print("Press 'q' to reboot...\r\n");
-	}
+	print("Test Boot Sector by Philip Simonson\r\n"
+		"\r\nPress 'q' to reboot...\r\n");
+	while (getche() != 'q');
 	reboot();
 }
