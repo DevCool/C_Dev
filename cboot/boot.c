@@ -1,13 +1,16 @@
-__asm__(".code16gcc\n");
+#include "code16gcc.h"
 __asm__("jmpl $0, $boot_main\n");
 
 void putch(char ch)
 {
 	__asm__ __volatile__(
+		"pusha;"
 		"mov $0x0E, %%ah;"
 		"mov %0, %%al;"
-		"mov $0x000A, %%bx;"
+		"mov $0x0007, %%bx;"
+		"mov $1, %%cx;"
 		"int $0x10;"
+		"popa;"
 		:
 		: "r"(ch)
 	);
@@ -75,6 +78,7 @@ void clear_cmos(void)
 	}
 }
 
+/*
 void init_graphics(void)
 {
 	__asm__ __volatile__(
@@ -84,11 +88,13 @@ void init_graphics(void)
 		"int $0x10;"
 	);
 }
+*/
 
 void boot_main(void)
 {
 	char ch;
-	init_graphics();
+/*	init_graphics();	*/
+	print("Press 'e' to wipe CMOS!\r\n");
 	while ((ch = getch()) != 'q') {
 		if (ch == 'e')
 			clear_cmos();
