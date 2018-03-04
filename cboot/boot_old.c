@@ -44,6 +44,7 @@ char getche(void)
 	);
 	return ch;
 }
+*/
 
 char getch(void)
 {
@@ -58,6 +59,7 @@ char getch(void)
 	return ch;
 }
 
+/*
 void reboot(void)
 {
 	__asm__(
@@ -120,50 +122,26 @@ void boot_main(void)
 
 void boot_main(void)
 {
-	unsigned char cf, i, reset;
-	print("Loading sector from floppy.\r\n");
-	for (i = 0; i < 3; i++) {
-		cf = 0;
-		__asm__(
-			"pusha;"
-			"mov $0x0, %%ax;"
-			"mov %%ax, %%es;"
-			"mov $0x1000, %%bx;"
-			"mov $0x02, %%ah;"
-			"mov $0x02, %%al;"
-			"mov $0x00, %%ch;" /* track/cylinder */
-			"mov $0x02, %%cl;" /* sector to read */
-			"mov $0x00, %%dh;" /* head number */
-			"mov $0x00, %%dl;" /* drive number. */
-			"int $0x13;"	/* call BIOS; read sector */
-			"setc %0;"
-			"popa;"
-			: "=r"(cf)
-			:
-		);
-		if (cf) {
-			reset = 1;
-			print("Could not read the disk"
-				" sector.\r\n");
-			while (reset)
-				__asm__(
-					"mov $0x00, %%ah;"
-					"int $0x13;"
-					"or %%ah, %%ah;"
-					"mov %%ah, %0;"
-					: "=r"(reset)
-					:
-				);
-		} else {
-			print("Sector read.\r\n");
-			__asm__(
-				"cli;"
-				"xor %ax, %ax;"
-				"mov %ss, %ax;"
-				"mov $0x1000, %sp;"
-				"jmp $0x0000, $0x1000;"
-				"popa;"
-			);
+	char ch, i;
+	for (;;) {
+		print("Press 'q' to reboot system...\r\n"
+			"Press 'e' to wipe CMOS!\r\n");
+		ch = getch();
+		switch (ch) {
+		case 'q':
+		case 'Q':
+			__asm__("jmp $0xFFFF, $0x0000;");
+			break;
+		case 'e':
+		case 'E':
+			print("Wiping CMOS...\r\n");
+			for (i = 0; i < 255; i++)
+				__asm__("xor %ax, %ax;"
+					"in $0x70, %ax;"
+					"out %ax, $0x71;");
+			break;
+		default:
+			print("Invalid key pressed\r\n");
 			break;
 		}
 	}

@@ -5,7 +5,12 @@ if [ ! "$?" = "0" ]; then
 	echo "There was an error making the floppy image."
 	exit 1
 fi
-dd if=boot.bin of=floppy.img bs=512 count=1
+dd if=boot.bin of=floppy.img bs=512 count=1 conv=notrunc
+if [ ! "$?" = "0" ]; then
+	echo "There was an error copying to floppy image."
+	exit 1
+fi
+dd if=stage2.bin of=floppy.img bs=512 count=1 seek=1 conv=notrunc
 if [ ! "$?" = "0" ]; then
 	echo "There was an error copying to floppy image."
 	exit 1
