@@ -59,6 +59,7 @@ char getch(void)
 	return ch;
 }
 
+/*
 void reboot(void)
 {
 	__asm__(
@@ -78,7 +79,6 @@ void clear_cmos(void)
 	}
 }
 
-/*
 void init_graphics(void)
 {
 	__asm__ __volatile__(
@@ -92,14 +92,27 @@ void init_graphics(void)
 
 void boot_main(void)
 {
-	char ch;
-/*	init_graphics();	*/
-	print("Press 'e' to wipe CMOS!\r\n");
-	while ((ch = getch()) != 'q') {
-		if (ch == 'e')
-			clear_cmos();
-		else
-			print("Press 'q' to reboot...\r\n");
+	char ch, i;
+	for (;;) {
+		print("Press 'q' to reboot system...\r\n"
+			"Press 'e' to wipe CMOS!\r\n");
+		ch = getch();
+		switch (ch) {
+		case 'q':
+		case 'Q':
+			__asm__("jmp $0xFFFF, $0x0000;");
+			break;
+		case 'e':
+		case 'E':
+			print("Wiping CMOS...\r\n");
+			for (i = 0; i < 255; i++)
+				__asm__("xor %ax, %ax;"
+					"in $0x70, %ax;"
+					"out %ax, $0x71;");
+			break;
+		default:
+			print("Invalid key pressed\r\n");
+			break;
+		}
 	}
-	reboot();
 }
